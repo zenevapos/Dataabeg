@@ -47,8 +47,24 @@ export class SMEPlugClient {
         cache: 'no-store'
       });
 
-      const data = await res.json();
-      return data;
+      const json = await res.json();
+      
+      // SMEPlug returns { balance: 0 } or { status: true, data: { balance: ... } }
+      const balanceNum = typeof json.balance === 'number' 
+        ? json.balance 
+        : (json.data?.balance ? Number(json.data.balance) : 0);
+
+      return {
+        status: true,
+        msg: 'Balance fetched successfully',
+        data: {
+          balance: Number(balanceNum).toLocaleString('en-NG', { minimumFractionDigits: 2 }),
+          user: json.user || json.data?.user || {
+            name: 'DataAbeg Merchant',
+            email: 'admin@dataabeg.com'
+          }
+        }
+      };
     } catch (error: unknown) {
       console.error('SMEPlug getBalance error:', error);
       return {
@@ -81,33 +97,56 @@ export class SMEPlugClient {
       });
 
       if (!res.ok) {
-        // Fallback to curated high-margin plans if endpoint is slow
         let fallback = CURATED_DATA_PLANS;
         if (networkId) fallback = fallback.filter((p) => p.networkId === networkId);
         return { status: true, data: fallback };
       }
 
       const json = await res.json();
-      if (json && json.status && Array.isArray(json.data)) {
-        // Parse and enrich with selling price and retail savings
-        const parsedPlans: DataPlan[] = json.data.map((item: {
-          plan_id?: number | string;
-          id?: number | string;
-          network_id?: number;
-          network?: string;
-          plan_name?: string;
-          name?: string;
-          price?: number | string;
-          validity?: string;
-          type?: string;
-        }) => {
-          const planId = item.plan_id || item.id || 0;
+      
+      const NETWORK_NAMES: Record<number, 'MTN' | 'AIRTEL' | 'GLO' | '9MOBILE'> = {
+        1: 'MTN',
+        2: 'AIRTEL',
+        3: 'GLO',
+        4: '9MOBILE'
+      };
+
+      // SMEPlug returns { status: true, data: { '1': [...], '2': [...], '3': [...], '4': [...] } } or array
+      const rawList: any[] = [];
+      if (json && json.data) {
+        if (Array.isArray(json.data)) {
+          rawList.push(...json.data);
+        } else if (typeof json.data === 'object') {
+          for (const [netKey, plans] of Object.entries(json.data)) {
+            const netNum = Number(netKey);
+            if (Array.isArray(plans)) {
+              plans.forEach((p: any) => {
+                rawList.push({
+                  ...p,
+                  network_id: netNum,
+                  network: NETWORK_NAMES[netNum] || 'MTN'
+                });
+              });
+            }
+          }
+        }
+      }
+
+      // Filter only active plans with positive price
+      const activeRaw = rawList.filter((item) => Number(item.price) > 0);
+
+      if (activeRaw.length > 0) {
+        const parsedPlans: DataPlan[] = activeRaw.map((item) => {
+          const planId = item.id || item.plan_id || 0;
           const cost = Number(item.price) || 250;
-          const sellingPrice = Math.round(cost * 1.15); // +15% margin
-          const retailPrice = 1000;
+          // Clean competitive profit markup
+          const markup = cost < 500 ? 50 : cost < 1500 ? 100 : cost < 3000 ? 150 : 250;
+          const sellingPrice = cost + markup;
+          const retailPrice = Math.round(sellingPrice * 1.35);
           const netId = (Number(item.network_id) || 1) as 1 | 2 | 3 | 4;
-          const netName = (item.network?.toUpperCase() || 'MTN') as 'MTN' | 'AIRTEL' | 'GLO' | '9MOBILE';
-          const name = item.plan_name || item.name || 'Data Plan';
+          const netName = (item.network?.toUpperCase() || NETWORK_NAMES[netId] || 'MTN') as 'MTN' | 'AIRTEL' | 'GLO' | '9MOBILE';
+          const name = item.name || item.plan_name || 'Data Plan';
+          const isCorporate = name.toUpperCase().includes('CORP') || name.toUpperCase().includes('CG');
 
           return {
             id: `smeplug-${planId}`,
@@ -115,11 +154,11 @@ export class SMEPlugClient {
             networkId: netId,
             networkName: netName,
             name,
-            category: (item.type?.toUpperCase().includes('CG') ? 'CORPORATE_GIFTING' : 'SME') as 'SME' | 'CORPORATE_GIFTING' | 'DIRECT',
-            categoryLabel: item.type?.toUpperCase().includes('CG') ? '⚡ Corporate Gifting' : '🔥 SME Super Cheap',
+            category: isCorporate ? 'CORPORATE_GIFTING' : 'SME',
+            categoryLabel: isCorporate ? '⚡ Corporate Gifting' : '🔥 SME Super Cheap',
             size: name.match(/\d+(\.\d+)?\s*(GB|MB)/i)?.[0] || '1GB',
             sizeInMB: 1024,
-            validity: item.validity || '30 Days',
+            validity: name.match(/(\d+\s*(Days?|Months?|Hours?|Day))/i)?.[0] || item.validity || '30 Days',
             costPrice: cost,
             sellingPrice,
             retailPrice,
