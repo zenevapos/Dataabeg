@@ -1,5 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const viewport: Viewport = {
+  themeColor: '#080d1a',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1
+};
 
 export const metadata: Metadata = {
   title: 'DataAbeg | Super Cheap Mobile Data Bundles (MTN, Airtel, Glo, 9mobile)',
@@ -37,11 +44,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark scroll-smooth">
+    <html
+      lang="en"
+      className="dark scroll-smooth"
+      suppressHydrationWarning
+      style={{ backgroundColor: '#080d1a', color: '#f8fafc', colorScheme: 'dark' }}
+    >
       <head>
-        <meta name="theme-color" content="#090d16" />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              html, body {
+                background-color: #080d1a !important;
+                color: #f8fafc !important;
+                color-scheme: dark;
+              }
+            `
+          }}
+        />
       </head>
-      <body className="min-h-screen bg-[#090d16] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans">
+      <body
+        className="min-h-screen bg-[#080d1a] text-slate-100 antialiased selection:bg-blue-600 selection:text-white font-sans"
+        suppressHydrationWarning
+        style={{ backgroundColor: '#080d1a', color: '#f8fafc' }}
+      >
         {children}
       </body>
     </html>

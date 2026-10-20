@@ -91,7 +91,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#090d16] text-white">
+    <main className="min-h-screen flex flex-col bg-[#080d1a] text-white">
       {/* Top Navigation */}
       <Navbar
         onOpenSettings={() => setIsAdminDrawerOpen(true)}
