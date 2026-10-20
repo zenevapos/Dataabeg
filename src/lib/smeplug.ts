@@ -224,4 +224,46 @@ export class SMEPlugClient {
       };
     }
   }
+
+  /**
+   * Dispatches instant airtime recharge to SMEPlug API
+   */
+  async purchaseAirtime(payload: { network_id: number; phone: string; amount: number; customer_reference?: string }): Promise<SMEPlugPurchaseResponse> {
+    if (!this.isConfigured()) {
+      return {
+        status: true,
+        msg: `[Sandbox] Success! Recharged ₦${payload.amount} airtime to ${payload.phone}`,
+        data: {
+          reference: `AIR_${Date.now()}`,
+          msg: `You have successfully recharged ₦${payload.amount} airtime to ${payload.phone}.`,
+          current_status: 'successful'
+        }
+      };
+    }
+
+    try {
+      const res = await fetch(`${SMEPLUG_BASE_URL}/airtime/purchase`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          network_id: Number(payload.network_id),
+          phone: payload.phone,
+          amount: Number(payload.amount),
+          customer_reference: payload.customer_reference
+        })
+      });
+
+      const json = await res.json();
+      return json;
+    } catch (error: unknown) {
+      console.error('SMEPlug airtime API error:', error);
+      return {
+        status: false,
+        msg: error instanceof Error ? error.message : 'Network error communicating with SMEPlug VTU Engine'
+      };
+    }
+  }
 }

@@ -264,7 +264,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal(null);
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-white/10 text-white font-semibold transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-white/10 text-white font-semibold transition-colors text-left cursor-pointer hover:bg-white/20"
           >
             <LayoutDashboard className="w-4 h-4 text-blue-200" />
             <span>Dashboard</span>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('fund_wallet');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <Wallet className="w-4 h-4 text-blue-200" />
             <span>Fund Wallet</span>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('airtime');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <PhoneCall className="w-4 h-4 text-blue-200" />
             <span>Airtime Topup</span>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('process_log');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <FileText className="w-4 h-4 text-blue-200" />
             <span>Data Process Log</span>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('history');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <Clock className="w-4 h-4 text-blue-200" />
             <span>History</span>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('api_docs');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <Code className="w-4 h-4 text-blue-200" />
             <span>Data Plan IDs - API</span>
@@ -330,7 +330,7 @@ export default function DashboardPage() {
               setIsMobileMenuOpen(false);
               setActiveModal('dispense_method');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/10 hover:text-white transition-colors text-left cursor-pointer"
           >
             <Package className="w-4 h-4 text-blue-200" />
             <span>Dispense Method</span>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
           <div className="pt-2">
             <button
               onClick={() => setDataShareOpen(!dataShareOpen)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Share2 className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                     setSelectedNetworkId('1');
                     window.scrollTo({ top: 300, behavior: 'smooth' });
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Data Share System
                 </div>
@@ -366,7 +366,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('module_rentals');
                   }}
-                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md flex items-center justify-between cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <span>Module Rentals</span>
                   <span className="bg-rose-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">HOT</span>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('auto_recharge');
                   }}
-                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md flex items-center justify-between cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <span>Auto Recharge Modules</span>
                   <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('vending_board');
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Vending Board
                 </div>
@@ -398,7 +398,7 @@ export default function DashboardPage() {
           <div className="pt-1">
             <button
               onClick={() => setSimConnOpen(!simConnOpen)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Layers className="w-3.5 h-3.5" />
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('connect_sim');
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Connect Sim
                 </div>
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('manage_sim');
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Manage Sim
                 </div>
@@ -435,7 +435,7 @@ export default function DashboardPage() {
           <div className="pt-1">
             <button
               onClick={() => setDataGroupOpen(!dataGroupOpen)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white hover:bg-white/10 rounded-md transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Smartphone className="w-3.5 h-3.5" />
@@ -451,7 +451,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('api_docs');
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Manage Plans
                 </div>
@@ -460,7 +460,7 @@ export default function DashboardPage() {
                     setIsMobileMenuOpen(false);
                     setActiveModal('bulk_data');
                   }}
-                  className="py-1 cursor-pointer hover:text-white"
+                  className="py-1 px-2 rounded-md cursor-pointer hover:text-white hover:bg-white/10 transition-colors"
                 >
                   Sell Bulk
                 </div>

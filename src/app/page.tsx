@@ -115,14 +115,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Fast Live Moving Bundles Marquee */}
-      <ShowreelMarquee />
-
       {/* Commercial Banks vs DataAbeg Price Comparison */}
       <PriceComparisonSection />
-
-      {/* USSD Check Codes Section */}
-      <USSDGuideSection />
 
       {/* Split-Column FAQ Section */}
       <FAQSection />

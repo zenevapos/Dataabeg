@@ -70,15 +70,26 @@ export function PurchaseModal({
         headers['x-smeplug-key'] = customApiKey;
       }
 
-      const res = await fetch('/api/smeplug/purchase', {
+      const isAirtime = String(plan.id).startsWith('airtime-') || plan.planId === 0;
+      const endpoint = isAirtime ? '/api/smeplug/airtime' : '/api/smeplug/purchase';
+      const payload = isAirtime
+        ? {
+            network_id: plan.networkId,
+            phone: phoneNumber,
+            amount: plan.retailPrice,
+            customer_reference: txRef
+          }
+        : {
+            network_id: plan.networkId,
+            plan_id: plan.planId,
+            phone: phoneNumber,
+            customer_reference: txRef
+          };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          network_id: plan.networkId,
-          plan_id: plan.planId,
-          phone: phoneNumber,
-          customer_reference: txRef
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
