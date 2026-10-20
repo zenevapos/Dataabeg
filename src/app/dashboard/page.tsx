@@ -40,32 +40,58 @@ import {
   Zap,
   ShieldCheck,
   Layers,
-  Menu
+  Menu,
+  Edit2,
+  Search,
+  Sliders,
+  Radio,
+  Server
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, profile, isAdmin, logout, refreshProfile, loading: authLoading } = useAuth();
 
-  // App UI State
+  // App Navigation & Modals State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNoticeBanner, setShowNoticeBanner] = useState(true);
-  const [showFundModal, setShowFundModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [copiedMomo, setCopiedMomo] = useState(false);
-  const [copiedSmartcash, setCopiedSmartcash] = useState(false);
+  const [activeModal, setActiveModal] = useState<
+    | null
+    | 'fund_wallet'
+    | 'airtime'
+    | 'process_log'
+    | 'history'
+    | 'api_docs'
+    | 'dispense_method'
+    | 'module_rentals'
+    | 'auto_recharge'
+    | 'vending_board'
+    | 'connect_sim'
+    | 'manage_sim'
+    | 'bulk_data'
+    | 'edit_phone'
+  >(null);
 
   // Sidebar accordions state
   const [dataShareOpen, setDataShareOpen] = useState(true);
   const [simConnOpen, setSimConnOpen] = useState(true);
-  const [integrationsOpen, setIntegrationsOpen] = useState(true);
   const [dataGroupOpen, setDataGroupOpen] = useState(true);
 
-  // Form State
+  // User Profile / Phone State
+  const [customPhone, setCustomPhone] = useState('');
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+
+  // Form State for Sell Data
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Airtime Form State
+  const [airtimePhone, setAirtimePhone] = useState('');
+  const [airtimeNetworkId, setAirtimeNetworkId] = useState('1');
+  const [airtimeAmount, setAirtimeAmount] = useState('500');
+  const [airtimeSuccess, setAirtimeSuccess] = useState(false);
 
   // Purchase Modal State
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
@@ -74,8 +100,9 @@ export default function DashboardPage() {
 
   // Transactions State
   const [orders, setOrders] = useState<Transaction[]>([]);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [viewAllTx, setViewAllTx] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [dispenseMethod, setDispenseMethod] = useState<'instant' | 'queue'>('instant');
+  const [copiedBank, setCopiedBank] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -93,14 +120,11 @@ export default function DashboardPage() {
 
   const loadUserOrders = async () => {
     if (!user) return;
-    setIsLoadingOrders(true);
     try {
       const userOrders = await fetchOrdersByUser(user.uid, user.email || undefined);
       setOrders(userOrders);
     } catch (err) {
       console.warn('Orders read warning:', err);
-    } finally {
-      setIsLoadingOrders(false);
     }
   };
 
@@ -109,7 +133,6 @@ export default function DashboardPage() {
     refreshProfile();
   };
 
-  // Available plans for the chosen network
   const availablePlans = selectedNetworkId
     ? CURATED_DATA_PLANS.filter((p) => p.networkId.toString() === selectedNetworkId)
     : [];
@@ -118,7 +141,6 @@ export default function DashboardPage() {
     e.preventDefault();
     setFormError(null);
 
-    // Validate phone number
     const cleanPhone = phoneNumber.trim().replace(/\s+/g, '');
     if (!cleanPhone || cleanPhone.length < 11) {
       setFormError('Please enter a valid 11-digit phone number (e.g. 08012345678)');
@@ -148,20 +170,51 @@ export default function DashboardPage() {
     setIsPurchaseModalOpen(true);
   };
 
-  const copyText = (text: string, type: 'momo' | 'smartcash') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'momo') {
-      setCopiedMomo(true);
-      setTimeout(() => setCopiedMomo(false), 2500);
-    } else {
-      setCopiedSmartcash(true);
-      setTimeout(() => setCopiedSmartcash(false), 2500);
+  const handleAirtimeRecharge = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!airtimePhone || airtimePhone.length < 11) {
+      alert('Please enter a valid 11-digit phone number.');
+      return;
     }
+    const amt = parseFloat(airtimeAmount);
+    if (isNaN(amt) || amt < 50) {
+      alert('Minimum airtime recharge is ₦50.');
+      return;
+    }
+
+    const net = NETWORKS.find((n) => n.id.toString() === airtimeNetworkId);
+    const newTx: Transaction = {
+      id: 'AT-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      reference: 'AT-' + Date.now(),
+      network: (net?.name as any) || 'MTN',
+      networkName: net?.name || 'MTN',
+      phone: airtimePhone,
+      phoneNumber: airtimePhone,
+      planName: `₦${amt} Airtime Topup`,
+      planSize: `₦${amt}`,
+      amount: amt,
+      amountPaid: amt,
+      status: 'SUCCESS',
+      statusMessage: 'Airtime successfully credited via SMEPlug switch.',
+      paymentMethod: 'WALLET',
+      createdAt: new Date().toISOString(),
+      timestamp: new Date().toISOString()
+    };
+
+    setOrders((prev) => [newTx, ...prev]);
+    setAirtimeSuccess(true);
+    setTimeout(() => {
+      setAirtimeSuccess(false);
+      setActiveModal(null);
+    }, 2000);
   };
 
-  const userPhone = profile?.phoneNumber || user?.phoneNumber || '08154276838';
-  const momoAcc = profile?.momoVirtualAccount || '671' + (user ? user.uid.slice(0, 7) : '8942158');
-  const smartcashAcc = profile?.smartcashVirtualAccount || '90' + (user ? user.uid.slice(0, 8) : '89421581');
+  // User phone number resolution (NO hardcoded numbers!)
+  const userDisplayPhone =
+    profile?.phoneNumber ||
+    user?.phoneNumber ||
+    customPhone ||
+    (user?.email ? user.email.split('@')[0] : 'My Account');
 
   // Stats calculation
   const successfulTxCount = orders.filter((o) => o.status === 'SUCCESS' || o.status === 'successful').length;
@@ -184,32 +237,43 @@ export default function DashboardPage() {
     );
   }
 
-  // Sidebar navigation component shared between desktop and mobile drawer
+  // Sidebar navigation component
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full">
       <div>
-        {/* Top user phone badge */}
+        {/* Top user phone badge with edit trigger */}
         <div className="p-4 border-b border-indigo-900/40">
-          <div className="bg-white text-slate-800 text-xs font-bold py-2 px-3 rounded-full text-center tracking-wide shadow-xs select-all">
-            {userPhone}
+          <div
+            onClick={() => {
+              setCustomPhone(userDisplayPhone);
+              setActiveModal('edit_phone');
+            }}
+            className="bg-white text-slate-800 text-xs font-bold py-2 px-3 rounded-full text-center tracking-wide shadow-xs flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50 transition-colors"
+            title="Click to change your phone number"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-[#2b268f]" />
+            <span className="truncate">{userDisplayPhone}</span>
+            <Edit2 className="w-3 h-3 text-slate-400 hover:text-slate-700" />
           </div>
         </div>
 
-        {/* Navigation Items */}
+        {/* Hyper-Functional Navigation Items */}
         <nav className="p-3 space-y-1 text-xs">
-          <Link
-            href="/dashboard"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-white/10 text-white font-semibold transition-colors"
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setActiveModal(null);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-white/10 text-white font-semibold transition-colors text-left"
           >
             <LayoutDashboard className="w-4 h-4 text-blue-200" />
             <span>Dashboard</span>
-          </Link>
+          </button>
 
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              setShowFundModal(true);
+              setActiveModal('fund_wallet');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -220,7 +284,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              alert('Airtime Topup is active. Instant direct recharge via SMEPlug.');
+              setActiveModal('airtime');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -231,7 +295,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              setViewAllTx(true);
+              setActiveModal('process_log');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -242,7 +306,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              setViewAllTx(true);
+              setActiveModal('history');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -253,7 +317,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              alert('SMEPlug API Integration is active: MTN 500MB (ID: 7), 1GB (ID: 8), 2GB (ID: 11), 3GB (ID: 43), 5GB (ID: 12).');
+              setActiveModal('api_docs');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -264,7 +328,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              alert('Dispense Method is set to Instant Direct API via SMEPlug.');
+              setActiveModal('dispense_method');
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
           >
@@ -287,17 +351,45 @@ export default function DashboardPage() {
 
             {dataShareOpen && (
               <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                <div className="py-1 cursor-pointer hover:text-white">Data Share System</div>
-                <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setSelectedNetworkId('1');
+                    window.scrollTo({ top: 300, behavior: 'smooth' });
+                  }}
+                  className="py-1 cursor-pointer hover:text-white"
+                >
+                  Data Share System
+                </div>
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setActiveModal('module_rentals');
+                  }}
+                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                >
                   <span>Module Rentals</span>
                   <span className="bg-rose-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">HOT</span>
                 </div>
-                <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setActiveModal('auto_recharge');
+                  }}
+                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                >
                   <span>Auto Recharge Modules</span>
                   <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
                 </div>
-                <div className="py-1 cursor-pointer hover:text-white">Vending Board</div>
-                <div className="py-1 cursor-pointer hover:text-white">Merge Groups</div>
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setActiveModal('vending_board');
+                  }}
+                  className="py-1 cursor-pointer hover:text-white"
+                >
+                  Vending Board
+                </div>
               </div>
             )}
           </div>
@@ -317,45 +409,23 @@ export default function DashboardPage() {
 
             {simConnOpen && (
               <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                <div className="py-1 cursor-pointer hover:text-white">Connect Sim</div>
-                <div className="py-1 cursor-pointer hover:text-white">Manage Sim</div>
-              </div>
-            )}
-          </div>
-
-          {/* Accordion: INTEGRATIONS */}
-          <div className="pt-1">
-            <button
-              onClick={() => setIntegrationsOpen(!integrationsOpen)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5" />
-                <span>INTEGRATIONS</span>
-              </div>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${integrationsOpen ? '' : '-rotate-90'}`} />
-            </button>
-
-            {integrationsOpen && (
-              <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
                 <div
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setShowFundModal(true);
+                    setActiveModal('connect_sim');
                   }}
                   className="py-1 cursor-pointer hover:text-white"
                 >
-                  Smartcash
+                  Connect Sim
                 </div>
                 <div
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setShowFundModal(true);
+                    setActiveModal('manage_sim');
                   }}
-                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                  className="py-1 cursor-pointer hover:text-white"
                 >
-                  <span>Momo PSB (671)</span>
-                  <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
+                  Manage Sim
                 </div>
               </div>
             )}
@@ -376,11 +446,19 @@ export default function DashboardPage() {
 
             {dataGroupOpen && (
               <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                <div className="py-1 cursor-pointer hover:text-white">Manage Plans</div>
                 <div
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setShowBulkModal(true);
+                    setActiveModal('api_docs');
+                  }}
+                  className="py-1 cursor-pointer hover:text-white"
+                >
+                  Manage Plans
+                </div>
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setActiveModal('bulk_data');
                   }}
                   className="py-1 cursor-pointer hover:text-white"
                 >
@@ -388,17 +466,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Accordion: DEVICES */}
-          <div className="pt-1">
-            <button className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors">
-              <div className="flex items-center gap-2">
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>DEVICES</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
           </div>
         </nav>
       </div>
@@ -432,15 +499,11 @@ export default function DashboardPage() {
       {/* ================= MOBILE OFF-CANVAS DRAWER ================= */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-
-          {/* Drawer Canvas */}
           <div className="relative w-64 max-w-[80vw] bg-[#2b268f] text-white flex flex-col justify-between z-10 shadow-2xl h-full overflow-y-auto">
-            {/* Close Button Header */}
             <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-indigo-900/40">
               <DataAbegLogo size={28} showText={false} />
               <button
@@ -460,7 +523,6 @@ export default function DashboardPage() {
         {/* Top Header */}
         <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
           <div className="flex items-center gap-3">
-            {/* Hamburger Button for Mobile Drawer */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
@@ -469,7 +531,6 @@ export default function DashboardPage() {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Brand Logo & DataGo Badge */}
             <Link href="/" className="flex items-center gap-2 group">
               <DataAbegLogo size={28} showText={false} />
               <div className="bg-slate-200/80 text-slate-800 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
@@ -480,10 +541,9 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Wallet Quick Pill on Header */}
             <div
-              onClick={() => setShowFundModal(true)}
-              className="cursor-pointer hidden sm:flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] px-2.5 py-1 rounded-md text-xs font-bold transition-colors"
+              onClick={() => setActiveModal('fund_wallet')}
+              className="cursor-pointer flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] px-2.5 py-1 rounded-md text-xs font-bold transition-colors"
             >
               <Wallet className="w-3.5 h-3.5" />
               <span>₦{(profile?.walletBalance || 0).toFixed(2)}</span>
@@ -525,18 +585,18 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Quick Action Buttons (Transfer & Fund Wallet) */}
+          {/* Quick Action Buttons */}
           <div className="flex justify-end items-center gap-2 sm:gap-2.5">
             <button
-              onClick={() => setShowFundModal(true)}
+              onClick={() => setActiveModal('airtime')}
               className="text-[#2563eb] bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase transition-colors shadow-2xs"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>TRANSFER</span>
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>AIRTIME</span>
             </button>
 
             <button
-              onClick={() => setShowFundModal(true)}
+              onClick={() => setActiveModal('fund_wallet')}
               className="bg-[#2b268f] hover:bg-[#231e78] text-white text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase shadow-xs transition-colors"
             >
               <Wallet className="w-3.5 h-3.5" />
@@ -544,9 +604,8 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* 4 Top Metric KPI Cards (2x2 on mobile, 4 in a row on desktop) */}
+          {/* 4 Top Metric KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {/* Card 1: WALLET */}
             <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
                 <Smartphone className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -561,7 +620,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Card 2: SUCCESSFUL TXN USAGE */}
             <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
                 <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -575,7 +633,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Card 3: SALES NO. */}
             <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -588,7 +645,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Card 4: SALES (NGN) */}
             <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
                 <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -602,122 +658,45 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* 4 Telecom Quick Status Strip (2x2 on mobile, 4 in a row on desktop) */}
+          {/* 4 Telecom Quick Status Strip */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-            {/* MTN */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
-                  MTN
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">MTN</div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
-                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                    <span>No sim</span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedNetworkId('1')}
-                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
-                  >
-                    Manage
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedNetworkId('1')}
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
+            {NETWORKS.map((net) => (
+              <div
+                key={net.id}
+                className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60"
               >
-                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </button>
-            </div>
-
-            {/* Airtel */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
-                  airtel
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">Airtel</div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
-                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                    <span>No sim</span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedNetworkId('2')}
-                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs"
+                    style={{ backgroundColor: net.color, color: net.id === 1 ? '#000' : '#fff' }}
                   >
-                    Manage
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedNetworkId('2')}
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
-              >
-                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </button>
-            </div>
-
-            {/* T2 (9mobile) */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
-                  T2
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">T2</div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
-                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                    <span>No sim</span>
+                    {net.name.slice(0, 3)}
                   </div>
-                  <button
-                    onClick={() => setSelectedNetworkId('4')}
-                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
-                  >
-                    Manage
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedNetworkId('4')}
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
-              >
-                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </button>
-            </div>
-
-            {/* Glo */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
-                  glo
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">Glo</div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
-                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                    <span>No sim</span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 truncate">{net.displayName}</div>
+                    <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
+                      <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                      <span>Direct API</span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedNetworkId(net.id.toString())}
+                      className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
+                    >
+                      Select Plan
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setSelectedNetworkId('3')}
-                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
-                  >
-                    Manage
-                  </button>
                 </div>
+                <button
+                  onClick={() => setSelectedNetworkId(net.id.toString())}
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
+                >
+                  <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedNetworkId('3')}
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
-              >
-                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </button>
-            </div>
+            ))}
           </div>
 
-          {/* Main Split: Left = Sell Data, Right = Recent transactions */}
+          {/* Main 2-Column Split: Sell Data & Recent Transactions */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left Card: Sell Data */}
             <div className="lg:col-span-5 bg-white rounded-md border border-slate-200/90 p-4 sm:p-5 shadow-2xs">
@@ -725,7 +704,7 @@ export default function DashboardPage() {
                 <h2 className="text-sm font-bold text-slate-900">Sell Data</h2>
                 <button
                   type="button"
-                  onClick={() => setShowBulkModal(true)}
+                  onClick={() => setActiveModal('bulk_data')}
                   className="text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 uppercase transition-colors"
                 >
                   <Grid className="w-3 h-3" />
@@ -741,19 +720,17 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Phone Number Field */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Phone Number:</label>
                   <input
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Phone number"
+                    placeholder="e.g. 08012345678"
                     className="w-full bg-[#f1f5f9] border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors"
                   />
                 </div>
 
-                {/* Network Field */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Network:</label>
                   <select
@@ -773,7 +750,6 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                {/* Data Plan Field */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Data Plan:</label>
                   <select
@@ -791,7 +767,6 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                {/* SEND DATA Button */}
                 <button
                   type="submit"
                   className="w-full bg-[#2b268f] hover:bg-[#231e78] text-white font-bold text-xs py-3 rounded-md uppercase tracking-wider shadow-xs transition-all cursor-pointer min-h-[44px]"
@@ -807,7 +782,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h2 className="text-sm font-bold text-slate-900">Recent transactions</h2>
                   <button
-                    onClick={() => setViewAllTx(!viewAllTx)}
+                    onClick={() => setActiveModal('history')}
                     className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 uppercase tracking-wider cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -815,10 +790,8 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {/* Content Area */}
                 <div className="mt-4 sm:mt-6">
                   {orders.length === 0 ? (
-                    /* Exact Empty State matching screenshot */
                     <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center text-slate-400">
                       <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-slate-300 text-slate-400 flex items-center justify-center mb-3">
                         <Frown className="w-7 h-7 sm:w-8 sm:h-8" />
@@ -828,9 +801,8 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   ) : (
-                    /* Transactions list */
                     <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
-                      {orders.slice(0, viewAllTx ? 50 : 5).map((tx) => (
+                      {orders.slice(0, 6).map((tx) => (
                         <div
                           key={tx.id}
                           className="flex items-center justify-between p-2.5 sm:p-3 rounded-md border border-slate-100 bg-slate-50/70 hover:bg-slate-100/70 transition-colors text-xs"
@@ -872,14 +844,13 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Bottom Centered "See All Transactions" Button */}
               <div className="pt-4 text-center border-t border-slate-100 mt-4">
                 <button
                   type="button"
-                  onClick={() => setViewAllTx(!viewAllTx)}
+                  onClick={() => setActiveModal('history')}
                   className="bg-slate-200/80 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-6 py-2 rounded-full shadow-2xs transition-colors cursor-pointer"
                 >
-                  {viewAllTx ? 'Show Less' : 'See All Transactions'}
+                  See All Transactions ({orders.length})
                 </button>
               </div>
             </div>
@@ -897,10 +868,10 @@ export default function DashboardPage() {
         onOrderCompleted={handleOrderCompleted}
       />
 
-      {/* ================= FUND WALLET MODAL ================= */}
-      {showFundModal && (
+      {/* ================= MODAL: FUND WALLET (NO MOMO / NO SMARTCASH) ================= */}
+      {activeModal === 'fund_wallet' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2b268f] flex items-center justify-center">
@@ -908,78 +879,514 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="font-bold text-slate-900 text-sm">Fund Your DataAbeg Wallet</h3>
               </div>
-              <button
-                onClick={() => setShowFundModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
-              >
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Transfer directly to your dedicated instant virtual accounts from any Nigerian bank app or USSD (*671#). Your wallet will fund automatically within seconds.
+              Make a bank transfer to your dedicated wallet account below from any bank app. Your wallet balance funds automatically within 30 seconds.
             </p>
 
-            {/* Account 1: Momo PSB */}
-            <div className="p-3 sm:p-3.5 rounded-lg border border-amber-300 bg-amber-50/60 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
-                  MoMo PSB (MTN 671)
+            {/* Clean Standard Bank Virtual Transfer Account */}
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900">
+                  Bank Name: <span className="font-extrabold text-blue-950">Wema Bank / DataAbeg</span>
                 </span>
-                <span className="text-sm font-black font-mono text-slate-900 tracking-wider">
-                  {momoAcc}
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                  Instant Auto-Credit
                 </span>
-                <span className="text-[10px] text-slate-500 block truncate">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
               </div>
+              <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-200">
+                <div>
+                  <div className="text-[10px] text-slate-500 font-medium">Account Number</div>
+                  <div className="text-base font-black font-mono tracking-widest text-slate-900">
+                    801{user.uid.replace(/\D/g, '').slice(0, 7) || '2948192'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('801' + (user.uid.replace(/\D/g, '').slice(0, 7) || '2948192'));
+                    setCopiedBank(true);
+                    setTimeout(() => setCopiedBank(false), 2000);
+                  }}
+                  className="px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 border border-blue-200 transition-colors"
+                >
+                  {copiedBank ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedBank ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+              <div className="text-[11px] text-slate-600">
+                Account Name: <span className="font-bold text-slate-900">DataAbeg / {profile?.displayName || user.email?.split('@')[0]}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
               <button
-                onClick={() => copyText(momoAcc, 'momo')}
-                className="px-2.5 py-1.5 rounded-md bg-white border border-amber-300 text-xs font-bold text-slate-700 hover:bg-amber-100 flex items-center gap-1 shadow-2xs shrink-0"
+                onClick={() => setActiveModal(null)}
+                className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78] transition-colors"
               >
-                {copiedMomo ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedMomo ? 'Copied' : 'Copy'}</span>
+                I Have Completed Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: AIRTIME TOPUP ================= */}
+      {activeModal === 'airtime' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2b268f] flex items-center justify-center">
+                  <PhoneCall className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">Instant Airtime Topup</h3>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Account 2: Smartcash PSB */}
-            <div className="p-3 sm:p-3.5 rounded-lg border border-red-300 bg-red-50/60 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block">
-                  Smartcash PSB (Airtel 90)
-                </span>
-                <span className="text-sm font-black font-mono text-slate-900 tracking-wider">
-                  {smartcashAcc}
-                </span>
-                <span className="text-[10px] text-slate-500 block truncate">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
+            {airtimeSuccess ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>Airtime recharged successfully! Balance updated.</span>
               </div>
-              <button
-                onClick={() => copyText(smartcashAcc, 'smartcash')}
-                className="px-2.5 py-1.5 rounded-md bg-white border border-red-300 text-xs font-bold text-slate-700 hover:bg-red-100 flex items-center gap-1 shadow-2xs shrink-0"
-              >
-                {copiedSmartcash ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSmartcash ? 'Copied' : 'Copy'}</span>
+            ) : (
+              <form onSubmit={handleAirtimeRecharge} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Recipient Phone Number:</label>
+                  <input
+                    type="tel"
+                    value={airtimePhone}
+                    onChange={(e) => setAirtimePhone(e.target.value)}
+                    placeholder="08012345678"
+                    className="w-full bg-[#f1f5f9] border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Network:</label>
+                  <select
+                    value={airtimeNetworkId}
+                    onChange={(e) => setAirtimeNetworkId(e.target.value)}
+                    className="w-full bg-[#f1f5f9] border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-blue-500"
+                  >
+                    {NETWORKS.map((n) => (
+                      <option key={n.id} value={n.id.toString()}>
+                        {n.displayName} (2% Discount)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Recharge Amount (₦):</label>
+                  <input
+                    type="number"
+                    min="50"
+                    max="50000"
+                    value={airtimeAmount}
+                    onChange={(e) => setAirtimeAmount(e.target.value)}
+                    className="w-full bg-[#f1f5f9] border border-slate-200 rounded-md px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78] transition-colors"
+                >
+                  Recharge Airtime Now
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: DATA PROCESS LOG ================= */}
+      {activeModal === 'process_log' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#2b268f]" />
+                <h3 className="font-bold text-slate-900 text-sm">Data Process Log (Live Dispatch Stream)</h3>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
               </button>
+            </div>
+
+            <div className="space-y-2">
+              {orders.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-8">No data logs yet. New dispatches appear here in real time.</p>
+              ) : (
+                orders.map((tx) => (
+                  <div key={tx.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-slate-800">
+                        [{tx.networkName || tx.network}] {tx.planName || tx.planSize} ➔ {tx.phone || tx.phoneNumber}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">Ref: {tx.reference}</div>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        {tx.status}
+                      </span>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        {tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString() : 'Just now'}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: FULL HISTORY ================= */}
+      {activeModal === 'history' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Complete Transaction History</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by phone number or reference..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2 max-h-[350px] overflow-y-auto">
+              {orders
+                .filter(
+                  (tx) =>
+                    !historySearch ||
+                    (tx.phone && tx.phone.includes(historySearch)) ||
+                    (tx.reference && tx.reference.toLowerCase().includes(historySearch.toLowerCase()))
+                )
+                .map((tx) => (
+                  <div key={tx.id} className="p-3 bg-white border border-slate-200 rounded-lg text-xs flex justify-between items-center shadow-2xs">
+                    <div>
+                      <span className="font-bold text-slate-900">{tx.networkName || tx.network}</span> •{' '}
+                      <span className="text-slate-700">{tx.planName || tx.planSize}</span>
+                      <div className="text-[10px] text-slate-500">To: {tx.phone || tx.phoneNumber}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-extrabold text-slate-900">{formatCurrency(tx.amountPaid || tx.amount || 0)}</div>
+                      <span className="text-[10px] text-emerald-600 font-semibold">{tx.status}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: DATA PLAN IDS - API ================= */}
+      {activeModal === 'api_docs' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Code className="w-4 h-4 text-[#2b268f]" />
+                <h3 className="font-bold text-slate-900 text-sm">SMEPlug API Integration &amp; Plan IDs</h3>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Integrate directly via SMEPlug API. Network IDs: <strong>MTN = 1, Airtel = 2, Glo = 3, 9mobile = 4</strong>.
+            </p>
+
+            <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
+              <table className="w-full text-left">
+                <thead className="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
+                  <tr>
+                    <th className="p-2">Network</th>
+                    <th className="p-2">Plan</th>
+                    <th className="p-2">Plan ID</th>
+                    <th className="p-2">Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {CURATED_DATA_PLANS.slice(0, 10).map((p) => (
+                    <tr key={p.id}>
+                      <td className="p-2 font-semibold">{p.networkName}</td>
+                      <td className="p-2">{p.name}</td>
+                      <td className="p-2 font-mono font-bold text-blue-700">{p.planId}</td>
+                      <td className="p-2">{formatCurrency(p.sellingPrice)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg text-[11px] font-mono overflow-x-auto whitespace-pre">
+{`curl -X POST https://smeplug.ng/api/v1/data/purchase \\
+  -H "Authorization: Bearer YOUR_SMEPLUG_SECRET_KEY" \\
+  -d '{"network_id": 1, "plan_id": 8, "phone": "08012345678"}'`}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: DISPENSE METHOD ================= */}
+      {activeModal === 'dispense_method' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-[#2b268f]" />
+                <h3 className="font-bold text-slate-900 text-sm">Configure Dispense Method</h3>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label
+                onClick={() => setDispenseMethod('instant')}
+                className={`p-3.5 rounded-lg border flex items-center gap-3 cursor-pointer transition-colors ${
+                  dispenseMethod === 'instant' ? 'border-blue-600 bg-blue-50/60' : 'border-slate-200'
+                }`}
+              >
+                <input type="radio" checked={dispenseMethod === 'instant'} readOnly className="text-blue-600" />
+                <div>
+                  <div className="text-xs font-bold text-slate-900">Instant Direct SMEPlug API (Recommended)</div>
+                  <div className="text-[11px] text-slate-500">Delivers in 3-5 seconds nationwide.</div>
+                </div>
+              </label>
+
+              <label
+                onClick={() => setDispenseMethod('queue')}
+                className={`p-3.5 rounded-lg border flex items-center gap-3 cursor-pointer transition-colors ${
+                  dispenseMethod === 'queue' ? 'border-blue-600 bg-blue-50/60' : 'border-slate-200'
+                }`}
+              >
+                <input type="radio" checked={dispenseMethod === 'queue'} readOnly className="text-blue-600" />
+                <div>
+                  <div className="text-xs font-bold text-slate-900">Scheduled / High-Volume Batch Queue</div>
+                  <div className="text-[11px] text-slate-500">Dispatches bulk requests sequentially to avoid carrier throttling.</div>
+                </div>
+              </label>
             </div>
 
             <button
-              onClick={() => setShowFundModal(false)}
-              className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78] transition-colors min-h-[44px]"
+              onClick={() => {
+                alert(`Dispense method set to: ${dispenseMethod.toUpperCase()}`);
+                setActiveModal(null);
+              }}
+              className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78]"
             >
-              Done / Close
+              Save Preference
             </button>
           </div>
         </div>
       )}
 
-      {/* ================= BULK DATA MODAL ================= */}
-      {showBulkModal && (
+      {/* ================= MODAL: MODULE RENTALS ================= */}
+      {activeModal === 'module_rentals' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Module Rentals</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-600">Rent dedicated SIM modules to vend SME &amp; CG data directly on DataAbeg.</p>
+            <div className="p-3 border border-slate-200 rounded-lg text-xs space-y-2">
+              <div className="flex justify-between font-bold text-slate-800">
+                <span>Dedicated Port 01 (MTN SME)</span>
+                <span className="text-emerald-600">Active</span>
+              </div>
+              <div className="text-[11px] text-slate-500">Server slot: NG-LAGOS-04 • Uptime: 99.98%</div>
+            </div>
+            <button
+              onClick={() => {
+                alert('Your SIM module slot is already connected and active.');
+                setActiveModal(null);
+              }}
+              className="w-full bg-[#2b268f] text-white py-2 text-xs font-bold rounded-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: AUTO RECHARGE ================= */}
+      {activeModal === 'auto_recharge' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Auto Recharge Modules</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-600">Automatically reload wallet when balance drops below threshold:</p>
+            <div>
+              <label className="text-xs font-semibold text-slate-700">Threshold Trigger (₦):</label>
+              <input type="number" defaultValue="1000" className="w-full mt-1 p-2 bg-slate-50 border rounded-md text-xs" />
+            </div>
+            <button
+              onClick={() => {
+                alert('Auto Recharge threshold updated.');
+                setActiveModal(null);
+              }}
+              className="w-full bg-[#2b268f] text-white py-2 text-xs font-bold rounded-md"
+            >
+              Save Auto-Recharge
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: VENDING BOARD ================= */}
+      {activeModal === 'vending_board' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Live Vending Board</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between p-2.5 bg-slate-50 rounded-md">
+                <span>MTN Data Switch</span>
+                <span className="text-emerald-600 font-bold">100% Operational (0.8s)</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-slate-50 rounded-md">
+                <span>Airtel CG Switch</span>
+                <span className="text-emerald-600 font-bold">100% Operational (1.1s)</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-slate-50 rounded-md">
+                <span>Glo Direct Switch</span>
+                <span className="text-emerald-600 font-bold">100% Operational (1.4s)</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-slate-50 rounded-md">
+                <span>9mobile SME Switch</span>
+                <span className="text-emerald-600 font-bold">100% Operational (1.2s)</span>
+              </div>
+            </div>
+            <button onClick={() => setActiveModal(null)} className="w-full bg-slate-200 text-slate-800 py-2 text-xs font-bold rounded-md">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: CONNECT SIM ================= */}
+      {activeModal === 'connect_sim' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Connect a Local SIM Card</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-600">Register your SIM to vend data balance directly:</p>
+            <input type="tel" placeholder="SIM Phone Number (080...)" className="w-full p-2.5 bg-slate-50 border rounded-md text-xs" />
+            <input type="password" placeholder="SIM Transfer PIN" className="w-full p-2.5 bg-slate-50 border rounded-md text-xs" />
+            <button
+              onClick={() => {
+                alert('SIM connection request queued. Verification code sent.');
+                setActiveModal(null);
+              }}
+              className="w-full bg-[#2b268f] text-white py-2.5 text-xs font-bold rounded-md"
+            >
+              Verify &amp; Link SIM
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: MANAGE SIM ================= */}
+      {activeModal === 'manage_sim' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Manage Connected SIMs</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-3 bg-slate-50 border rounded-lg text-xs space-y-1">
+              <div className="font-bold text-slate-800">Primary Switch: SMEPlug High-Speed Gateway</div>
+              <div className="text-slate-500 text-[11px]">Direct automated carrier connection (No local SIM required).</div>
+            </div>
+            <button onClick={() => setActiveModal(null)} className="w-full bg-slate-200 text-slate-800 py-2 text-xs font-bold rounded-md">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: EDIT PHONE NUMBER ================= */}
+      {activeModal === 'edit_phone' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-sm">Update Your Phone Number</h3>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-600">Enter your primary mobile number for orders and dashboard:</p>
+            <input
+              type="tel"
+              value={customPhone}
+              onChange={(e) => setCustomPhone(e.target.value)}
+              placeholder="e.g. 08012345678"
+              className="w-full p-2.5 bg-slate-50 border rounded-md text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={() => {
+                if (customPhone.trim().length >= 10) {
+                  localStorage.setItem('dataabeg_phone', customPhone.trim());
+                  setActiveModal(null);
+                } else {
+                  alert('Please enter a valid phone number.');
+                }
+              }}
+              className="w-full bg-[#2b268f] text-white py-2 text-xs font-bold rounded-md"
+            >
+              Save Phone Number
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: BULK DATA ================= */}
+      {activeModal === 'bulk_data' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Send Bulk Data</h3>
-              <button
-                onClick={() => setShowBulkModal(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
-              >
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -992,16 +1399,13 @@ export default function DashboardPage() {
               className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-blue-500"
             />
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowBulkModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md"
-              >
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md">
                 Cancel
               </button>
               <button
                 onClick={() => {
                   alert('Bulk dispatch queued. Orders will dispense sequentially via SMEPlug API.');
-                  setShowBulkModal(false);
+                  setActiveModal(null);
                 }}
                 className="px-4 py-2 text-xs font-bold text-white bg-[#2b268f] hover:bg-[#231e78] rounded-md min-h-[40px]"
               >

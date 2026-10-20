@@ -4,7 +4,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { DataAbegLogo } from '@/components/DataAbegLogo';
-import { Zap, ShieldCheck, HelpCircle, Menu, X, Sparkles, Lock, LayoutDashboard, User as UserIcon, LogIn } from 'lucide-react';
+import {
+  ShieldCheck,
+  HelpCircle,
+  Menu,
+  X,
+  Sparkles,
+  Lock,
+  LayoutDashboard,
+  LogIn,
+  UserPlus
+} from 'lucide-react';
 
 interface NavbarProps {
   onOpenSettings: () => void;
@@ -15,7 +25,7 @@ interface NavbarProps {
 
 export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugConnected }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -26,135 +36,108 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
   };
 
   return (
-    <div className="sticky top-0 z-50 w-full">
+    <div className="sticky top-0 z-50 w-full overflow-x-clip bg-white">
       {/* Top Announcement Bar */}
-      <aside aria-label="Announcement" className="relative w-full overflow-hidden bg-blue-50/90 border-b border-blue-100 text-blue-950">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 flex min-h-10 items-center justify-between py-2 text-xs">
-          <div className="flex items-center gap-2 mx-auto sm:mx-0">
-            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-200 text-[#1E40AF]">
-              <Sparkles className="w-3 h-3 text-[#1E40AF]" />
+      <aside aria-label="Announcement" className="w-full bg-[#1E40AF] text-white">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-8 sm:h-9 flex items-center justify-between text-[11px] sm:text-xs">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-400 text-blue-950 shrink-0">
+              <Sparkles className="w-2.5 h-2.5" />
             </span>
-            <span className="font-medium text-slate-700">
-              Direct <span className="text-[#1E40AF] font-bold">MoMo PSB (671)</span> &amp; <span className="text-rose-700 font-bold">Smartcash</span> virtual funding live! Save up to{' '}
-              <span className="font-bold text-[#1E40AF]">71% off</span> on MTN, Airtel, Glo &amp; 9mobile this week.
+            <span className="font-medium truncate">
+              Instant 5-second mobile data delivery on <span className="font-bold text-yellow-300">MTN, Airtel, Glo &amp; 9mobile</span> from ₦290/GB!
             </span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-4 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              24/7 VTU Switch 100% Operational
+          <div className="hidden md:flex items-center gap-4 text-[11px] shrink-0">
+            <span className="flex items-center gap-1 text-emerald-300 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              VTU Switch Active
             </span>
             <button
-              onClick={() => scrollToSection('ways-to-fund')}
-              className="text-slate-600 hover:text-[#1E40AF] transition-colors underline underline-offset-2 cursor-pointer"
+              onClick={onOpenUSSD}
+              className="text-blue-100 hover:text-white underline underline-offset-2 cursor-pointer"
             >
-              Learn about MoMo
+              Check USSD Codes
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Sticky Navbar */}
-      <header className="w-full border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-xs transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="w-full border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <DataAbegLogo size={38} showText={false} />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-slate-900 font-heading">
-                  Data<span className="text-[#1E40AF]">Abeg</span>
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-[#1E40AF] border border-blue-200">
-                  v2.0
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 -mt-0.5 tracking-wide">Automated Mobile Data Platform</p>
-            </div>
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <DataAbegLogo size={32} showText={true} textClassName="text-lg sm:text-xl font-heading" />
+            <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-blue-50 text-[#1E40AF] border border-blue-200">
+              v2.0
+            </span>
           </Link>
 
-          {/* Center Nav Links */}
+          {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
             <button
               onClick={() => scrollToSection('data-purchase-section')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#1E40AF] hover:bg-blue-50/60 transition-colors cursor-pointer"
             >
               Buy Data
             </button>
             <button
-              onClick={() => scrollToSection('ways-to-fund')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              MoMo &amp; Smartcash
-            </button>
-            <button
               onClick={() => scrollToSection('price-comparison')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#1E40AF] hover:bg-blue-50/60 transition-colors cursor-pointer"
             >
-              Rates &amp; Savings
+              Price Comparison
             </button>
             <button
-              onClick={() => scrollToSection('feature-tour')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              onClick={() => scrollToSection('ussd-check-codes')}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#1E40AF] hover:bg-blue-50/60 transition-colors cursor-pointer"
             >
-              Features
+              USSD Balance Codes
             </button>
             <button
               onClick={() => scrollToSection('faq-section')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#1E40AF] hover:bg-blue-50/60 transition-colors cursor-pointer"
             >
               FAQ
             </button>
           </nav>
 
-          {/* Action Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Action Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               onClick={onOpenTracker}
-              id="nav-track-order-btn"
-              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#1E40AF]" />
-              Track
+              <span>Track Order</span>
             </button>
 
-            <button
-              onClick={onOpenUSSD}
-              id="nav-check-codes-btn"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-              USSD
-            </button>
-
-            {/* User Auth Buttons: If user logged in, show Dashboard & Avatar. If not, show Login & Get Started */}
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {isAdmin && (
                   <Link
                     href="/admin-salam"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#1E40AF] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer"
-                    title="Master Admin Portal"
+                    className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 bg-amber-300 hover:bg-amber-400 transition-colors cursor-pointer"
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Admin Salam</span>
+                    <span>Admin</span>
                   </Link>
                 )}
 
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-xs transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-xs transition-colors cursor-pointer"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
                   <span>Dashboard</span>
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-[#1E40AF] hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-[#1E40AF] hover:bg-blue-50/60 transition-colors cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Log In</span>
@@ -162,32 +145,34 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
 
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center cursor-pointer whitespace-nowrap text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-md shadow-blue-900/20 px-4 py-2 rounded-lg transition-all duration-150"
+                  className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-xs transition-colors cursor-pointer"
                 >
-                  Get Started Free
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Register</span>
                 </Link>
               </div>
             )}
 
-            {/* Mobile Menu Hamburger */}
+            {/* Mobile Hamburger Button: Always visible on screens < lg */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-              aria-label="Toggle Menu"
+              className="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5 text-slate-900" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Dropdown Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 flex flex-col gap-2 shadow-lg">
+          <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-3 shadow-xl animate-in slide-in-from-top-2">
             {user ? (
-              <>
+              <div className="space-y-2 pb-2 border-b border-slate-100">
                 <Link
                   href="/dashboard"
-                  className="text-left px-3 py-2.5 text-sm font-bold text-white bg-[#1E40AF] rounded-xl flex items-center justify-between cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-white bg-[#1E40AF] rounded-lg shadow-xs"
                 >
                   <span>Open User Dashboard</span>
                   <LayoutDashboard className="w-4 h-4" />
@@ -196,68 +181,69 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
                 {isAdmin && (
                   <Link
                     href="/admin-salam"
-                    className="text-left px-3 py-2 text-sm font-bold text-[#1E40AF] bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-between cursor-pointer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-between px-3.5 py-2 text-xs font-bold text-amber-950 bg-amber-300 rounded-lg"
                   >
-                    <span>Admin Salam Portal ({user.email})</span>
-                    <Lock className="w-4 h-4 text-[#1E40AF]" />
+                    <span>Admin Console</span>
+                    <Lock className="w-3.5 h-3.5" />
                   </Link>
                 )}
-              </>
+              </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-100">
                 <Link
                   href="/login"
-                  className="text-center px-3 py-2 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg"
                 >
                   Log In
                 </Link>
                 <Link
                   href="/register"
-                  className="text-center px-3 py-2 text-sm font-bold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-lg cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2 text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-lg"
                 >
-                  Get Started
+                  Create Account
                 </Link>
               </div>
             )}
 
-            <button
-              onClick={() => scrollToSection('data-purchase-section')}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              Buy Data Instantly
-            </button>
-            <button
-              onClick={() => scrollToSection('ways-to-fund')}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              MoMo PSB (671) &amp; Smartcash Funding
-            </button>
-            <button
-              onClick={() => scrollToSection('price-comparison')}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              Price Rates &amp; Savings
-            </button>
-            <button
-              onClick={() => scrollToSection('feature-tour')}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              Feature Tour
-            </button>
-            <button
-              onClick={onOpenTracker}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg flex items-center justify-between cursor-pointer"
-            >
-              <span>Track Existing Order</span>
-              <ShieldCheck className="w-4 h-4 text-[#1E40AF]" />
-            </button>
-            <button
-              onClick={onOpenUSSD}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg flex items-center justify-between cursor-pointer"
-            >
-              <span>Check USSD Codes</span>
-              <HelpCircle className="w-4 h-4 text-amber-500" />
-            </button>
+            {/* Nav list */}
+            <div className="space-y-1 text-xs font-semibold text-slate-700">
+              <button
+                onClick={() => scrollToSection('data-purchase-section')}
+                className="w-full text-left py-2 px-2 hover:bg-blue-50 hover:text-[#1E40AF] rounded-md transition-colors"
+              >
+                ⚡ Buy Data Instantly
+              </button>
+              <button
+                onClick={() => scrollToSection('price-comparison')}
+                className="w-full text-left py-2 px-2 hover:bg-blue-50 hover:text-[#1E40AF] rounded-md transition-colors"
+              >
+                📊 Price Comparison
+              </button>
+              <button
+                onClick={() => scrollToSection('ussd-check-codes')}
+                className="w-full text-left py-2 px-2 hover:bg-blue-50 hover:text-[#1E40AF] rounded-md transition-colors"
+              >
+                📱 USSD Balance Codes
+              </button>
+              <button
+                onClick={() => scrollToSection('faq-section')}
+                className="w-full text-left py-2 px-2 hover:bg-blue-50 hover:text-[#1E40AF] rounded-md transition-colors"
+              >
+                ❓ Frequently Asked Questions
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenTracker();
+                }}
+                className="w-full text-left py-2 px-2 hover:bg-blue-50 hover:text-[#1E40AF] rounded-md transition-colors text-blue-700"
+              >
+                🔍 Track an Order
+              </button>
+            </div>
           </div>
         )}
       </header>

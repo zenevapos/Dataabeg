@@ -31,19 +31,19 @@ export function HeroSection({ onLearnMoMo }: HeroSectionProps) {
         {/* Pill Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium mb-6 shadow-xs">
           <span className="flex h-2 w-2 rounded-full bg-[#1E40AF] animate-pulse" />
-          <span>Save up to 71% • Direct MoMo PSB (671) &amp; Smartcash Virtual Funding</span>
+          <span>Save up to 71% • Instant Automated Delivery on All Nigerian Networks</span>
           <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
         </div>
 
         {/* Main Headline */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08] max-w-4xl mx-auto font-heading">
-          <span>Agentic VTU data platform </span>
+          <span>Cheap mobile data </span>
           <span className="text-slate-500 font-normal">for every Nigerian.</span>
         </h1>
 
         {/* Subtitle */}
         <p className="mt-5 sm:mt-6 text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          From marketing teams, students, and remote workers to SME data gifting and automated reselling. DataAbeg delivers cheap mobile data in <span className="text-[#1E40AF] font-bold underline decoration-[#1E40AF]/40 decoration-2 underline-offset-4">5 seconds flat</span>.
+          From students and remote workers to business owners and data resellers. DataAbeg delivers cheap SME &amp; gifting data in <span className="text-[#1E40AF] font-bold underline decoration-[#1E40AF]/40 decoration-2 underline-offset-4">5 seconds flat</span>.
         </p>
 
         {/* Action Buttons */}
@@ -57,11 +57,14 @@ export function HeroSection({ onLearnMoMo }: HeroSectionProps) {
           </button>
 
           <button
-            onClick={scrollToMoMo}
+            onClick={() => {
+              const el = document.getElementById('price-comparison');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="inline-flex items-center justify-center gap-2 font-semibold text-sm sm:text-base text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 px-5 sm:px-6 py-3.5 rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            <Building2 className="w-4 h-4 text-[#1E40AF]" />
-            <span>MoMo PSB &amp; Smartcash Guide</span>
+            <TrendingDown className="w-4 h-4 text-[#1E40AF]" />
+            <span>View Price Comparison</span>
           </button>
         </div>
 

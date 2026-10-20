@@ -40,7 +40,7 @@ export function PurchaseModal({
   onOrderCompleted,
   customApiKey
 }: PurchaseModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'momo_psb' | 'smartcash' | 'wallet'>('momo_psb');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'wallet'>('wallet');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
@@ -99,7 +99,7 @@ export function PurchaseModal({
           amountPaid: plan.sellingPrice,
           status: 'successful',
           statusMessage: data.data?.msg || 'Transaction completed successfully.',
-          paymentMethod: paymentMethod === 'momo_psb' ? 'MOMO_PSB' : paymentMethod === 'smartcash' ? 'SMARTCASH_PSB' : paymentMethod === 'wallet' ? 'WALLET' : 'DEBIT_CARD',
+          paymentMethod: paymentMethod === 'wallet' ? 'WALLET' : paymentMethod === 'transfer' ? 'BANK_TRANSFER' : 'DEBIT_CARD',
           createdAt: new Date().toISOString(),
           timestamp: new Date().toISOString(),
           completedAt: new Date().toISOString()
@@ -282,65 +282,17 @@ export function PurchaseModal({
               </div>
             </div>
 
-            {/* Payment Method Selector with MoMo PSB & Smartcash */}
+            {/* Payment Method Selector */}
             <div className="mb-6">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                Select Instant Payment Option
+                Select Payment Option
               </label>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('momo_psb')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                    paymentMethod === 'momo_psb'
-                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <Building2 className="w-5 h-5 text-amber-500 shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">MoMo PSB (671)</p>
-                    <p className="text-[10px] text-amber-700 font-semibold">MTN Auto Bank</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('smartcash')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                    paymentMethod === 'smartcash'
-                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <Smartphone className="w-5 h-5 text-rose-500 shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Smartcash PSB</p>
-                    <p className="text-[10px] text-rose-700 font-semibold">Airtel Auto Bank</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                    paymentMethod === 'card'
-                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5 text-[#1E40AF] shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Debit Card</p>
-                    <p className="text-[10px] text-slate-500">Mastercard / Visa</p>
-                  </div>
-                </button>
-
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('wallet')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     paymentMethod === 'wallet'
                       ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
                       : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
@@ -348,8 +300,40 @@ export function PurchaseModal({
                 >
                   <Wallet className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-slate-900">DataAbeg Wallet</p>
-                    <p className="text-[10px] text-emerald-700 font-semibold">Auto-Deduct</p>
+                    <p className="text-xs font-bold text-slate-900">Wallet</p>
+                    <p className="text-[10px] text-emerald-700 font-semibold">Instant</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('transfer')}
+                  className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    paymentMethod === 'transfer'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Transfer</p>
+                    <p className="text-[10px] text-blue-700 font-semibold">Auto-Credit</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    paymentMethod === 'card'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <CreditCard className="w-5 h-5 text-[#1E40AF] shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Card</p>
+                    <p className="text-[10px] text-slate-500">Debit Card</p>
                   </div>
                 </button>
               </div>

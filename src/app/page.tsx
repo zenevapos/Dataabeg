@@ -5,11 +5,6 @@ import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { DataPurchaseWidget } from '@/components/DataPurchaseWidget';
 import { ShowreelMarquee } from '@/components/ShowreelMarquee';
-import { WaysToStartSection } from '@/components/WaysToStartSection';
-import { FeatureTourSection } from '@/components/FeatureTourSection';
-import { EnterpriseSection } from '@/components/EnterpriseSection';
-import { TestimonialsSection } from '@/components/TestimonialsSection';
-import { ClosingCTASection } from '@/components/ClosingCTASection';
 import { PriceComparisonSection } from '@/components/PriceComparisonSection';
 import { USSDGuideSection } from '@/components/USSDGuideSection';
 import { FAQSection } from '@/components/FAQSection';
@@ -96,15 +91,9 @@ export default function Home() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleQuickPhoneSubmit = (phone: string) => {
-    setCheckoutPhone(phone);
-    const el = document.getElementById('data-purchase-section');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <main className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-[#1E40AF] selection:text-white">
-      {/* Clueso-style Top Navigation & Announcement Bar */}
+      {/* Top Navbar */}
       <Navbar
         onOpenSettings={() => setIsAdminDrawerOpen(true)}
         onOpenTracker={() => setIsTrackModalOpen(true)}
@@ -113,44 +102,32 @@ export default function Home() {
       />
 
       {/* Hero Section */}
-      <HeroSection onLearnMoMo={() => setIsAdminDrawerOpen(true)} />
+      <HeroSection onLearnMoMo={() => {
+        const el = document.getElementById('data-purchase-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }} />
 
-      {/* Main Interactive Purchasing Engine in Clueso Hero-Aura Stage */}
-      <div className="hero-aura my-6">
+      {/* Main Interactive Purchasing Engine */}
+      <div className="hero-aura my-4 sm:my-6">
         <DataPurchaseWidget
           onSelectPlanForCheckout={handleSelectPlanForCheckout}
           plans={CURATED_DATA_PLANS}
         />
       </div>
 
-      {/* Clueso Showreel Marquee (2-Row Continuous Moving Bundles + Value Cards) */}
+      {/* Fast Live Moving Bundles Marquee */}
       <ShowreelMarquee />
 
-      {/* Clueso 2x2 Ways To Start Section (MoMo PSB, Smartcash, Card, API) */}
-      <WaysToStartSection onOpenSettings={() => setIsAdminDrawerOpen(true)} />
-
-      {/* Interactive Feature Tour (Clueso 11-step tour adapted to VTU) */}
-      <FeatureTourSection />
-
-      {/* Side-by-side Commercial Bank vs DataAbeg Price Comparison */}
+      {/* Commercial Banks vs DataAbeg Price Comparison */}
       <PriceComparisonSection />
 
-      {/* Enterprise & Reseller Ready (Clueso-style 3 security cards + 4 metrics) */}
-      <EnterpriseSection />
-
-      {/* Clueso Tabbed Customer Testimonials Slider */}
-      <TestimonialsSection />
-
-      {/* Network USSD Balance Check Codes Section */}
+      {/* USSD Check Codes Section */}
       <USSDGuideSection />
 
-      {/* Clueso High-Impact Closing CTA Banner */}
-      <ClosingCTASection onQuickPhoneSubmit={handleQuickPhoneSubmit} />
-
-      {/* Clueso Split-Column FAQ Section */}
+      {/* Split-Column FAQ Section */}
       <FAQSection />
 
-      {/* Clueso-style Multi-column Footer */}
+      {/* Footer */}
       <Footer
         onOpenSettings={() => setIsAdminDrawerOpen(true)}
         onOpenTracker={() => setIsTrackModalOpen(true)}
@@ -168,7 +145,7 @@ export default function Home() {
         customApiKey={apiKey}
       />
 
-      {/* SMEPlug Settings & API Drawer */}
+      {/* Settings / API Drawer */}
       <AdminDrawer
         isOpen={isAdminDrawerOpen}
         onClose={() => setIsAdminDrawerOpen(false)}
@@ -186,4 +163,3 @@ export default function Home() {
     </main>
   );
 }
-
