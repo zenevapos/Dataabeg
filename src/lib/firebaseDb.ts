@@ -163,6 +163,121 @@ export async function getAdminSettings(): Promise<AdminSettings> {
 }
 
 /**
+ * User Profile Interface
+ */
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  phoneNumber?: string;
+  walletBalance: number;
+  momoVirtualAccount?: string;
+  smartcashVirtualAccount?: string;
+  createdAt: string;
+}
+
+/**
+ * Get or create User Profile in Firestore
+ */
+export async function getOrCreateUserProfile(user: {
+  uid: string;
+  email?: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+  phoneNumber?: string | null;
+}): Promise<UserProfile> {
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const snap = await getDoc(userRef);
+
+    if (snap.exists()) {
+      return snap.data() as UserProfile;
+    }
+
+    // Default new user profile
+    const newProfile: UserProfile = {
+      uid: user.uid,
+      email: user.email || '',
+      displayName: user.displayName || user.email?.split('@')[0] || 'User',
+      photoURL: user.photoURL || '',
+      phoneNumber: user.phoneNumber || '',
+      walletBalance: 0,
+      momoVirtualAccount: '671' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
+      smartcashVirtualAccount: '90' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
+      createdAt: new Date().toISOString()
+    };
+
+    await setDoc(userRef, {
+      ...newProfile,
+      updatedAt: serverTimestamp()
+    });
+
+    return newProfile;
+  } catch (err) {
+    console.error('Error fetching or creating user profile:', err);
+    return {
+      uid: user.uid,
+      email: user.email || '',
+      displayName: user.displayName || 'User',
+      walletBalance: 0,
+      createdAt: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Fetch orders for a specific user (by UID or email)
+ */
+export async function fetchOrdersByUser(uid: string, email?: string): Promise<Transaction[]> {
+  try {
+    const ordersCol = collection(db, 'orders');
+    // First query by userId
+    const q1 = query(ordersCol, where('userId', '==', uid), limit(50));
+    const snap1 = await getDocs(q1);
+    const ordersMap = new Map<string, Transaction>();
+
+    snap1.forEach((docSnap) => {
+      ordersMap.set(docSnap.id, docSnap.data() as Transaction);
+    });
+
+    if (email) {
+      const q2 = query(ordersCol, where('userEmail', '==', email), limit(50));
+      const snap2 = await getDocs(q2);
+      snap2.forEach((docSnap) => {
+        ordersMap.set(docSnap.id, docSnap.data() as Transaction);
+      });
+    }
+
+    const orders = Array.from(ordersMap.values());
+    return orders.sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
+      const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  } catch (err) {
+    console.warn('Error fetching orders by user:', err);
+    return [];
+  }
+}
+
+/**
+ * Update user wallet balance in Firestore
+ */
+export async function updateUserWalletBalance(uid: string, newBalance: number): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+      walletBalance: newBalance,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error('Error updating user wallet:', err);
+    throw err;
+  }
+}
+
+/**
  * Save Admin settings to Firestore
  */
 export async function saveAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
@@ -177,3 +292,5 @@ export async function saveAdminSettings(settings: Partial<AdminSettings>): Promi
     throw err;
   }
 }
+
+

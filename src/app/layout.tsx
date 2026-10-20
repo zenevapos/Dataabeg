@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -82,7 +83,9 @@ export default function RootLayout({
         suppressHydrationWarning
         style={{ backgroundColor: '#f8fafc', color: '#0f172a' }}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

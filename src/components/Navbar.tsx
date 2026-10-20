@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Zap, Wifi, ShieldCheck, Settings, HelpCircle, ArrowRight, Menu, X, Sparkles, Lock } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Zap, ShieldCheck, HelpCircle, Menu, X, Sparkles, Lock, LayoutDashboard, User as UserIcon, LogIn } from 'lucide-react';
 
 interface NavbarProps {
   onOpenSettings: () => void;
@@ -13,6 +14,7 @@ interface NavbarProps {
 
 export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugConnected }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAdmin, loading } = useAuth();
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -24,7 +26,7 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
 
   return (
     <div className="sticky top-0 z-50 w-full">
-      {/* Top Announcement Bar (Light theme) */}
+      {/* Top Announcement Bar */}
       <aside aria-label="Announcement" className="relative w-full overflow-hidden bg-blue-50/90 border-b border-blue-100 text-blue-950">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10 flex min-h-10 items-center justify-between py-2 text-xs">
           <div className="flex items-center gap-2 mx-auto sm:mx-0">
@@ -52,12 +54,12 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
         </div>
       </aside>
 
-      {/* Main Sticky Navbar (Light theme) */}
+      {/* Main Sticky Navbar */}
       <header className="w-full border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-xs transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo with #1E40AF Brand Color */}
+          {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1E40AF] via-blue-700 to-sky-500 text-white font-black shadow-md shadow-blue-900/30 transition-transform group-hover:scale-105">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#1E40AF] text-white font-black shadow-md shadow-blue-900/30 transition-transform group-hover:scale-105">
               <Zap className="w-5 h-5 fill-white" />
               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
@@ -81,37 +83,31 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
             <button
               onClick={() => scrollToSection('data-purchase-section')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Buy Data
             </button>
             <button
               onClick={() => scrollToSection('ways-to-fund')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               MoMo &amp; Smartcash
             </button>
             <button
               onClick={() => scrollToSection('price-comparison')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Rates &amp; Savings
             </button>
             <button
               onClick={() => scrollToSection('feature-tour')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Features
             </button>
             <button
-              onClick={() => scrollToSection('customer-stories')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Reviews
-            </button>
-            <button
               onClick={() => scrollToSection('faq-section')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               FAQ
             </button>
@@ -122,37 +118,61 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
             <button
               onClick={onOpenTracker}
               id="nav-track-order-btn"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#1E40AF]" />
-              Track Order
+              Track
             </button>
 
             <button
               onClick={onOpenUSSD}
               id="nav-check-codes-btn"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-              USSD Codes
+              USSD
             </button>
 
-            {/* Admin Salam Link */}
-            <Link
-              href="/admin-salam"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-[#1E40AF] bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all cursor-pointer"
-              title="Admin Salam Portal"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#1E40AF]" />
-              <span className="hidden sm:inline">Admin</span> Salam
-            </Link>
+            {/* User Auth Buttons: If user logged in, show Dashboard & Avatar. If not, show Login & Get Started */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Link
+                    href="/admin-salam"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#1E40AF] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer"
+                    title="Master Admin Portal"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Admin Salam</span>
+                  </Link>
+                )}
 
-            <button
-              onClick={() => scrollToSection('data-purchase-section')}
-              className="inline-flex items-center justify-center cursor-pointer whitespace-nowrap text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-md shadow-blue-900/20 px-4 py-2 rounded-lg transition-all duration-150"
-            >
-              ⚡ Buy Data
-            </button>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-xs transition-colors cursor-pointer"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Dashboard</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-[#1E40AF] hover:bg-slate-50 border border-slate-200 transition-colors cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Log In</span>
+                </Link>
+
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center cursor-pointer whitespace-nowrap text-xs font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-md shadow-blue-900/20 px-4 py-2 rounded-lg transition-all duration-150"
+                >
+                  Get Started Free
+                </Link>
+              </div>
+            )}
 
             {/* Mobile Menu Hamburger */}
             <button
@@ -165,9 +185,46 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu (Light theme) */}
+        {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 flex flex-col gap-2 shadow-lg">
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-left px-3 py-2.5 text-sm font-bold text-white bg-[#1E40AF] rounded-xl flex items-center justify-between cursor-pointer"
+                >
+                  <span>Open User Dashboard</span>
+                  <LayoutDashboard className="w-4 h-4" />
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin-salam"
+                    className="text-left px-3 py-2 text-sm font-bold text-[#1E40AF] bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Admin Salam Portal ({user.email})</span>
+                    <Lock className="w-4 h-4 text-[#1E40AF]" />
+                  </Link>
+                )}
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <Link
+                  href="/login"
+                  className="text-center px-3 py-2 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-center px-3 py-2 text-sm font-bold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-lg cursor-pointer"
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
+
             <button
               onClick={() => scrollToSection('data-purchase-section')}
               className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
@@ -193,12 +250,6 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
               Feature Tour
             </button>
             <button
-              onClick={() => scrollToSection('customer-stories')}
-              className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              Customer Reviews
-            </button>
-            <button
               onClick={onOpenTracker}
               className="text-left px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 rounded-lg flex items-center justify-between cursor-pointer"
             >
@@ -212,13 +263,6 @@ export function Navbar({ onOpenSettings, onOpenTracker, onOpenUSSD, isSMEPlugCon
               <span>Check USSD Codes</span>
               <HelpCircle className="w-4 h-4 text-amber-500" />
             </button>
-            <Link
-              href="/admin-salam"
-              className="text-left px-3 py-2 text-sm font-bold text-[#1E40AF] bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-between cursor-pointer"
-            >
-              <span>Admin Salam Portal</span>
-              <Lock className="w-4 h-4 text-[#1E40AF]" />
-            </Link>
           </div>
         )}
       </header>

@@ -1,7 +1,9 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
+
+// Admin authorized email
+export const ADMIN_EMAIL = "kokoroowoabdulsalam@gmail.com";
 
 // Your web app's Firebase configuration
 export const firebaseConfig = {
@@ -18,3 +20,4 @@ export const firebaseConfig = {
 export const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db: Firestore = getFirestore(app);
 export const auth: Auth = getAuth(app);
+export const googleProvider: GoogleAuthProvider = new GoogleAuthProvider();

@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { Transaction, DataPlan } from '@/lib/types';
 import { CURATED_DATA_PLANS, NETWORKS } from '@/lib/constants';
+import { useAuth } from '@/context/AuthContext';
+import { ADMIN_EMAIL } from '@/lib/firebase';
 import {
   fetchAllOrdersFromFirestore,
   updateOrderStatusInFirestore,
@@ -38,10 +40,15 @@ import {
 import { formatCurrency } from '@/lib/utils';
 
 export default function AdminSalamPage() {
+  const { user, signInWithGoogle, signInWithEmail, logout: authLogout, loading: authLoading } = useAuth();
+
   // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pinAuthenticated, setPinAuthenticated] = useState(false);
   const [inputPin, setInputPin] = useState('');
+  const [inputEmail, setInputEmail] = useState(ADMIN_EMAIL);
+  const [inputPassword, setInputPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'orders' | 'smeplug' | 'psb' | 'pricing'>('orders');
@@ -69,9 +76,13 @@ export default function AdminSalamPage() {
   useEffect(() => {
     const sessionAuth = sessionStorage.getItem('admin_salam_auth');
     if (sessionAuth === 'true') {
-      setIsAuthenticated(true);
+      setPinAuthenticated(true);
     }
   }, []);
+
+  // Determine if admin is authorized (either by verified email or master PIN session)
+  const isEmailAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
+  const isAuthenticated = isEmailAdmin || pinAuthenticated;
 
   // Fetch orders and settings once authenticated
   useEffect(() => {
@@ -99,22 +110,53 @@ export default function AdminSalamPage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setAuthError('');
-    // Default PIN: salam2026 or matches adminPin from settings
-    if (inputPin === 'salam2026' || inputPin === adminSettings.adminPin) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('admin_salam_auth', 'true');
-    } else {
-      setAuthError('Incorrect PIN. Please try again.');
+    setIsSubmittingAuth(true);
+    try {
+      const signedInUser = await signInWithGoogle();
+      if (signedInUser.email?.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
+        setAuthError(`Access Denied: ${signedInUser.email} is not authorized. Only ${ADMIN_EMAIL} can access this portal.`);
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setIsSubmittingAuth(false);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setIsSubmittingAuth(true);
+    try {
+      const signedInUser = await signInWithEmail(inputEmail.trim(), inputPassword);
+      if (signedInUser.email?.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
+        setAuthError(`Access Denied: ${signedInUser.email} is not authorized. Only ${ADMIN_EMAIL} can access this portal.`);
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Email authentication failed. Please check your credentials.');
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  const handlePinLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    if (inputPin === 'salam2026' || inputPin === adminSettings.adminPin) {
+      setPinAuthenticated(true);
+      sessionStorage.setItem('admin_salam_auth', 'true');
+    } else {
+      setAuthError('Incorrect Emergency PIN.');
+    }
+  };
+
+  const handleLogout = async () => {
+    setPinAuthenticated(false);
     sessionStorage.removeItem('admin_salam_auth');
     setInputPin('');
+    await authLogout();
   };
 
   const checkSmeplugBalance = async (keyOverride?: string) => {
@@ -201,44 +243,141 @@ export default function AdminSalamPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 sm:p-10 text-center">
           <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1E40AF] mx-auto flex items-center justify-center mb-6 shadow-inner">
-            <Lock className="w-8 h-8" />
+            <ShieldCheck className="w-8 h-8" />
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">
             Admin Salam Portal
           </h1>
-          <p className="text-sm text-slate-500 mt-2">
-            Secure management console for SMEPlug VTU, MoMo PSB &amp; Firebase Orders.
+          <p className="text-xs text-slate-500 mt-2">
+            Restricted to master administrator: <br />
+            <strong className="text-[#1E40AF] font-mono">{ADMIN_EMAIL}</strong>
           </p>
 
-          <form onSubmit={handleLogin} className="mt-8 space-y-4">
-            <div className="text-left">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Enter Master Admin PIN
-              </label>
-              <input
-                type="password"
-                value={inputPin}
-                onChange={(e) => setInputPin(e.target.value)}
-                placeholder="Enter PIN (Default: salam2026)"
-                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-[#1E40AF] focus:ring-2 focus:ring-blue-100 outline-none text-center text-lg font-mono tracking-widest text-slate-900 bg-slate-50"
-                autoFocus
-              />
-            </div>
-
-            {authError && (
-              <p className="text-xs font-medium text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
-                {authError}
+          {/* User logged in with wrong email */}
+          {user && !isEmailAdmin ? (
+            <div className="mt-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-left space-y-3">
+              <div className="flex items-center gap-2 text-rose-700 font-bold text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>Unauthorized Account</span>
+              </div>
+              <p className="text-xs text-rose-600">
+                You are currently signed in as <strong className="font-mono">{user.email}</strong>. This email does not have administrative privileges.
               </p>
-            )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-rose-700 bg-white border border-rose-300 hover:bg-rose-100 transition-colors cursor-pointer"
+              >
+                Sign Out &amp; Switch to {ADMIN_EMAIL}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {/* Google Sign In Button */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isSubmittingAuth}
+                className="w-full py-3.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-xs flex items-center justify-center gap-3 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
 
-            <button
-              type="submit"
-              className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-md shadow-blue-900/20 transition-all text-sm cursor-pointer"
-            >
-              Unlock Console
-            </button>
-          </form>
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink mx-3 text-slate-400 text-xs uppercase font-medium">Or Email Login</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              {/* Email & Password Form */}
+              <form onSubmit={handleEmailSignIn} className="space-y-3 text-left">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Admin Email
+                  </label>
+                  <input
+                    type="email"
+                    value={inputEmail}
+                    onChange={(e) => setInputEmail(e.target.value)}
+                    placeholder={ADMIN_EMAIL}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 bg-slate-50 outline-none focus:bg-white focus:border-[#1E40AF]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={inputPassword}
+                    onChange={(e) => setInputPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 bg-slate-50 outline-none focus:bg-white focus:border-[#1E40AF]"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingAuth}
+                  className="w-full py-3 px-4 rounded-xl font-bold text-white bg-[#1E40AF] hover:bg-blue-800 shadow-md shadow-blue-900/20 text-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingAuth ? 'Signing In...' : 'Sign In as Admin'}
+                </button>
+              </form>
+
+              {/* Master PIN Accordion / Fallback */}
+              <div className="pt-3 border-t border-slate-100">
+                <details className="text-left text-xs">
+                  <summary className="font-semibold text-slate-500 hover:text-slate-800 cursor-pointer">
+                    Emergency PIN Access
+                  </summary>
+                  <form onSubmit={handlePinLogin} className="mt-3 space-y-2">
+                    <input
+                      type="password"
+                      value={inputPin}
+                      onChange={(e) => setInputPin(e.target.value)}
+                      placeholder="Emergency Master PIN (salam2026)"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono text-center outline-none focus:border-[#1E40AF]"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs cursor-pointer"
+                    >
+                      Verify Master PIN
+                    </button>
+                  </form>
+                </details>
+              </div>
+            </div>
+          )}
+
+          {authError && (
+            <p className="mt-4 text-xs font-medium text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 text-left">
+              {authError}
+            </p>
+          )}
 
           <div className="mt-6 pt-6 border-t border-slate-100">
             <Link
@@ -272,11 +411,22 @@ export default function AdminSalamPage() {
                 <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   Firebase Connected
                 </span>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-[#1E40AF]" />
+                  <span>{ADMIN_EMAIL}</span>
+                </p>
               </div>
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors"
+            >
+              User Dashboard
+            </Link>
+
             <Link
               href="/"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors"
@@ -287,7 +437,7 @@ export default function AdminSalamPage() {
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out
