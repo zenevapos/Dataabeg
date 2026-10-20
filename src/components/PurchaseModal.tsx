@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { formatCurrency, generateTxReference } from '@/lib/utils';
-import { saveOrderToFirestore } from '@/lib/firebaseDb';
+import { saveOrderToFirestore, getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
 import {
   X,
   CheckCircle2,
@@ -47,6 +47,16 @@ export function PurchaseModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [completedTx, setCompletedTx] = useState<Transaction | null>(null);
   const [copiedRef, setCopiedRef] = useState<boolean>(false);
+  const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
+  const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
+
+  useEffect(() => {
+    if (isOpen) {
+      getAdminSettings()
+        .then((s) => setAdminSettings(s))
+        .catch((err) => console.warn('Admin settings fetch warning:', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen || !plan || !network) return null;
 
@@ -357,6 +367,67 @@ export function PurchaseModal({
               </div>
             </div>
 
+            {/* Dynamic Payment Method Guidance Box */}
+            {paymentMethod === 'transfer' && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200 text-xs text-slate-800 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-blue-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-[#1E40AF]" />
+                    Transfer to Merchant Bank Account:
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-200/70 text-blue-900 text-[10px] font-extrabold">
+                    0% Bank Fee
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-blue-100 flex justify-between items-center shadow-2xs">
+                  <div>
+                    <p className="text-[10px] text-slate-500 font-semibold">{adminSettings.bankName || 'Moniepoint MFB / OPay'}</p>
+                    <p className="text-base font-mono font-black text-slate-900 tracking-wider">
+                      {adminSettings.accountNumber || '08154276838'}
+                    </p>
+                    <p className="text-[11px] text-slate-700 font-medium">
+                      Account Name: <span className="font-bold text-slate-900">{adminSettings.accountName || 'DataAbeg VTU'}</span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(adminSettings.accountNumber || '08154276838');
+                      setCopiedAccount(true);
+                      setTimeout(() => setCopiedAccount(false), 2000);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#1E40AF] font-bold text-xs flex items-center gap-1 border border-blue-200 transition-colors cursor-pointer"
+                  >
+                    {copiedAccount ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedAccount ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Transfer exactly <span className="font-bold text-[#1E40AF]">{formatCurrency(plan.sellingPrice)}</span> to the account above, then click &ldquo;Confirm Transfer &amp; Dispense&rdquo; below.
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === 'card' && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex items-center gap-3">
+                <CreditCard className="w-6 h-6 text-[#1E40AF] shrink-0" />
+                <div className="text-[11px] leading-relaxed">
+                  <p className="font-bold text-slate-900">Instant Card Checkout</p>
+                  <p className="text-slate-500">Pay securely with Mastercard, Visa, or Verve via Paystack. Automated 5-second fulfillment.</p>
+                </div>
+              </div>
+            )}
+
+            {paymentMethod === 'wallet' && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-3">
+                <Wallet className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div className="text-[11px]">
+                  <p className="font-bold text-slate-900">Instant Wallet Dispenser</p>
+                  <p className="text-slate-600">Deducts <span className="font-bold text-emerald-700">{formatCurrency(plan.sellingPrice)}</span> directly from your active wallet balance.</p>
+                </div>
+              </div>
+            )}
+
             {/* Error Alert */}
             {errorMessage && (
               <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
@@ -383,7 +454,11 @@ export function PurchaseModal({
               ) : (
                 <>
                   <Zap className="w-5 h-5 fill-white" />
-                  <span>Pay {formatCurrency(plan.sellingPrice)} &amp; Dispense</span>
+                  <span>
+                    {paymentMethod === 'transfer'
+                      ? `I Have Sent ${formatCurrency(plan.sellingPrice)} & Dispense`
+                      : `Pay ${formatCurrency(plan.sellingPrice)} & Dispense`}
+                  </span>
                 </>
               )}
             </button>

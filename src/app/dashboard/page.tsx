@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ADMIN_EMAIL } from '@/lib/firebase';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { NETWORKS, CURATED_DATA_PLANS } from '@/lib/constants';
-import { fetchOrdersByUser } from '@/lib/firebaseDb';
+import { fetchOrdersByUser, getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
 import { formatCurrency } from '@/lib/utils';
 import { PurchaseModal } from '@/components/PurchaseModal';
 import { DataAbegLogo } from '@/components/DataAbegLogo';
@@ -104,6 +104,9 @@ export default function DashboardPage() {
   const [dispenseMethod, setDispenseMethod] = useState<'instant' | 'queue'>('instant');
   const [copiedBank, setCopiedBank] = useState(false);
 
+  // Admin Settings State (Bank info)
+  const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
@@ -111,10 +114,13 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, router]);
 
-  // Load orders
+  // Load orders and admin bank settings
   useEffect(() => {
     if (user) {
       loadUserOrders();
+      getAdminSettings()
+        .then((settings) => setAdminSettings(settings))
+        .catch((err) => console.warn('Admin settings load warning:', err));
     }
   }, [user]);
 
@@ -892,22 +898,22 @@ export default function DashboardPage() {
             <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900">
-                  Bank Name: <span className="font-extrabold text-blue-950">Wema Bank / DataAbeg</span>
+                  Bank Name: <span className="font-extrabold text-blue-950">{adminSettings.bankName || 'Moniepoint MFB / OPay'}</span>
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                  Instant Auto-Credit
+                  Direct Bank Transfer
                 </span>
               </div>
               <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-200">
                 <div>
                   <div className="text-[10px] text-slate-500 font-medium">Account Number</div>
                   <div className="text-base font-black font-mono tracking-widest text-slate-900">
-                    801{user.uid.replace(/\D/g, '').slice(0, 7) || '2948192'}
+                    {adminSettings.accountNumber || '08154276838'}
                   </div>
                 </div>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText('801' + (user.uid.replace(/\D/g, '').slice(0, 7) || '2948192'));
+                    navigator.clipboard.writeText(adminSettings.accountNumber || '08154276838');
                     setCopiedBank(true);
                     setTimeout(() => setCopiedBank(false), 2000);
                   }}
@@ -918,7 +924,7 @@ export default function DashboardPage() {
                 </button>
               </div>
               <div className="text-[11px] text-slate-600">
-                Account Name: <span className="font-bold text-slate-900">DataAbeg / {profile?.displayName || user.email?.split('@')[0]}</span>
+                Account Name: <span className="font-bold text-slate-900">{adminSettings.accountName || 'DataAbeg VTU Ventures'}</span>
               </div>
             </div>
 

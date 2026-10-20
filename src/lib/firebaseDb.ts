@@ -17,21 +17,23 @@ import { Transaction } from './types';
 
 export interface AdminSettings {
   smeplugApiKey: string;
-  momoAccountNumber: string;
-  momoAccountName: string;
-  smartcashAccountNumber: string;
-  smartcashAccountName: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
   supportPhone: string;
   adminPin: string;
   globalDiscountNotice: string;
+  momoAccountNumber?: string;
+  momoAccountName?: string;
+  smartcashAccountNumber?: string;
+  smartcashAccountName?: string;
 }
 
 export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   smeplugApiKey: '',
-  momoAccountNumber: '08154276838',
-  momoAccountName: 'DataAbeg MoMo PSB',
-  smartcashAccountNumber: '08154276838',
-  smartcashAccountName: 'DataAbeg Smartcash',
+  bankName: 'Moniepoint MFB / OPay',
+  accountNumber: '08154276838',
+  accountName: 'DataAbeg VTU Ventures',
   supportPhone: '08154276838',
   adminPin: 'salam2026',
   globalDiscountNotice: '⚡ Save up to 71% • Direct Bank Transfer & Instant Debit Card Automated Dispenser'

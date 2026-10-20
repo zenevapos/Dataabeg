@@ -35,22 +35,22 @@ export function WaysToStartSection({ onOpenSettings }: WaysToStartSectionProps) 
         {/* 2x2 Grid with Center Divider */}
         <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50 shadow-xs">
           <div className="relative grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
-            {/* Card 1: MoMo PSB (671) */}
+            {/* Card 1: Instant Bank Transfer */}
             <div className="p-6 sm:p-10 flex flex-col justify-between gap-6 hover:bg-white transition-colors">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1E40AF] flex items-center justify-center border border-blue-200">
                     <Building2 className="w-6 h-6" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                    Bank Code 671 • 0% Fee
+                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-200">
+                    All Nigerian Banks • 0% Fee
                   </span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 font-heading">
-                  Direct MoMo PSB Virtual Account
+                  Direct Bank Transfer &amp; USSD
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Transfer directly from Kuda, OPay, Palmpay, GTBank, or Zenith to your designated MoMo PSB account (Bank Code: 671). Instant credit without third-party card charges.
+                  Transfer directly from OPay, Moniepoint, PalmPay, Kuda, GTBank, Zenith, or any Nigerian bank app. Instant wallet crediting and frictionless order fulfillment.
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 flex flex-col gap-2 shadow-2xs">
@@ -65,22 +65,22 @@ export function WaysToStartSection({ onOpenSettings }: WaysToStartSectionProps) 
               </div>
             </div>
 
-            {/* Card 2: Smartcash PSB */}
+            {/* Card 2: 5-Second Cloud Dispenser */}
             <div className="p-6 sm:p-10 flex flex-col justify-between gap-6 hover:bg-white transition-colors">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
                     <Smartphone className="w-6 h-6" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-200">
-                    Airtel Smartcash • Instant
+                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                    Fast Delivery • Instant
                   </span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 font-heading">
-                  Smartcash PSB Auto-Funding
+                  Sub-5-Second Automated Top-Up
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Leverage Airtel Smartcash payment service bank infrastructure for sub-second wallet topups and automated SIM data dispatch.
+                  Leverage direct telecom cloud infrastructure for sub-second wallet topups and automated SIM data dispatch without manual delays.
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 flex flex-col gap-2 shadow-2xs">
