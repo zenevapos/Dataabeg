@@ -4,13 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { DataPurchaseWidget } from '@/components/DataPurchaseWidget';
+import { ShowreelMarquee } from '@/components/ShowreelMarquee';
+import { WaysToStartSection } from '@/components/WaysToStartSection';
+import { FeatureTourSection } from '@/components/FeatureTourSection';
+import { EnterpriseSection } from '@/components/EnterpriseSection';
+import { TestimonialsSection } from '@/components/TestimonialsSection';
+import { ClosingCTASection } from '@/components/ClosingCTASection';
+import { PriceComparisonSection } from '@/components/PriceComparisonSection';
+import { USSDGuideSection } from '@/components/USSDGuideSection';
+import { FAQSection } from '@/components/FAQSection';
+import { Footer } from '@/components/Footer';
 import { PurchaseModal } from '@/components/PurchaseModal';
 import { AdminDrawer } from '@/components/AdminDrawer';
 import { TrackOrderModal } from '@/components/TrackOrderModal';
-import { USSDGuideSection } from '@/components/USSDGuideSection';
-import { PriceComparisonSection } from '@/components/PriceComparisonSection';
-import { FAQSection } from '@/components/FAQSection';
-import { Footer } from '@/components/Footer';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { CURATED_DATA_PLANS } from '@/lib/constants';
 
@@ -90,9 +96,15 @@ export default function Home() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleQuickPhoneSubmit = (phone: string) => {
+    setCheckoutPhone(phone);
+    const el = document.getElementById('data-purchase-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <main className="min-h-screen flex flex-col bg-[#080d1a] text-white">
-      {/* Top Navigation */}
+    <main className="min-h-screen flex flex-col bg-[#080d1a] text-white selection:bg-blue-600 selection:text-white">
+      {/* Clueso-style Top Navigation & Announcement Bar */}
       <Navbar
         onOpenSettings={() => setIsAdminDrawerOpen(true)}
         onOpenTracker={() => setIsTrackModalOpen(true)}
@@ -101,24 +113,44 @@ export default function Home() {
       />
 
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection onLearnMoMo={() => setIsAdminDrawerOpen(true)} />
 
-      {/* Main Interactive Purchasing Engine */}
-      <DataPurchaseWidget
-        onSelectPlanForCheckout={handleSelectPlanForCheckout}
-        plans={CURATED_DATA_PLANS}
-      />
+      {/* Main Interactive Purchasing Engine in Clueso Hero-Aura Stage */}
+      <div className="hero-aura my-6">
+        <DataPurchaseWidget
+          onSelectPlanForCheckout={handleSelectPlanForCheckout}
+          plans={CURATED_DATA_PLANS}
+        />
+      </div>
 
-      {/* Side-by-side Bank vs DataAbeg Price Comparison */}
+      {/* Clueso Showreel Marquee (2-Row Continuous Moving Bundles + Value Cards) */}
+      <ShowreelMarquee />
+
+      {/* Clueso 2x2 Ways To Start Section (MoMo PSB, Smartcash, Card, API) */}
+      <WaysToStartSection onOpenSettings={() => setIsAdminDrawerOpen(true)} />
+
+      {/* Interactive Feature Tour (Clueso 11-step tour adapted to VTU) */}
+      <FeatureTourSection />
+
+      {/* Side-by-side Commercial Bank vs DataAbeg Price Comparison */}
       <PriceComparisonSection />
 
-      {/* Network USSD Balance Check Codes */}
+      {/* Enterprise & Reseller Ready (Clueso-style 3 security cards + 4 metrics) */}
+      <EnterpriseSection />
+
+      {/* Clueso Tabbed Customer Testimonials Slider */}
+      <TestimonialsSection />
+
+      {/* Network USSD Balance Check Codes Section */}
       <USSDGuideSection />
 
-      {/* FAQ Section */}
+      {/* Clueso High-Impact Closing CTA Banner */}
+      <ClosingCTASection onQuickPhoneSubmit={handleQuickPhoneSubmit} />
+
+      {/* Clueso Split-Column FAQ Section */}
       <FAQSection />
 
-      {/* Footer with WhatsApp Support */}
+      {/* Clueso-style Multi-column Footer */}
       <Footer
         onOpenSettings={() => setIsAdminDrawerOpen(true)}
         onOpenTracker={() => setIsTrackModalOpen(true)}
@@ -154,3 +186,4 @@ export default function Home() {
     </main>
   );
 }
+

@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const viewport: Viewport = {
   themeColor: '#080d1a',
@@ -9,9 +16,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'DataAbeg | Super Cheap Mobile Data Bundles (MTN, Airtel, Glo, 9mobile)',
+  title: 'DataAbeg | Agentic Cheap Mobile Data VTU Platform Nigeria',
   description:
-    'Buy cheap mobile data bundles in Nigeria starting from ₦290 per GB with 30-day validity. Instant 5-second automated delivery powered by SMEPlug.',
+    'Buy cheap mobile data bundles in Nigeria starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery with MoMo PSB (671) & Smartcash auto-funding.',
   keywords: [
     'cheap data nigeria',
     'buy mtn sme data',
@@ -20,7 +27,8 @@ export const metadata: Metadata = {
     '9mobile data reselling',
     'smeplug vtu',
     'dataabeg',
-    'buy 1gb for 300'
+    'momo psb',
+    'smartcash virtual account'
   ],
   authors: [{ name: 'DataAbeg Team' }],
   openGraph: {
@@ -46,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="dark scroll-smooth"
+      className={`dark scroll-smooth ${inter.variable}`}
       suppressHydrationWarning
       style={{ backgroundColor: '#080d1a', color: '#f8fafc', colorScheme: 'dark' }}
     >

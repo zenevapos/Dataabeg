@@ -1,28 +1,38 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { Plus, Minus, HelpCircle } from 'lucide-react';
 
 const FAQS_WITH_PSB = [
   {
-    question: 'How fast is data delivery after payment?',
-    answer: 'Data delivery is 100% automated and arrives in under 5 to 15 seconds directly on the recipient SIM line.'
+    question: 'How fast is mobile data delivery after payment?',
+    answer:
+      'Data delivery is 100% automated via direct telecom switch APIs and arrives in under 4.8 to 15 seconds directly on the recipient SIM line across MTN, Airtel, Glo, and 9mobile.'
   },
   {
     question: 'Can I pay with MoMo PSB or Smartcash PSB?',
-    answer: 'Yes! DataAbeg supports automated payments and virtual account funding through MTN MoMo PSB (Bank Code 671) and Airtel Smartcash PSB. Transfers from any Nigerian bank app, USSD, or mobile money wallet are credited instantly.'
+    answer:
+      'Yes! DataAbeg supports automated payments and virtual account funding through MTN MoMo PSB (Bank Code 671) and Airtel Smartcash PSB. Transfers from any Nigerian bank app (GTB, Kuda, OPay, Zenith, Palmpay) are credited with zero deposit deductions.'
   },
   {
-    question: 'Why are DataAbeg data prices so much cheaper than my bank or PalmPay?',
-    answer: 'Banks and fintech apps sell official retail packages with short 1-day or 2-day validity and high markups. DataAbeg leverages wholesale Telecom SME and Corporate Gifting pools via SMEPlug, delivering full 30-day validity at rock-bottom bulk rates.'
+    question: 'Why are DataAbeg prices so much cheaper than commercial bank apps?',
+    answer:
+      'Commercial banking apps sell retail packages with short 1-day or 2-day validity and high markups (up to ₦1,000 for 1GB). DataAbeg pools wholesale Telecom SME and Corporate Gifting quotas directly via SMEPlug, passing bulk savings directly to you with guaranteed 30-day validity.'
   },
   {
-    question: 'How do I check my data balance after buying?',
-    answer: 'For MTN SME dial *323*4# or *461*4#. For Airtel dial *323# or *140#. For Glo dial *323# or *127*0#. For 9mobile dial *323# or *228#. You will also receive an instant confirmation SMS directly from your telecom operator.'
+    question: 'How do I verify my data balance after buying?',
+    answer:
+      'For MTN SME dial *323*4# or *461*4#. For Airtel dial *323# or *140#. For Glo dial *323# or *127*0#. For 9mobile dial *323# or *228#. You will also receive an official confirmation SMS directly from your telecom operator.'
   },
   {
-    question: 'Can I resell data to my own friends and customers using DataAbeg?',
-    answer: 'Yes! Anyone can resell data by buying at our ultra-cheap wholesale rates and charging their own customers whatever price they choose.'
+    question: 'Do these data bundles work on lines with Do-Not-Disturb (DND)?',
+    answer:
+      'Yes! We route all data through verified telecom corporate gifting and SME channels that bypass DND filters, ensuring full delivery even on restricted lines.'
+  },
+  {
+    question: 'Can I resell data to my own campus students or WhatsApp clients?',
+    answer:
+      'Absolutely. Thousands of campus reps and entrepreneurs buy at our ₦290/GB wholesale rate and resell at ₦400 - ₦500/GB, pocketing reliable daily profit. You can also integrate our REST API into your own website or bot.'
   }
 ];
 
@@ -34,50 +44,52 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq-section" className="py-12 sm:py-16 max-w-4xl mx-auto px-4 sm:px-6">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 text-xs font-semibold mb-3">
-          <HelpCircle className="w-3.5 h-3.5" />
-          <span>Frequently Asked Questions</span>
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          Got Questions? We&apos;ve Got Answers.
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Everything you need to know about purchasing, MoMo/Smartcash PSB, and reselling data on DataAbeg.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {FAQS_WITH_PSB.map((faq, idx) => {
-          const isOpen = openIndex === idx;
-          return (
-            <div
-              key={idx}
-              className="rounded-2xl bg-slate-900/80 border border-slate-800 overflow-hidden transition-all"
-            >
-              <button
-                type="button"
-                onClick={() => toggle(idx)}
-                className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-white hover:text-sky-400 transition-colors"
-              >
-                <span className="text-sm sm:text-base">{faq.question}</span>
-                <ChevronDown
-                  className={`w-5 h-5 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    isOpen ? 'rotate-180 text-sky-400' : ''
-                  }`}
-                />
-              </button>
-
-              {isOpen && (
-                <div className="px-4 pb-5 sm:px-5 sm:pb-6 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 pt-3 animate-in fade-in duration-200">
-                  {faq.answer}
-                </div>
-              )}
+    <section id="faq-section" className="w-full py-16 sm:py-24 border-t border-slate-800/80 bg-slate-950/40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Title Column (Clueso style) */}
+          <div className="lg:col-span-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/80 border border-blue-800 text-sky-400 text-xs font-semibold mb-3">
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Got Questions?</span>
             </div>
-          );
-        })}
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+              Frequently asked questions
+            </h2>
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+              Everything you need to know about purchasing, MoMo/Smartcash PSB, validity, and reseller automation on DataAbeg.
+            </p>
+          </div>
+
+          {/* Right Accordion Column */}
+          <div className="lg:col-span-8 divide-y divide-slate-800 border-t border-b border-slate-800">
+            {FAQS_WITH_PSB.map((faq, idx) => {
+              const isOpen = openIndex === idx;
+              return (
+                <div key={idx} className="py-5">
+                  <button
+                    type="button"
+                    onClick={() => toggle(idx)}
+                    className="w-full flex items-center justify-between gap-4 text-left font-bold text-white hover:text-sky-400 transition-colors"
+                  >
+                    <span className="text-base sm:text-lg">{faq.question}</span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 border border-slate-700/80 text-sky-400 shrink-0">
+                      {isOpen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-3 text-sm text-slate-300 leading-relaxed pr-8 animate-in fade-in duration-200">
+                      {faq.answer}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );
 }
+
