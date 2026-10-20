@@ -36,22 +36,6 @@ export const NETWORKS: NetworkInfo[] = [
   },
   {
     id: 3,
-    name: 'GLO',
-    displayName: 'Glo Nigeria',
-    color: '#22C55E', // Glo Green
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500',
-    badgeBg: 'bg-emerald-600 text-white font-bold',
-    textColor: 'text-emerald-400',
-    prefixes: [
-      '0805', '0807', '0705', '0815', '0811', '0905', '0915'
-    ],
-    ussdCheckCode: '*323# or *127*0#',
-    smsCheckCode: 'Send "INFO" to 127',
-    description: 'Massive heavy data bundles with the grandmasters of data.'
-  },
-  {
-    id: 4,
     name: '9MOBILE',
     displayName: '9mobile',
     color: '#84CC16', // 9mobile Lime Green
@@ -65,6 +49,22 @@ export const NETWORKS: NetworkInfo[] = [
     ussdCheckCode: '*323# or *228#',
     smsCheckCode: 'Send "BAL" to 228',
     description: 'Crisp, ultra-reliable gaming and browsing bundles.'
+  },
+  {
+    id: 4,
+    name: 'GLO',
+    displayName: 'Glo Nigeria',
+    color: '#22C55E', // Glo Green
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500',
+    badgeBg: 'bg-emerald-600 text-white font-bold',
+    textColor: 'text-emerald-400',
+    prefixes: [
+      '0805', '0807', '0705', '0815', '0811', '0905', '0915'
+    ],
+    ussdCheckCode: '*323# or *127*0#',
+    smsCheckCode: 'Send "INFO" to 127',
+    description: 'Massive heavy data bundles with the grandmasters of data.'
   }
 ];
 
@@ -302,111 +302,11 @@ export const CURATED_DATA_PLANS: DataPlan[] = [
     savingsPercentage: 61
   },
 
-  // --- GLO PLANS ---
-  {
-    id: 'glo-cg-500mb',
-    planId: 301,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 500MB CG',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '500MB',
-    sizeInMB: 500,
-    validity: '30 Days',
-    costPrice: 130,
-    sellingPrice: 160,
-    retailPrice: 500,
-    savingsPercentage: 68
-  },
-  {
-    id: 'glo-cg-1gb',
-    planId: 302,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 1.0GB Corporate Gifting',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '1.0GB',
-    sizeInMB: 1024,
-    validity: '30 Days',
-    costPrice: 245,
-    sellingPrice: 285,
-    retailPrice: 1000,
-    isPopular: true,
-    savingsPercentage: 71
-  },
-  {
-    id: 'glo-cg-2gb',
-    planId: 303,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 2.0GB Corporate Gifting',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '2.0GB',
-    sizeInMB: 2048,
-    validity: '30 Days',
-    costPrice: 490,
-    sellingPrice: 570,
-    retailPrice: 2000,
-    isPopular: true,
-    savingsPercentage: 71
-  },
-  {
-    id: 'glo-cg-3gb',
-    planId: 304,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 3.0GB Corporate Gifting',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '3.0GB',
-    sizeInMB: 3072,
-    validity: '30 Days',
-    costPrice: 735,
-    sellingPrice: 855,
-    retailPrice: 3000,
-    savingsPercentage: 71
-  },
-  {
-    id: 'glo-cg-5gb',
-    planId: 305,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 5.0GB Corporate Gifting',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '5.0GB',
-    sizeInMB: 5120,
-    validity: '30 Days',
-    costPrice: 1225,
-    sellingPrice: 1425,
-    retailPrice: 4500,
-    savingsPercentage: 68
-  },
-  {
-    id: 'glo-cg-10gb',
-    planId: 306,
-    networkId: 3,
-    networkName: 'GLO',
-    name: 'Glo 10.0GB Corporate Gifting',
-    category: 'CORPORATE_GIFTING',
-    categoryLabel: '⚡ Corporate Gifting',
-    size: '10.0GB',
-    sizeInMB: 10240,
-    validity: '30 Days',
-    costPrice: 2450,
-    sellingPrice: 2850,
-    retailPrice: 7500,
-    savingsPercentage: 62
-  },
-
   // --- 9MOBILE PLANS ---
   {
     id: '9mobile-sme-1gb',
     planId: 401,
-    networkId: 4,
+    networkId: 3,
     networkName: '9MOBILE',
     name: '9mobile 1.0GB SME',
     category: 'SME',
@@ -423,7 +323,7 @@ export const CURATED_DATA_PLANS: DataPlan[] = [
   {
     id: '9mobile-sme-2gb',
     planId: 402,
-    networkId: 4,
+    networkId: 3,
     networkName: '9MOBILE',
     name: '9mobile 2.0GB SME',
     category: 'SME',
@@ -439,7 +339,7 @@ export const CURATED_DATA_PLANS: DataPlan[] = [
   {
     id: '9mobile-sme-5gb',
     planId: 403,
-    networkId: 4,
+    networkId: 3,
     networkName: '9MOBILE',
     name: '9mobile 5.0GB SME',
     category: 'SME',
@@ -451,6 +351,106 @@ export const CURATED_DATA_PLANS: DataPlan[] = [
     sellingPrice: 1300,
     retailPrice: 4500,
     savingsPercentage: 71
+  },
+
+  // --- GLO PLANS ---
+  {
+    id: 'glo-cg-500mb',
+    planId: 301,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 500MB CG',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '500MB',
+    sizeInMB: 500,
+    validity: '30 Days',
+    costPrice: 130,
+    sellingPrice: 160,
+    retailPrice: 500,
+    savingsPercentage: 68
+  },
+  {
+    id: 'glo-cg-1gb',
+    planId: 302,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 1.0GB Corporate Gifting',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '1.0GB',
+    sizeInMB: 1024,
+    validity: '30 Days',
+    costPrice: 245,
+    sellingPrice: 285,
+    retailPrice: 1000,
+    isPopular: true,
+    savingsPercentage: 71
+  },
+  {
+    id: 'glo-cg-2gb',
+    planId: 303,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 2.0GB Corporate Gifting',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '2.0GB',
+    sizeInMB: 2048,
+    validity: '30 Days',
+    costPrice: 490,
+    sellingPrice: 570,
+    retailPrice: 2000,
+    isPopular: true,
+    savingsPercentage: 71
+  },
+  {
+    id: 'glo-cg-3gb',
+    planId: 304,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 3.0GB Corporate Gifting',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '3.0GB',
+    sizeInMB: 3072,
+    validity: '30 Days',
+    costPrice: 735,
+    sellingPrice: 855,
+    retailPrice: 3000,
+    savingsPercentage: 71
+  },
+  {
+    id: 'glo-cg-5gb',
+    planId: 305,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 5.0GB Corporate Gifting',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '5.0GB',
+    sizeInMB: 5120,
+    validity: '30 Days',
+    costPrice: 1225,
+    sellingPrice: 1425,
+    retailPrice: 4500,
+    savingsPercentage: 68
+  },
+  {
+    id: 'glo-cg-10gb',
+    planId: 306,
+    networkId: 4,
+    networkName: 'GLO',
+    name: 'Glo 10.0GB Corporate Gifting',
+    category: 'CORPORATE_GIFTING',
+    categoryLabel: '⚡ Corporate Gifting',
+    size: '10.0GB',
+    sizeInMB: 10240,
+    validity: '30 Days',
+    costPrice: 2450,
+    sellingPrice: 2850,
+    retailPrice: 7500,
+    savingsPercentage: 62
   }
 ];
 

@@ -107,8 +107,8 @@ export class SMEPlugClient {
       const NETWORK_NAMES: Record<number, 'MTN' | 'AIRTEL' | 'GLO' | '9MOBILE'> = {
         1: 'MTN',
         2: 'AIRTEL',
-        3: 'GLO',
-        4: '9MOBILE'
+        3: '9MOBILE',
+        4: 'GLO'
       };
 
       // SMEPlug returns { status: true, data: { '1': [...], '2': [...], '3': [...], '4': [...] } } or array
@@ -264,6 +264,98 @@ export class SMEPlugClient {
         status: false,
         msg: error instanceof Error ? error.message : 'Network error communicating with SMEPlug VTU Engine'
       };
+    }
+  }
+
+  /**
+   * Retrieves official telecom network mappings from SMEPlug
+   */
+  async getNetworks(): Promise<{ status: boolean; networks?: Record<string, string>; error?: string }> {
+    if (!this.isConfigured()) {
+      return {
+        status: true,
+        networks: { '1': 'MTN', '2': 'Airtel', '3': '9Mobile', '4': 'Glo' }
+      };
+    }
+
+    try {
+      const res = await fetch(`${SMEPLUG_BASE_URL}/networks`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return await res.json();
+    } catch (err: unknown) {
+      return { status: false, error: err instanceof Error ? err.message : 'Failed to fetch networks' };
+    }
+  }
+
+  /**
+   * Retrieves list of supported Nigerian banks for transfers from SMEPlug
+   */
+  async getBanks(): Promise<{ status: boolean; banks?: Array<{ code: string; name: string }>; error?: string }> {
+    if (!this.isConfigured()) {
+      return { status: true, banks: [{ code: '000014', name: 'ACCESS BANK' }, { code: '000013', name: 'GTBANK PLC' }] };
+    }
+
+    try {
+      const res = await fetch(`${SMEPLUG_BASE_URL}/transfer/banks`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return await res.json();
+    } catch (err: unknown) {
+      return { status: false, error: err instanceof Error ? err.message : 'Failed to fetch banks' };
+    }
+  }
+
+  /**
+   * Resolves Nigerian bank account name via SMEPlug
+   */
+  async resolveAccount(bankCode: string, accountNumber: string): Promise<any> {
+    if (!this.isConfigured()) {
+      return { status: true, account_name: 'DATAABEG MERCHANT HOLDINGS' };
+    }
+
+    try {
+      const res = await fetch(`${SMEPLUG_BASE_URL}/transfer/resolveaccount`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          bank_code: bankCode,
+          account_number: accountNumber
+        })
+      });
+      return await res.json();
+    } catch (err: unknown) {
+      return { status: false, error: err instanceof Error ? err.message : 'Failed to resolve account' };
+    }
+  }
+
+  /**
+   * Retrieves live transactions log from SMEPlug
+   */
+  async getTransactions(): Promise<any> {
+    if (!this.isConfigured()) {
+      return { status: true, transactions: [] };
+    }
+
+    try {
+      const res = await fetch(`${SMEPLUG_BASE_URL}/transactions`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return await res.json();
+    } catch (err: unknown) {
+      return { status: false, error: err instanceof Error ? err.message : 'Failed to fetch transactions' };
     }
   }
 }

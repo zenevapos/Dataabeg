@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { updateOrderStatusInFirestore } from '@/lib/firebaseDb';
 
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
     console.log('[SMEPlug Webhook Callback Received]:', JSON.stringify(payload, null, 2));
 
-    // Payload typically contains:
-    // {
-    //   "reference": "...",
-    //   "customer_reference": "...",
-    //   "status": "successful" | "failed",
-    //   "msg": "...",
-    //   "phone": "...",
-    //   "network_id": 1
-    // }
+    // Support official SMEPlug format:
+    // { "transaction": { "status": "success", "reference": "...", "customer_reference": "...", "beneficiary": "...", "price": "..." } }
+    // Or flat format: { "reference": "...", "customer_reference": "...", "status": "successful" }
+    const tx = payload.transaction || payload;
+    const ref = tx.customer_reference || tx.reference;
+    const statusRaw = (tx.status || '').toLowerCase();
+    const isSuccess = statusRaw === 'success' || statusRaw === 'successful' || statusRaw === 'delivered';
+
+    if (ref) {
+      try {
+        await updateOrderStatusInFirestore(
+          ref,
+          isSuccess ? 'SUCCESS' : 'FAILED',
+          tx.response || tx.memo || (isSuccess ? 'Delivered successfully via SMEPlug' : 'Transaction failed on telecom gateway')
+        );
+      } catch (err) {
+        console.warn('Could not update order status in Firestore:', err);
+      }
+    }
 
     return NextResponse.json({
       status: true,
-      msg: 'Webhook received successfully',
+      msg: 'Webhook received and processed successfully',
       received_at: new Date().toISOString()
     });
   } catch (error: unknown) {
