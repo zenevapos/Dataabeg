@@ -178,7 +178,13 @@ export interface UserProfile {
 }
 
 /**
- * Get or create User Profile in Firestore
+ * Local storage keys for graceful offline / unconfigured Firestore rules fallback
+ */
+const PROFILE_LOCAL_KEY = 'dataabeg_user_profile_';
+const ORDERS_LOCAL_KEY = 'dataabeg_user_orders_';
+
+/**
+ * Get or create User Profile in Firestore with resilient fallback
  */
 export async function getOrCreateUserProfile(user: {
   uid: string;
@@ -187,42 +193,54 @@ export async function getOrCreateUserProfile(user: {
   photoURL?: string | null;
   phoneNumber?: string | null;
 }): Promise<UserProfile> {
+  const localCached = typeof window !== 'undefined' ? localStorage.getItem(PROFILE_LOCAL_KEY + user.uid) : null;
+  let fallbackProfile: UserProfile = localCached
+    ? JSON.parse(localCached)
+    : {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || user.email?.split('@')[0] || 'User',
+        photoURL: user.photoURL || '',
+        phoneNumber: user.phoneNumber || '08154276838',
+        walletBalance: 0,
+        momoVirtualAccount: '671' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
+        smartcashVirtualAccount: '90' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
+        createdAt: new Date().toISOString()
+      };
+
   try {
     const userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
 
     if (snap.exists()) {
-      return snap.data() as UserProfile;
+      const dbProfile = snap.data() as UserProfile;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PROFILE_LOCAL_KEY + user.uid, JSON.stringify(dbProfile));
+      }
+      return dbProfile;
     }
 
-    // Default new user profile
-    const newProfile: UserProfile = {
-      uid: user.uid,
-      email: user.email || '',
-      displayName: user.displayName || user.email?.split('@')[0] || 'User',
-      photoURL: user.photoURL || '',
-      phoneNumber: user.phoneNumber || '',
-      walletBalance: 0,
-      momoVirtualAccount: '671' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
-      smartcashVirtualAccount: '90' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
-      createdAt: new Date().toISOString()
-    };
-
+    // Try writing new profile
     await setDoc(userRef, {
-      ...newProfile,
+      ...fallbackProfile,
       updatedAt: serverTimestamp()
     });
 
-    return newProfile;
-  } catch (err) {
-    console.error('Error fetching or creating user profile:', err);
-    return {
-      uid: user.uid,
-      email: user.email || '',
-      displayName: user.displayName || 'User',
-      walletBalance: 0,
-      createdAt: new Date().toISOString()
-    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(PROFILE_LOCAL_KEY + user.uid, JSON.stringify(fallbackProfile));
+    }
+    return fallbackProfile;
+  } catch (err: any) {
+    // Graceful permission or network fallback
+    if (err?.code === 'permission-denied') {
+      console.warn('Firestore permissions not yet published. Using local session profile.');
+    } else {
+      console.warn('Notice: Firestore profile read fallback:', err?.message || err);
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(PROFILE_LOCAL_KEY + user.uid, JSON.stringify(fallbackProfile));
+    }
+    return fallbackProfile;
   }
 }
 
@@ -242,21 +260,36 @@ export async function fetchOrdersByUser(uid: string, email?: string): Promise<Tr
     });
 
     if (email) {
-      const q2 = query(ordersCol, where('userEmail', '==', email), limit(50));
-      const snap2 = await getDocs(q2);
-      snap2.forEach((docSnap) => {
-        ordersMap.set(docSnap.id, docSnap.data() as Transaction);
-      });
+      try {
+        const q2 = query(ordersCol, where('userEmail', '==', email), limit(50));
+        const snap2 = await getDocs(q2);
+        snap2.forEach((docSnap) => {
+          ordersMap.set(docSnap.id, docSnap.data() as Transaction);
+        });
+      } catch (_) {
+        // ignore secondary email query permissions
+      }
     }
 
     const orders = Array.from(ordersMap.values());
+    if (orders.length > 0 && typeof window !== 'undefined') {
+      localStorage.setItem(ORDERS_LOCAL_KEY + uid, JSON.stringify(orders));
+    }
     return orders.sort((a, b) => {
       const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
       const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
       return timeB - timeA;
     });
-  } catch (err) {
-    console.warn('Error fetching orders by user:', err);
+  } catch (err: any) {
+    // Fallback to local storage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(ORDERS_LOCAL_KEY + uid);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (_) {}
+      }
+    }
     return [];
   }
 }
