@@ -103,7 +103,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#080d1a] text-white selection:bg-blue-600 selection:text-white">
+    <main className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-[#1E40AF] selection:text-white">
       {/* Clueso-style Top Navigation & Announcement Bar */}
       <Navbar
         onOpenSettings={() => setIsAdminDrawerOpen(true)}

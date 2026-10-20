@@ -44,25 +44,25 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq-section" className="w-full py-16 sm:py-24 border-t border-slate-800/80 bg-slate-950/40">
+    <section id="faq-section" className="w-full py-16 sm:py-24 border-t border-slate-200 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Title Column (Clueso style) */}
+          {/* Left Title Column */}
           <div className="lg:col-span-4">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/80 border border-blue-800 text-sky-400 text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E40AF] text-xs font-semibold mb-3">
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Got Questions?</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight font-heading">
               Frequently asked questions
             </h2>
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+            <p className="mt-3 text-sm text-slate-600 leading-relaxed">
               Everything you need to know about purchasing, MoMo/Smartcash PSB, validity, and reseller automation on DataAbeg.
             </p>
           </div>
 
           {/* Right Accordion Column */}
-          <div className="lg:col-span-8 divide-y divide-slate-800 border-t border-b border-slate-800">
+          <div className="lg:col-span-8 divide-y divide-slate-200 border-t border-b border-slate-200">
             {FAQS_WITH_PSB.map((faq, idx) => {
               const isOpen = openIndex === idx;
               return (
@@ -70,16 +70,16 @@ export function FAQSection() {
                   <button
                     type="button"
                     onClick={() => toggle(idx)}
-                    className="w-full flex items-center justify-between gap-4 text-left font-bold text-white hover:text-sky-400 transition-colors"
+                    className="w-full flex items-center justify-between gap-4 text-left font-bold text-slate-900 hover:text-[#1E40AF] transition-colors cursor-pointer"
                   >
-                    <span className="text-base sm:text-lg">{faq.question}</span>
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 border border-slate-700/80 text-sky-400 shrink-0">
+                    <span className="text-base sm:text-lg font-heading">{faq.question}</span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-[#1E40AF] shrink-0">
                       {isOpen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     </span>
                   </button>
 
                   {isOpen && (
-                    <div className="mt-3 text-sm text-slate-300 leading-relaxed pr-8 animate-in fade-in duration-200">
+                    <div className="mt-3 text-sm text-slate-600 leading-relaxed pr-8 animate-in fade-in duration-200">
                       {faq.answer}
                     </div>
                   )}
@@ -92,4 +92,3 @@ export function FAQSection() {
     </section>
   );
 }
-

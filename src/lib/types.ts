@@ -37,22 +37,27 @@ export interface DataPlan {
   savingsPercentage: number;
 }
 
-export type TransactionStatus = 'successful' | 'processing' | 'failed';
+export type TransactionStatus = 'successful' | 'processing' | 'failed' | 'SUCCESS' | 'PENDING' | 'FAILED';
 
 export interface Transaction {
   id: string;
   reference: string;
   smeplugReference?: string;
-  network: NetworkType;
+  network: NetworkType | string;
+  networkName?: string;
   phone: string;
+  phoneNumber?: string;
   planName: string;
   planSize: string;
   amount: number;
-  status: TransactionStatus;
+  amountPaid?: number;
+  status: TransactionStatus | string;
   statusMessage?: string;
-  paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'guest';
+  paymentMethod: string;
   createdAt: string;
   completedAt?: string;
+  timestamp?: string;
+  notes?: string;
 }
 
 export interface SMEPlugBalanceResponse {

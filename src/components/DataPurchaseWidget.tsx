@@ -81,18 +81,18 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
 
   return (
     <div id="data-purchase-section" className="max-w-4xl mx-auto px-4 sm:px-6">
-      <div className="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl p-5 sm:p-8 backdrop-blur-xl">
+      <div className="rounded-3xl bg-white border border-slate-200 shadow-xl p-5 sm:p-8">
         {/* Step 1: Select Network */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-xs">
                 1
               </span>
               Select Mobile Network
             </label>
             {autoDetectedMessage && (
-              <span className="text-[11px] font-medium text-sky-400 bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800 animate-pulse">
+              <span className="text-[11px] font-bold text-[#1E40AF] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 animate-pulse">
                 ✓ {autoDetectedMessage}
               </span>
             )}
@@ -110,14 +110,14 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                     setSelectedNetworkId(network.id);
                     setAutoDetectedMessage(null);
                   }}
-                  className={`relative flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left group ${
+                  className={`relative flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left group cursor-pointer ${
                     isSelected
-                      ? `bg-slate-800/90 ${network.borderColor} ring-2 ring-[#1E40AF] shadow-lg`
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/40'
+                      ? `bg-blue-50/60 border-[#1E40AF] ring-2 ring-[#1E40AF]/30 shadow-xs`
+                      : 'bg-slate-50/70 border-slate-200 hover:border-slate-300 hover:bg-white'
                   }`}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-md shrink-0 transition-transform group-hover:scale-105"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-xs shrink-0 transition-transform group-hover:scale-105"
                     style={{ backgroundColor: network.color, color: network.name === 'MTN' ? '#000' : '#fff' }}
                   >
                     {network.name === 'MTN' && 'MTN'}
@@ -127,12 +127,12 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-white truncate">{network.displayName}</p>
-                    <p className="text-[10px] text-sky-400 font-medium">From ₦285/GB</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">{network.displayName}</p>
+                    <p className="text-[10px] text-[#1E40AF] font-semibold">From ₦285/GB</p>
                   </div>
 
                   {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-[#1E40AF] text-white flex items-center justify-center shrink-0 shadow">
+                    <div className="w-5 h-5 rounded-full bg-[#1E40AF] text-white flex items-center justify-center shrink-0 shadow-xs">
                       <Check className="w-3 h-3 stroke-[3]" />
                     </div>
                   )}
@@ -145,13 +145,13 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
         {/* Step 2: Recipient Phone Number */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor="recipient-phone-input" className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
+            <label htmlFor="recipient-phone-input" className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-xs">
                 2
               </span>
               Recipient Phone Number
             </label>
-            <span className="text-[11px] text-slate-400">Auto-detects network</span>
+            <span className="text-[11px] text-slate-500">Auto-detects network</span>
           </div>
 
           <div className="relative">
@@ -165,23 +165,23 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
               onChange={handlePhoneChange}
               placeholder="0803 123 4567 or 0812 345 6789"
               maxLength={14}
-              className={`w-full pl-11 pr-24 py-3.5 bg-slate-950/80 rounded-2xl text-white text-base sm:text-lg font-medium tracking-wide placeholder-slate-500 border transition-all outline-none focus:ring-2 ${
+              className={`w-full pl-11 pr-24 py-3.5 bg-slate-50 rounded-2xl text-slate-900 text-base sm:text-lg font-medium tracking-wide placeholder-slate-400 border transition-all outline-none focus:bg-white focus:ring-2 ${
                 isPhoneValid
-                  ? 'border-sky-500/70 focus:ring-blue-500/30'
+                  ? 'border-emerald-500/80 focus:ring-emerald-100'
                   : phoneNumber.length > 3
-                  ? 'border-slate-700 focus:border-blue-500 focus:ring-blue-500/20'
-                  : 'border-slate-800 focus:border-slate-600 focus:ring-blue-500/10'
+                  ? 'border-slate-300 focus:border-[#1E40AF] focus:ring-blue-100'
+                  : 'border-slate-200 focus:border-[#1E40AF] focus:ring-blue-100'
               }`}
             />
 
             {/* Quick Helper button on right */}
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
               {isPhoneValid ? (
-                <span className="flex items-center gap-1 text-xs font-semibold text-sky-400 bg-blue-950 px-2 py-1 rounded-lg border border-blue-800">
-                  <Check className="w-3.5 h-3.5" /> Valid SIM
+                <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" /> Valid SIM
                 </span>
               ) : phoneNumber.length > 0 ? (
-                <span className="text-[10px] text-amber-400/90 font-medium">
+                <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded border border-amber-200">
                   {11 - normalizePhone(phoneNumber).length > 0
                     ? `${11 - normalizePhone(phoneNumber).length} digits left`
                     : 'Invalid format'}
@@ -194,7 +194,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                     setPhoneNumber(sample);
                     setSelectedNetworkId(1);
                   }}
-                  className="text-xs text-slate-400 hover:text-sky-400 transition-colors px-2 py-1 rounded bg-slate-800/60"
+                  className="text-xs text-slate-600 hover:text-[#1E40AF] transition-colors px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 cursor-pointer font-medium"
                 >
                   Use Sample
                 </button>
@@ -202,29 +202,29 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
             </div>
           </div>
 
-          <p className="mt-1.5 text-[11px] text-slate-400 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+          <p className="mt-1.5 text-[11px] text-slate-500 flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1E40AF] shrink-0" />
             <span>Works with all Nigerian SIMs (including lines with DND enabled). 30-day validity.</span>
           </p>
         </div>
 
         {/* Step 3: Plan Category Tabs */}
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-          <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
+          <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-xs">
               3
             </span>
             Choose Data Bundle
           </label>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-medium">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium">
             <button
               type="button"
               onClick={() => setCategoryFilter('ALL')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 categoryFilter === 'ALL'
-                  ? 'bg-[#1E40AF] text-white font-bold shadow'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All Bundles
@@ -232,21 +232,21 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
             <button
               type="button"
               onClick={() => setCategoryFilter('SME')}
-              className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
                 categoryFilter === 'SME'
-                  ? 'bg-[#1E40AF] text-white font-bold shadow'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Flame className="w-3 h-3 text-amber-400" /> SME Super Cheap
+              <Flame className="w-3 h-3 text-amber-500" /> SME Super Cheap
             </button>
             <button
               type="button"
               onClick={() => setCategoryFilter('CORPORATE_GIFTING')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 categoryFilter === 'CORPORATE_GIFTING'
-                  ? 'bg-[#1E40AF] text-white font-bold shadow'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Corporate Gifting
@@ -265,42 +265,42 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                 onClick={() => setSelectedPlanId(plan.id)}
                 className={`relative cursor-pointer rounded-2xl p-4 border transition-all text-left flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-[#1E40AF] shadow-xl ring-2 ring-blue-600/50 glow-brand'
-                    : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/30'
+                    ? 'bg-blue-50/50 border-[#1E40AF] shadow-md ring-2 ring-[#1E40AF]/30'
+                    : 'bg-slate-50/60 border-slate-200 hover:border-slate-300 hover:bg-white'
                 }`}
               >
                 {/* Popular / Best Value Badge */}
                 {plan.isPopular && (
-                  <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider shadow">
+                  <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
                     ★ Best Seller
                   </span>
                 )}
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-heading">
                       {plan.size}
                     </span>
-                    <span className="text-[10px] font-bold text-sky-300 bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800">
+                    <span className="text-[10px] font-bold text-[#1E40AF] bg-blue-100 px-2 py-0.5 rounded-full">
                       Save {plan.savingsPercentage}%
                     </span>
                   </div>
 
-                  <p className="text-[11px] text-slate-400 font-medium">{plan.validity}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">{plan.validity}</p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-baseline justify-between">
+                <div className="mt-4 pt-3 border-t border-slate-200 flex items-baseline justify-between">
                   <div>
-                    <span className="text-lg sm:text-xl font-extrabold text-sky-400">
+                    <span className="text-lg sm:text-xl font-extrabold text-[#1E40AF]">
                       {formatCurrency(plan.sellingPrice)}
                     </span>
-                    <span className="ml-1.5 text-xs text-slate-500 line-through">
+                    <span className="ml-1.5 text-xs text-slate-400 line-through">
                       {formatCurrency(plan.retailPrice)}
                     </span>
                   </div>
 
                   <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                    isSelected ? 'border-blue-400 bg-[#1E40AF] text-white' : 'border-slate-600'
+                    isSelected ? 'border-[#1E40AF] bg-[#1E40AF] text-white' : 'border-slate-300'
                   }`}>
                     {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                   </div>
@@ -312,29 +312,29 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
 
         {/* Step 5: Checkout Summary Bar */}
         {currentSelectedPlan && (
-          <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-900/50 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/80 border border-blue-200 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
             <div className="w-full sm:w-auto text-left">
               <div className="flex items-center gap-2">
                 <span
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: currentNetwork.color }}
                 />
-                <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+                <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">
                   Order Summary
                 </span>
               </div>
-              <p className="text-base sm:text-lg font-bold text-white mt-0.5">
+              <p className="text-base sm:text-lg font-bold text-slate-900 mt-0.5 font-heading">
                 {currentNetwork.displayName} • {currentSelectedPlan.name}
               </p>
-              <p className="text-xs text-slate-400">
-                To: <span className="text-white font-mono">{phoneNumber || 'Enter phone number above'}</span> (30 Days Validity)
+              <p className="text-xs text-slate-600">
+                To: <span className="text-slate-900 font-mono font-bold">{phoneNumber || 'Enter phone number above'}</span> (30 Days Validity)
               </p>
             </div>
 
             <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4">
               <div className="text-left sm:text-right">
-                <p className="text-[11px] text-slate-400 uppercase font-medium">Total Amount</p>
-                <p className="text-2xl font-black text-sky-400">
+                <p className="text-[11px] text-slate-500 uppercase font-bold">Total Amount</p>
+                <p className="text-2xl font-black text-[#1E40AF] font-heading">
                   {formatCurrency(currentSelectedPlan.sellingPrice)}
                 </p>
               </div>
@@ -343,7 +343,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                 type="button"
                 id="checkout-proceed-btn"
                 onClick={handleCheckoutClick}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 hover:from-blue-700 hover:to-blue-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#1E40AF] hover:bg-blue-800 text-white font-extrabold text-sm sm:text-base shadow-md shadow-blue-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               >
                 <span>Buy Now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />

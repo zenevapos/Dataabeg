@@ -16,14 +16,14 @@ export function USSDGuideSection() {
   return (
     <section id="ussd-check-codes" className="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 text-xs font-semibold mb-3">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1E40AF] text-xs font-semibold mb-3">
           <HelpCircle className="w-3.5 h-3.5" />
           <span>Quick USSD Guide</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-heading">
           How to Check Your Data Balance
         </h2>
-        <p className="mt-2 text-sm text-slate-400 max-w-xl mx-auto">
+        <p className="mt-2 text-sm text-slate-600 max-w-xl mx-auto">
           After purchasing on DataAbeg, your data bundle arrives instantly. Dial the official codes below or check the automated SMS notification from your network.
         </p>
       </div>
@@ -32,7 +32,7 @@ export function USSDGuideSection() {
         {NETWORKS.map((network) => (
           <div
             key={network.id}
-            className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg flex flex-col justify-between"
+            className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -45,26 +45,26 @@ export function USSDGuideSection() {
                 >
                   {network.name}
                 </span>
-                <Radio className="w-4 h-4 text-slate-500" />
+                <Radio className="w-4 h-4 text-slate-400" />
               </div>
 
-              <h4 className="text-base font-bold text-white">{network.displayName}</h4>
-              <p className="text-xs text-slate-400 mt-1 line-clamp-2">{network.description}</p>
+              <h4 className="text-base font-bold text-slate-900 font-heading">{network.displayName}</h4>
+              <p className="text-xs text-slate-500 mt-1 line-clamp-2">{network.description}</p>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-800">
-              <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1.5">
+            <div className="mt-5 pt-4 border-t border-slate-100">
+              <p className="text-[11px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">
                 USSD Dial Code
               </p>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-sky-400">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-[#1E40AF]">
                 <span>{network.ussdCheckCode}</span>
                 <button
                   onClick={() => handleCopy(network.name, network.ussdCheckCode)}
-                  className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-800 transition-colors cursor-pointer"
                   title="Copy Code"
                 >
                   {copiedNetwork === network.name ? (
-                    <Check className="w-4 h-4 text-sky-400" />
+                    <Check className="w-4 h-4 text-emerald-600" />
                   ) : (
                     <Copy className="w-4 h-4" />
                   )}
@@ -72,8 +72,8 @@ export function USSDGuideSection() {
               </div>
 
               {network.smsCheckCode && (
-                <p className="mt-2 text-[10px] text-slate-400">
-                  SMS Option: <span className="text-slate-300 font-medium">{network.smsCheckCode}</span>
+                <p className="mt-2 text-[10px] text-slate-500">
+                  SMS Option: <span className="text-slate-800 font-medium">{network.smsCheckCode}</span>
                 </p>
               )}
             </div>

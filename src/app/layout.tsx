@@ -1,22 +1,28 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-bricolage',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-dm-sans',
 });
 
 export const viewport: Viewport = {
-  themeColor: '#080d1a',
-  colorScheme: 'dark',
+  themeColor: '#1E40AF',
+  colorScheme: 'light',
   width: 'device-width',
   initialScale: 1
 };
 
 export const metadata: Metadata = {
-  title: 'DataAbeg | Agentic Cheap Mobile Data VTU Platform Nigeria',
+  title: 'DataAbeg | Buy Cheap Nigerian Mobile Data Instantly',
   description:
     'Buy cheap mobile data bundles in Nigeria starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery with MoMo PSB (671) & Smartcash auto-funding.',
   keywords: [
@@ -27,7 +33,7 @@ export const metadata: Metadata = {
     '9mobile data reselling',
     'smeplug vtu',
     'dataabeg',
-    'momo psb',
+    'momo psb 671',
     'smartcash virtual account'
   ],
   authors: [{ name: 'DataAbeg Team' }],
@@ -54,30 +60,31 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark scroll-smooth ${inter.variable}`}
+      className={`scroll-smooth ${bricolage.variable} ${dmSans.variable}`}
       suppressHydrationWarning
-      style={{ backgroundColor: '#080d1a', color: '#f8fafc', colorScheme: 'dark' }}
+      style={{ backgroundColor: '#f8fafc', color: '#0f172a', colorScheme: 'light' }}
     >
       <head>
         <style
           dangerouslySetInnerHTML={{
             __html: `
               html, body {
-                background-color: #080d1a !important;
-                color: #f8fafc !important;
-                color-scheme: dark;
+                background-color: #f8fafc !important;
+                color: #0f172a !important;
+                color-scheme: light;
               }
             `
           }}
         />
       </head>
       <body
-        className="min-h-screen bg-[#080d1a] text-slate-100 antialiased selection:bg-blue-600 selection:text-white font-sans"
+        className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased selection:bg-blue-600 selection:text-white font-sans"
         suppressHydrationWarning
-        style={{ backgroundColor: '#080d1a', color: '#f8fafc' }}
+        style={{ backgroundColor: '#f8fafc', color: '#0f172a' }}
       >
         {children}
       </body>
     </html>
   );
 }
+

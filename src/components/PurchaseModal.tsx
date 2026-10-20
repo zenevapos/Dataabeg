@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { formatCurrency, generateTxReference } from '@/lib/utils';
+import { saveOrderToFirestore } from '@/lib/firebaseDb';
 import {
   X,
   CheckCircle2,
@@ -16,7 +17,8 @@ import {
   Building2,
   ShieldCheck,
   Phone,
-  RefreshCw
+  RefreshCw,
+  Smartphone
 } from 'lucide-react';
 
 interface PurchaseModalProps {
@@ -88,14 +90,18 @@ export function PurchaseModal({
           reference: txRef,
           smeplugReference: data.data?.reference || `SIM_${Date.now()}`,
           network: plan.networkName,
+          networkName: plan.networkName,
           phone: phoneNumber,
+          phoneNumber: phoneNumber,
           planName: plan.name,
           planSize: plan.size,
           amount: plan.sellingPrice,
+          amountPaid: plan.sellingPrice,
           status: 'successful',
           statusMessage: data.data?.msg || 'Transaction completed successfully.',
-          paymentMethod: 'card',
+          paymentMethod: paymentMethod === 'momo_psb' ? 'MOMO_PSB' : paymentMethod === 'smartcash' ? 'SMARTCASH_PSB' : paymentMethod === 'wallet' ? 'WALLET' : 'DEBIT_CARD',
           createdAt: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
           completedAt: new Date().toISOString()
         };
 
@@ -103,6 +109,9 @@ export function PurchaseModal({
         if (onOrderCompleted) {
           onOrderCompleted(newTx);
         }
+
+        // Save order directly to Firestore
+        saveOrderToFirestore(newTx);
 
         try {
           confetti({
@@ -141,13 +150,14 @@ export function PurchaseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl p-6 sm:p-8 text-white overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-900 overflow-hidden">
         {/* Close Button */}
         {!isProcessing && (
           <button
             onClick={handleResetAndClose}
-            className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 transition-colors"
+            className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -156,23 +166,23 @@ export function PurchaseModal({
         {/* Content State: SUCCESS */}
         {isSuccess && completedTx ? (
           <div className="text-center py-2 animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-blue-950 text-sky-400 border border-blue-800 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-blue-50 text-[#1E40AF] border border-blue-200 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
 
-            <h3 className="text-2xl font-black text-white">Data Dispensed Successfully!</h3>
-            <p className="text-sm text-slate-300 mt-1">
-              <span className="text-sky-400 font-bold">{plan.size}</span> has been credited to{' '}
-              <span className="text-white font-mono font-bold">{phoneNumber}</span>.
+            <h3 className="text-2xl font-black text-slate-900 font-heading">Data Dispensed Successfully!</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              <span className="text-[#1E40AF] font-bold">{plan.size}</span> has been credited to{' '}
+              <span className="text-slate-900 font-mono font-bold">{phoneNumber}</span>.
             </p>
 
             {/* Receipt Card */}
-            <div className="mt-6 rounded-2xl bg-slate-950/80 border border-slate-800 p-4 text-left space-y-2.5 text-xs">
-              <div className="flex justify-between items-center pb-2 border-b border-slate-800/80">
-                <span className="text-slate-400">Transaction Ref:</span>
+            <div className="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-4 text-left space-y-2.5 text-xs text-slate-700">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500">Transaction Ref:</span>
                 <button
                   onClick={handleCopyReference}
-                  className="font-mono text-sky-400 flex items-center gap-1 hover:underline"
+                  className="font-mono text-[#1E40AF] font-bold flex items-center gap-1 hover:underline cursor-pointer"
                 >
                   {completedTx.reference}
                   {copiedRef ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -180,37 +190,37 @@ export function PurchaseModal({
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Mobile Network:</span>
-                <span className="font-semibold text-white">{network.displayName}</span>
+                <span className="text-slate-500">Mobile Network:</span>
+                <span className="font-semibold text-slate-900">{network.displayName}</span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Bundle Package:</span>
-                <span className="font-semibold text-white">{plan.name}</span>
+                <span className="text-slate-500">Bundle Package:</span>
+                <span className="font-semibold text-slate-900">{plan.name}</span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Validity:</span>
-                <span className="font-semibold text-amber-400">{plan.validity}</span>
+                <span className="text-slate-500">Validity:</span>
+                <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">{plan.validity}</span>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
-                <span className="text-slate-400">Amount Paid:</span>
-                <span className="font-black text-sky-400 text-sm">
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span className="text-slate-500 font-medium">Amount Paid:</span>
+                <span className="font-black text-[#1E40AF] text-sm">
                   {formatCurrency(plan.sellingPrice)}
                 </span>
               </div>
             </div>
 
             {/* How to check balance callout */}
-            <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center justify-between">
+            <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
               <div className="text-left">
                 <p className="font-bold">Check Balance on {network.name}:</p>
-                <p className="font-mono mt-0.5 text-white">{network.ussdCheckCode}</p>
+                <p className="font-mono mt-0.5 text-slate-900 font-bold">{network.ussdCheckCode}</p>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(network.ussdCheckCode)}
-                className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 rounded text-[11px] font-semibold text-amber-200"
+                className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 rounded-lg text-[11px] font-bold text-amber-950 cursor-pointer"
               >
                 Copy USSD
               </button>
@@ -218,7 +228,7 @@ export function PurchaseModal({
 
             <button
               onClick={handleResetAndClose}
-              className="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 text-white font-bold hover:from-blue-700 hover:to-blue-500 transition-all shadow-lg shadow-blue-900/40"
+              className="mt-6 w-full py-3.5 rounded-xl bg-[#1E40AF] hover:bg-blue-800 text-white font-bold transition-all shadow-md shadow-blue-900/20 cursor-pointer"
             >
               Buy Another Bundle
             </button>
@@ -228,44 +238,44 @@ export function PurchaseModal({
           <div>
             <div className="flex items-center gap-3 mb-5">
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-md"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm"
                 style={{ backgroundColor: network.color, color: network.name === 'MTN' ? '#000' : '#fff' }}
               >
                 {network.name}
               </div>
               <div>
-                <h3 className="text-xl font-black text-white">Confirm Data Purchase</h3>
-                <p className="text-xs text-slate-400">Instant 5-second automated top-up</p>
+                <h3 className="text-xl font-black text-slate-900 font-heading">Confirm Data Purchase</h3>
+                <p className="text-xs text-slate-500">Instant 5-second automated top-up</p>
               </div>
             </div>
 
             {/* Order Details Summary */}
-            <div className="rounded-2xl bg-slate-950/70 border border-slate-800 p-4 mb-5 space-y-3">
+            <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 mb-5 space-y-3">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Recipient Phone:</span>
-                <span className="font-mono font-bold text-white text-base flex items-center gap-1.5">
-                  <Phone className="w-4 h-4 text-sky-400" />
+                <span className="text-slate-500">Recipient Phone:</span>
+                <span className="font-mono font-bold text-slate-900 text-base flex items-center gap-1.5">
+                  <Phone className="w-4 h-4 text-[#1E40AF]" />
                   {phoneNumber}
                 </span>
               </div>
 
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Data Plan:</span>
-                <span className="font-bold text-white">{plan.name}</span>
+                <span className="text-slate-500">Data Plan:</span>
+                <span className="font-bold text-slate-900">{plan.name}</span>
               </div>
 
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Validity:</span>
-                <span className="font-semibold text-sky-400">{plan.validity}</span>
+                <span className="text-slate-500">Validity:</span>
+                <span className="font-semibold text-[#1E40AF]">{plan.validity}</span>
               </div>
 
-              <div className="flex justify-between items-center pt-2.5 border-t border-slate-800 text-base">
-                <span className="font-medium text-slate-300">Total Price:</span>
+              <div className="flex justify-between items-center pt-2.5 border-t border-slate-200 text-base">
+                <span className="font-medium text-slate-600">Total Price:</span>
                 <div className="text-right">
-                  <span className="font-black text-sky-400 text-xl">
+                  <span className="font-black text-[#1E40AF] text-xl">
                     {formatCurrency(plan.sellingPrice)}
                   </span>
-                  <span className="ml-2 text-xs text-slate-500 line-through">
+                  <span className="ml-2 text-xs text-slate-400 line-through">
                     {formatCurrency(plan.retailPrice)}
                   </span>
                 </div>
@@ -274,7 +284,7 @@ export function PurchaseModal({
 
             {/* Payment Method Selector with MoMo PSB & Smartcash */}
             <div className="mb-6">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
                 Select Instant Payment Option
               </label>
 
@@ -282,64 +292,64 @@ export function PurchaseModal({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('momo_psb')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                     paymentMethod === 'momo_psb'
-                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <Building2 className="w-5 h-5 text-amber-400 shrink-0" />
+                  <Building2 className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">MoMo PSB (671)</p>
-                    <p className="text-[10px] text-amber-300 font-semibold">MTN Auto Bank</p>
+                    <p className="text-xs font-bold text-slate-900">MoMo PSB (671)</p>
+                    <p className="text-[10px] text-amber-700 font-semibold">MTN Auto Bank</p>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('smartcash')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                     paymentMethod === 'smartcash'
-                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <Building2 className="w-5 h-5 text-red-400 shrink-0" />
+                  <Smartphone className="w-5 h-5 text-rose-500 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">Smartcash PSB</p>
-                    <p className="text-[10px] text-red-300 font-semibold">Airtel Auto Bank</p>
+                    <p className="text-xs font-bold text-slate-900">Smartcash PSB</p>
+                    <p className="text-[10px] text-rose-700 font-semibold">Airtel Auto Bank</p>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('card')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                     paymentMethod === 'card'
-                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className="w-5 h-5 text-sky-400 shrink-0" />
+                  <CreditCard className="w-5 h-5 text-[#1E40AF] shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">Debit Card</p>
-                    <p className="text-[10px] text-slate-400">Mastercard / Visa</p>
+                    <p className="text-xs font-bold text-slate-900">Debit Card</p>
+                    <p className="text-[10px] text-slate-500">Mastercard / Visa</p>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('wallet')}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                     paymentMethod === 'wallet'
-                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      ? 'bg-blue-50/70 border-[#1E40AF] ring-2 ring-[#1E40AF]/30'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <Wallet className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <Wallet className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">DataAbeg Wallet</p>
-                    <p className="text-[10px] text-emerald-300 font-semibold">Bal: ₦25,400</p>
+                    <p className="text-xs font-bold text-slate-900">DataAbeg Wallet</p>
+                    <p className="text-[10px] text-emerald-700 font-semibold">Auto-Deduct</p>
                   </div>
                 </button>
               </div>
@@ -347,7 +357,7 @@ export function PurchaseModal({
 
             {/* Error Alert */}
             {errorMessage && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold">Transaction Failed</p>
@@ -361,7 +371,7 @@ export function PurchaseModal({
               onClick={handlePurchase}
               disabled={isProcessing}
               id="confirm-pay-now-btn"
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 hover:from-blue-700 hover:to-blue-500 text-white font-extrabold text-base shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-[#1E40AF] hover:bg-blue-800 text-white font-extrabold text-base shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isProcessing ? (
                 <>
@@ -377,7 +387,7 @@ export function PurchaseModal({
             </button>
 
             <p className="text-center text-[11px] text-slate-500 mt-3 flex items-center justify-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1E40AF]" />
               Automated VTU engine powered by SMEPlug.ng &bull; MoMo &amp; Smartcash Ready
             </p>
           </div>
