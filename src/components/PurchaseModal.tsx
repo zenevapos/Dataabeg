@@ -59,7 +59,7 @@ export function PurchaseModal({
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setProcessingStep('Authorizing payment via PSB gateway...');
+      setProcessingStep('Authorizing secure payment verification...');
       await new Promise((r) => setTimeout(r, 600));
       setProcessingStep(`Dispensing ${plan.size} to ${phoneNumber}...`);
 
@@ -372,7 +372,7 @@ export function PurchaseModal({
 
             <p className="text-center text-[11px] text-slate-500 mt-3 flex items-center justify-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-[#1E40AF]" />
-              Automated VTU engine powered by SMEPlug.ng &bull; MoMo &amp; Smartcash Ready
+              Automated VTU engine powered by SMEPlug.ng &bull; Bank Transfer &amp; Card Ready
             </p>
           </div>
         )}

@@ -34,7 +34,7 @@ export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   smartcashAccountName: 'DataAbeg Smartcash',
   supportPhone: '08154276838',
   adminPin: 'salam2026',
-  globalDiscountNotice: '⚡ Save up to 71% • Direct MoMo PSB (671) & Smartcash Virtual Funding'
+  globalDiscountNotice: '⚡ Save up to 71% • Direct Bank Transfer & Instant Debit Card Automated Dispenser'
 };
 
 /**

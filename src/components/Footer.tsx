@@ -30,7 +30,7 @@ export function Footer({ onOpenSettings, onOpenTracker, onOpenUSSD }: FooterProp
             </div>
 
             <p className="text-slate-600 max-w-sm leading-relaxed">
-              Nigeria&apos;s fastest automated mobile data vending portal. Empowering individuals and businesses to purchase MTN, Airtel, Glo &amp; 9mobile data at true wholesale rates with 30-day validity, backed by MoMo PSB &amp; Smartcash.
+              Nigeria&apos;s fastest automated mobile data vending portal. Empowering individuals and businesses to purchase MTN, Airtel, Glo &amp; 9mobile data at true wholesale rates with 30-day validity, backed by instant automated bank transfer and card checkout.
             </p>
 
             <div className="flex items-center gap-3 pt-2">

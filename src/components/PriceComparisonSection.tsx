@@ -70,8 +70,8 @@ export function PriceComparisonSection() {
             <p className="text-sm font-bold text-slate-900 mt-1 font-heading">Direct Telco Automated Push</p>
           </div>
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-            <p className="text-xs text-slate-500 font-medium">PSB Auto-Wallet</p>
-            <p className="text-sm font-bold text-amber-700 mt-1 font-heading">MoMo PSB (671) &amp; Smartcash</p>
+            <p className="text-xs text-slate-500 font-medium">Instant Settlement</p>
+            <p className="text-sm font-bold text-slate-900 mt-1 font-heading">Bank Transfer &amp; Debit Card</p>
           </div>
         </div>
       </div>

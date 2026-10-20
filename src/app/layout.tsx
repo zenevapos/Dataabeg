@@ -25,7 +25,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'DataAbeg | Buy Cheap Nigerian Mobile Data Instantly',
   description:
-    'Buy cheap mobile data bundles in Nigeria starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery with MoMo PSB (671) & Smartcash auto-funding.',
+    'Buy cheap mobile data bundles in Nigeria starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery with automated bank transfer & instant wallet funding.',
   keywords: [
     'cheap data nigeria',
     'buy mtn sme data',
@@ -34,8 +34,7 @@ export const metadata: Metadata = {
     '9mobile data reselling',
     'smeplug vtu',
     'dataabeg',
-    'momo psb 671',
-    'smartcash virtual account'
+    'instant data topup nigeria'
   ],
   authors: [{ name: 'DataAbeg Team' }],
   openGraph: {

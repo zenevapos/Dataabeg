@@ -212,23 +212,23 @@ export function AdminDrawer({
             </p>
           </div>
 
-          {/* PSB Accounts Preview */}
+          {/* Virtual Accounts Preview */}
           <div className="mt-6 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              MoMo PSB (671) &amp; Smartcash
+              Dedicated Virtual Bank Account
             </h4>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900">MTN MoMo PSB:</span>
-                <span className="font-mono text-slate-700 font-bold">08154276838</span>
+                <span className="font-semibold text-slate-900">Partner Bank:</span>
+                <span className="font-mono text-slate-700 font-bold">Wema Bank / Moniepoint</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900">Bank Code:</span>
-                <span className="font-mono text-slate-700 font-bold">671 (MoMo PSB)</span>
+                <span className="font-semibold text-slate-900">Account Type:</span>
+                <span className="font-mono text-slate-700 font-bold">Auto-Credit Wallet</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900">Airtel Smartcash:</span>
-                <span className="font-mono text-slate-700 font-bold">08154276838</span>
+                <span className="font-semibold text-slate-900">Transfer Fees:</span>
+                <span className="font-mono text-emerald-600 font-bold">₦0.00 (Zero Fee)</span>
               </div>
             </div>
           </div>

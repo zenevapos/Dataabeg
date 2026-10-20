@@ -10,9 +10,9 @@ const FAQS_WITH_PSB = [
       'Data delivery is 100% automated via direct telecom switch APIs and arrives in under 4.8 to 15 seconds directly on the recipient SIM line across MTN, Airtel, Glo, and 9mobile.'
   },
   {
-    question: 'Can I pay with MoMo PSB or Smartcash PSB?',
+    question: 'How do I pay for my data purchase?',
     answer:
-      'Yes! DataAbeg supports automated payments and virtual account funding through MTN MoMo PSB (Bank Code 671) and Airtel Smartcash PSB. Transfers from any Nigerian bank app (GTB, Kuda, OPay, Zenith, Palmpay) are credited with zero deposit deductions.'
+      'DataAbeg supports automated instant bank transfers (to your dedicated wallet account number) as well as debit card payments. Transfers from any Nigerian bank app (GTB, Kuda, OPay, Zenith, Palmpay, Access) are instantly credited with zero hidden deductions.'
   },
   {
     question: 'Why are DataAbeg prices so much cheaper than commercial bank apps?',
@@ -57,7 +57,7 @@ export function FAQSection() {
               Frequently asked questions
             </h2>
             <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-              Everything you need to know about purchasing, MoMo/Smartcash PSB, validity, and reseller automation on DataAbeg.
+              Everything you need to know about purchasing, bank funding, 30-day validity, and reseller automation on DataAbeg.
             </p>
           </div>
 

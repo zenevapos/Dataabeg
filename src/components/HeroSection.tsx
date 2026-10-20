@@ -93,7 +93,7 @@ export function HeroSection({ onLearnMoMo }: HeroSectionProps) {
 
             <div className="flex flex-col items-center justify-center p-4 border-r border-b sm:border-b-0 border-slate-200 hover:bg-slate-50/80 transition-colors">
               <span className="text-xs font-black text-rose-600 tracking-wider">AIRTEL NIGERIA</span>
-              <span className="text-[11px] text-slate-500 mt-1">Smartcash PSB (0% Fee)</span>
+              <span className="text-[11px] text-slate-500 mt-1">SME &amp; AWOOF Bundles</span>
               <span className="text-[10px] text-[#1E40AF] font-bold mt-0.5">From ₦295/GB</span>
             </div>
 
