@@ -134,7 +134,14 @@ export function PurchaseModal({
           // ignore
         }
       } else {
-        setErrorMessage(data.msg || 'Transaction could not be processed by SMEPlug gateway. Please try again.');
+        const rawMsg = data.msg || data.data?.msg || data.error || data.message || '';
+        let friendlyMsg = rawMsg;
+        if (rawMsg.includes('active sim') || rawMsg.includes('No phone number added') || rawMsg.includes('sim to dispense')) {
+          friendlyMsg = 'SMEPlug Dispense Notice: ' + rawMsg + '. In your SMEPlug dashboard (smeplug.ng), please connect your SIM line under "Devices / Connected SIMs" or ensure your SMEPlug wallet is funded for server-pool dispensing.';
+        } else if (rawMsg.toLowerCase().includes('insufficient') || rawMsg.toLowerCase().includes('wallet funds')) {
+          friendlyMsg = 'SMEPlug Balance Notice: Insufficient wallet balance on your SMEPlug merchant account. Please fund your wallet on smeplug.ng to dispense data.';
+        }
+        setErrorMessage(friendlyMsg || 'Transaction could not be processed by SMEPlug gateway. Please try again.');
       }
     } catch (err: unknown) {
       console.error('Purchase error:', err);
