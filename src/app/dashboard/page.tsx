@@ -10,6 +10,7 @@ import { NETWORKS, CURATED_DATA_PLANS } from '@/lib/constants';
 import { fetchOrdersByUser } from '@/lib/firebaseDb';
 import { formatCurrency } from '@/lib/utils';
 import { PurchaseModal } from '@/components/PurchaseModal';
+import { DataAbegLogo } from '@/components/DataAbegLogo';
 import {
   LayoutDashboard,
   Wallet,
@@ -38,7 +39,8 @@ import {
   Grid,
   Zap,
   ShieldCheck,
-  Layers
+  Layers,
+  Menu
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -46,6 +48,7 @@ export default function DashboardPage() {
   const { user, profile, isAdmin, logout, refreshProfile, loading: authLoading } = useAuth();
 
   // App UI State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNoticeBanner, setShowNoticeBanner] = useState(true);
   const [showFundModal, setShowFundModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -74,7 +77,7 @@ export default function DashboardPage() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [viewAllTx, setViewAllTx] = useState(false);
 
-  // If not authenticated and not loading, redirect to login
+  // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
@@ -175,262 +178,338 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-slate-500 text-sm">
           <RefreshCw className="w-8 h-8 animate-spin text-[#2b268f]" />
-          <span>Opening your dashboard...</span>
+          <span>Opening your DataAbeg dashboard...</span>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#f4f6fa] text-slate-900 flex font-sans">
-      {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="w-60 bg-[#2b268f] text-white flex-shrink-0 flex flex-col justify-between shadow-xl min-h-screen z-30">
-        <div>
-          {/* Top user phone badge */}
-          <div className="p-4 border-b border-indigo-900/40">
-            <div className="bg-white text-slate-800 text-xs font-bold py-2 px-3 rounded-full text-center tracking-wide shadow-sm select-all">
-              {userPhone}
-            </div>
+  // Sidebar navigation component shared between desktop and mobile drawer
+  const renderSidebarContent = () => (
+    <div className="flex flex-col justify-between h-full">
+      <div>
+        {/* Top user phone badge */}
+        <div className="p-4 border-b border-indigo-900/40">
+          <div className="bg-white text-slate-800 text-xs font-bold py-2 px-3 rounded-full text-center tracking-wide shadow-xs select-all">
+            {userPhone}
           </div>
-
-          {/* Navigation Items */}
-          <nav className="p-3 space-y-1 text-xs">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-white/10 text-white font-semibold transition-colors"
-            >
-              <LayoutDashboard className="w-4 h-4 text-blue-200" />
-              <span>Dashboard</span>
-            </Link>
-
-            <button
-              onClick={() => setShowFundModal(true)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <Wallet className="w-4 h-4 text-blue-200" />
-              <span>Fund Wallet</span>
-            </button>
-
-            <button
-              onClick={() => {
-                alert('Airtime Topup is active. You can purchase instant airtime via SMEPlug.');
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <PhoneCall className="w-4 h-4 text-blue-200" />
-              <span>Airtime Topup</span>
-            </button>
-
-            <button
-              onClick={() => setViewAllTx(true)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <FileText className="w-4 h-4 text-blue-200" />
-              <span>Data Process Log</span>
-            </button>
-
-            <button
-              onClick={() => setViewAllTx(true)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <Clock className="w-4 h-4 text-blue-200" />
-              <span>History</span>
-            </button>
-
-            <button
-              onClick={() => {
-                alert('SMEPlug API Integration is connected: MTN 500MB (ID: 7), 1GB (ID: 8), 2GB (ID: 11), 3GB (ID: 43), 5GB (ID: 12).');
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <Code className="w-4 h-4 text-blue-200" />
-              <span>Data Plan IDs - API</span>
-            </button>
-
-            <button
-              onClick={() => {
-                alert('Dispense Method is set to Instant Direct API via SMEPlug.');
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
-            >
-              <Package className="w-4 h-4 text-blue-200" />
-              <span>Dispense Method</span>
-            </button>
-
-            {/* Accordion: DATA SHARE */}
-            <div className="pt-2">
-              <button
-                onClick={() => setDataShareOpen(!dataShareOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>DATA SHARE</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dataShareOpen ? '' : '-rotate-90'}`} />
-              </button>
-
-              {dataShareOpen && (
-                <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                  <div className="py-1 cursor-pointer hover:text-white">Data Share System</div>
-                  <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
-                    <span>Module Rentals</span>
-                    <span className="bg-rose-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">HOT</span>
-                  </div>
-                  <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
-                    <span>Auto Recharge Modules</span>
-                    <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
-                  </div>
-                  <div className="py-1 cursor-pointer hover:text-white">Vending Board</div>
-                  <div className="py-1 cursor-pointer hover:text-white">Merge Groups</div>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion: SIM CONNECTIONS */}
-            <div className="pt-1">
-              <button
-                onClick={() => setSimConnOpen(!simConnOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>SIM CONNECTIONS</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${simConnOpen ? '' : '-rotate-90'}`} />
-              </button>
-
-              {simConnOpen && (
-                <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                  <div className="py-1 cursor-pointer hover:text-white">Connect Sim</div>
-                  <div className="py-1 cursor-pointer hover:text-white">Manage Sim</div>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion: INTEGRATIONS */}
-            <div className="pt-1">
-              <button
-                onClick={() => setIntegrationsOpen(!integrationsOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>INTEGRATIONS</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${integrationsOpen ? '' : '-rotate-90'}`} />
-              </button>
-
-              {integrationsOpen && (
-                <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                  <div
-                    onClick={() => setShowFundModal(true)}
-                    className="py-1 cursor-pointer hover:text-white"
-                  >
-                    Smartcash
-                  </div>
-                  <div
-                    onClick={() => setShowFundModal(true)}
-                    className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
-                  >
-                    <span>Momo PSB (671)</span>
-                    <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion: DATA */}
-            <div className="pt-1">
-              <button
-                onClick={() => setDataGroupOpen(!dataGroupOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>DATA</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dataGroupOpen ? '' : '-rotate-90'}`} />
-              </button>
-
-              {dataGroupOpen && (
-                <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
-                  <div className="py-1 cursor-pointer hover:text-white">Manage Plans</div>
-                  <div
-                    onClick={() => setShowBulkModal(true)}
-                    className="py-1 cursor-pointer hover:text-white"
-                  >
-                    Sell Bulk
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion: DEVICES */}
-            <div className="pt-1">
-              <button className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>DEVICES</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </nav>
         </div>
 
-        {/* Admin Console link if admin */}
-        {isAdmin && (
-          <div className="p-3 border-t border-indigo-900/40">
-            <Link
-              href="/admin-salam"
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-sm transition-colors"
+        {/* Navigation Items */}
+        <nav className="p-3 space-y-1 text-xs">
+          <Link
+            href="/dashboard"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-white/10 text-white font-semibold transition-colors"
+          >
+            <LayoutDashboard className="w-4 h-4 text-blue-200" />
+            <span>Dashboard</span>
+          </Link>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setShowFundModal(true);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <Wallet className="w-4 h-4 text-blue-200" />
+            <span>Fund Wallet</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              alert('Airtime Topup is active. Instant direct recharge via SMEPlug.');
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <PhoneCall className="w-4 h-4 text-blue-200" />
+            <span>Airtime Topup</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setViewAllTx(true);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <FileText className="w-4 h-4 text-blue-200" />
+            <span>Data Process Log</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setViewAllTx(true);
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <Clock className="w-4 h-4 text-blue-200" />
+            <span>History</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              alert('SMEPlug API Integration is active: MTN 500MB (ID: 7), 1GB (ID: 8), 2GB (ID: 11), 3GB (ID: 43), 5GB (ID: 12).');
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <Code className="w-4 h-4 text-blue-200" />
+            <span>Data Plan IDs - API</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              alert('Dispense Method is set to Instant Direct API via SMEPlug.');
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-blue-100 hover:bg-white/5 hover:text-white transition-colors text-left"
+          >
+            <Package className="w-4 h-4 text-blue-200" />
+            <span>Dispense Method</span>
+          </button>
+
+          {/* Accordion: DATA SHARE */}
+          <div className="pt-2">
+            <button
+              onClick={() => setDataShareOpen(!dataShareOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Admin Console</span>
-            </Link>
+              <div className="flex items-center gap-2">
+                <Share2 className="w-3.5 h-3.5" />
+                <span>DATA SHARE</span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dataShareOpen ? '' : '-rotate-90'}`} />
+            </button>
+
+            {dataShareOpen && (
+              <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
+                <div className="py-1 cursor-pointer hover:text-white">Data Share System</div>
+                <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
+                  <span>Module Rentals</span>
+                  <span className="bg-rose-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">HOT</span>
+                </div>
+                <div className="py-1 flex items-center justify-between cursor-pointer hover:text-white">
+                  <span>Auto Recharge Modules</span>
+                  <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
+                </div>
+                <div className="py-1 cursor-pointer hover:text-white">Vending Board</div>
+                <div className="py-1 cursor-pointer hover:text-white">Merge Groups</div>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Accordion: SIM CONNECTIONS */}
+          <div className="pt-1">
+            <button
+              onClick={() => setSimConnOpen(!simConnOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5" />
+                <span>SIM CONNECTIONS</span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${simConnOpen ? '' : '-rotate-90'}`} />
+            </button>
+
+            {simConnOpen && (
+              <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
+                <div className="py-1 cursor-pointer hover:text-white">Connect Sim</div>
+                <div className="py-1 cursor-pointer hover:text-white">Manage Sim</div>
+              </div>
+            )}
+          </div>
+
+          {/* Accordion: INTEGRATIONS */}
+          <div className="pt-1">
+            <button
+              onClick={() => setIntegrationsOpen(!integrationsOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5" />
+                <span>INTEGRATIONS</span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${integrationsOpen ? '' : '-rotate-90'}`} />
+            </button>
+
+            {integrationsOpen && (
+              <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowFundModal(true);
+                  }}
+                  className="py-1 cursor-pointer hover:text-white"
+                >
+                  Smartcash
+                </div>
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowFundModal(true);
+                  }}
+                  className="py-1 flex items-center justify-between cursor-pointer hover:text-white"
+                >
+                  <span>Momo PSB (671)</span>
+                  <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm">NEW</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Accordion: DATA */}
+          <div className="pt-1">
+            <button
+              onClick={() => setDataGroupOpen(!dataGroupOpen)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>DATA</span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dataGroupOpen ? '' : '-rotate-90'}`} />
+            </button>
+
+            {dataGroupOpen && (
+              <div className="pl-6 pr-2 py-1 space-y-1 text-[11px] text-blue-100">
+                <div className="py-1 cursor-pointer hover:text-white">Manage Plans</div>
+                <div
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowBulkModal(true);
+                  }}
+                  className="py-1 cursor-pointer hover:text-white"
+                >
+                  Sell Bulk
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Accordion: DEVICES */}
+          <div className="pt-1">
+            <button className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold tracking-wider text-blue-200 uppercase hover:text-white transition-colors">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>DEVICES</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      {/* Admin Console link if admin */}
+      {isAdmin && (
+        <div className="p-3 border-t border-indigo-900/40">
+          <Link
+            href="/admin-salam"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-xs transition-colors"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Admin Console</span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div
+      className="min-h-screen bg-[#f4f6fa] text-slate-900 flex"
+      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', sans-serif" }}
+    >
+      {/* ================= DESKTOP SIDEBAR ================= */}
+      <aside className="hidden lg:flex w-60 bg-[#2b268f] text-white flex-shrink-0 flex-col justify-between shadow-xl min-h-screen z-30 sticky top-0 h-screen overflow-y-auto">
+        {renderSidebarContent()}
       </aside>
+
+      {/* ================= MOBILE OFF-CANVAS DRAWER ================= */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Canvas */}
+          <div className="relative w-64 max-w-[80vw] bg-[#2b268f] text-white flex flex-col justify-between z-10 shadow-2xl h-full overflow-y-auto">
+            {/* Close Button Header */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-indigo-900/40">
+              <DataAbegLogo size={28} showText={false} />
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 text-blue-200 hover:text-white rounded-md transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {renderSidebarContent()}
+          </div>
+        </div>
+      )}
 
       {/* ================= MAIN CONTENT AREA ================= */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-2">
+        <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Button for Mobile Drawer */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+              title="Open Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Brand Logo & DataGo Badge */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center">
-                <Zap className="w-4 h-4 fill-white" />
-              </div>
+              <DataAbegLogo size={28} showText={false} />
               <div className="bg-slate-200/80 text-slate-800 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>DataGo</span>
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Wallet Quick Pill on Header */}
+            <div
+              onClick={() => setShowFundModal(true)}
+              className="cursor-pointer hidden sm:flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] px-2.5 py-1 rounded-md text-xs font-bold transition-colors"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>₦{(profile?.walletBalance || 0).toFixed(2)}</span>
+            </div>
+
             <button
               onClick={() => logout()}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </header>
 
         {/* Dashboard Main Canvas */}
-        <main className="p-6 space-y-5 flex-1 max-w-[1400px] w-full">
+        <main className="p-3 sm:p-5 lg:p-6 space-y-4 sm:space-y-5 flex-1 max-w-[1400px] w-full mx-auto">
           {/* Blue Announcement Banner */}
           {showNoticeBanner && (
-            <div className="bg-[#2563eb] text-white rounded-md p-3.5 shadow-sm flex items-start justify-between gap-3 relative transition-all">
-              <div className="flex items-start gap-3">
+            <div className="bg-[#2563eb] text-white rounded-md p-3 sm:p-3.5 shadow-xs flex items-start justify-between gap-2.5 relative transition-all">
+              <div className="flex items-start gap-2.5 sm:gap-3">
                 <div className="w-6 h-6 rounded-full bg-white text-[#2563eb] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-xs">
                   <Info className="w-3.5 h-3.5" />
                 </div>
-                <div className="text-xs leading-relaxed">
-                  <span className="font-extrabold block text-sm">MTN Weekly Data Share Price Reduction</span>
+                <div className="text-[11px] sm:text-xs leading-relaxed">
+                  <span className="font-extrabold block text-xs sm:text-sm">MTN Weekly Data Share Price Reduction</span>
                   <p className="text-blue-100 font-medium">
                     500MB - N290, 1GB - N400, 2GB - N800, 3GB - N1,200, 5GB - N2,000 Navigate to Manage Plan &gt;&gt; MTN &gt;&gt; &quot;Use Wallet&quot; and Save
                   </p>
@@ -438,7 +517,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setShowNoticeBanner(false)}
-                className="text-blue-200 hover:text-white p-1 rounded-md transition-colors"
+                className="text-blue-200 hover:text-white p-1 rounded-md transition-colors shrink-0"
                 title="Dismiss"
               >
                 <X className="w-4 h-4" />
@@ -447,10 +526,10 @@ export default function DashboardPage() {
           )}
 
           {/* Quick Action Buttons (Transfer & Fund Wallet) */}
-          <div className="flex justify-end items-center gap-2.5">
+          <div className="flex justify-end items-center gap-2 sm:gap-2.5">
             <button
               onClick={() => setShowFundModal(true)}
-              className="text-[#2563eb] bg-blue-50 hover:bg-blue-100 border border-blue-200 text-xs font-bold px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase transition-colors shadow-2xs"
+              className="text-[#2563eb] bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase transition-colors shadow-2xs"
             >
               <Send className="w-3.5 h-3.5" />
               <span>TRANSFER</span>
@@ -458,81 +537,87 @@ export default function DashboardPage() {
 
             <button
               onClick={() => setShowFundModal(true)}
-              className="bg-[#2b268f] hover:bg-[#231e78] text-white text-xs font-bold px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase shadow-xs transition-colors"
+              className="bg-[#2b268f] hover:bg-[#231e78] text-white text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-md flex items-center gap-1.5 tracking-wider uppercase shadow-xs transition-colors"
             >
               <Wallet className="w-3.5 h-3.5" />
               <span>FUND WALLET</span>
             </button>
           </div>
 
-          {/* 4 Top Metric KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 4 Top Metric KPI Cards (2x2 on mobile, 4 in a row on desktop) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {/* Card 1: WALLET */}
-            <div className="bg-white rounded-md border border-slate-200/90 p-4 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
-                <Smartphone className="w-6 h-6" />
+            <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
+                <Smartphone className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">WALLET (NGN)</div>
-                <div className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  WALLET (NGN)
+                </div>
+                <div className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">
                   {(profile?.walletBalance || 0).toFixed(2)}
                 </div>
               </div>
             </div>
 
             {/* Card 2: SUCCESSFUL TXN USAGE */}
-            <div className="bg-white rounded-md border border-slate-200/90 p-4 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
-                <FileText className="w-6 h-6" />
+            <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SUCCESSFUL TXN USAGE:</div>
-                <div className="text-xs font-bold text-slate-900 mt-0.5">Count: {successfulTxCount}</div>
-                <div className="text-[11px] font-bold text-rose-500">Pending Amt NGN {pendingAmt}</div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  SUCCESS TXN:
+                </div>
+                <div className="text-xs font-bold text-slate-900 mt-0.5 truncate">Count: {successfulTxCount}</div>
+                <div className="text-[10px] sm:text-[11px] font-bold text-rose-500 truncate">Pending: ₦{pendingAmt}</div>
               </div>
             </div>
 
             {/* Card 3: SALES NO. */}
-            <div className="bg-white rounded-md border border-slate-200/90 p-4 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6" />
+            <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SALES NO.</div>
-                <div className="text-2xl font-black text-slate-900 tracking-tight">{totalSalesCount}</div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  SALES NO.
+                </div>
+                <div className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">{totalSalesCount}</div>
               </div>
             </div>
 
             {/* Card 4: SALES (NGN) */}
-            <div className="bg-white rounded-md border border-slate-200/90 p-4 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
-                <BarChart3 className="w-6 h-6" />
+            <div className="bg-white rounded-md border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-4">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SALES (NGN)</div>
-                <div className="text-2xl font-black text-slate-900 tracking-tight">{totalSalesAmount}</div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                  SALES (NGN)
+                </div>
+                <div className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">{totalSalesAmount}</div>
               </div>
             </div>
           </div>
 
-          {/* 4 Telecom Quick Status Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* 4 Telecom Quick Status Strip (2x2 on mobile, 4 in a row on desktop) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {/* MTN */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
                   MTN
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">MTN</div>
-                  <div className="text-[10px] text-slate-600 flex items-center gap-1">
-                    <Smartphone className="w-3 h-3 text-slate-400" />
-                    <span>No connected sim</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 truncate">MTN</div>
+                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
+                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span>No sim</span>
                   </div>
                   <button
-                    onClick={() => {
-                      setSelectedNetworkId('1');
-                    }}
+                    onClick={() => setSelectedNetworkId('1')}
                     className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer block"
                   >
                     Manage
@@ -541,23 +626,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setSelectedNetworkId('1')}
-                className="w-6 h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
 
             {/* Airtel */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
                   airtel
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Airtel</div>
-                  <div className="text-[10px] text-slate-600 flex items-center gap-1">
-                    <Smartphone className="w-3 h-3 text-slate-400" />
-                    <span>No connected sim</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 truncate">Airtel</div>
+                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
+                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span>No sim</span>
                   </div>
                   <button
                     onClick={() => setSelectedNetworkId('2')}
@@ -569,23 +654,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setSelectedNetworkId('2')}
-                className="w-6 h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
 
             {/* T2 (9mobile) */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
                   T2
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">T2</div>
-                  <div className="text-[10px] text-slate-600 flex items-center gap-1">
-                    <Smartphone className="w-3 h-3 text-slate-400" />
-                    <span>No connected sim</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 truncate">T2</div>
+                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
+                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span>No sim</span>
                   </div>
                   <button
                     onClick={() => setSelectedNetworkId('4')}
@@ -597,23 +682,23 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setSelectedNetworkId('4')}
-                className="w-6 h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
 
             {/* Glo */}
-            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-3 flex items-center justify-between border border-slate-200/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+            <div className="bg-[#ebecee] hover:bg-[#e4e6ea] transition-colors rounded-md p-2.5 sm:p-3 flex items-center justify-between border border-slate-200/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-[10px] sm:text-xs shrink-0 shadow-2xs">
                   glo
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Glo</div>
-                  <div className="text-[10px] text-slate-600 flex items-center gap-1">
-                    <Smartphone className="w-3 h-3 text-slate-400" />
-                    <span>No connected sim</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 truncate">Glo</div>
+                  <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-0.5 truncate">
+                    <Smartphone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span>No sim</span>
                   </div>
                   <button
                     onClick={() => setSelectedNetworkId('3')}
@@ -625,30 +710,30 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setSelectedNetworkId('3')}
-                className="w-6 h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-2xs shrink-0"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Main 2-Column Split: Left = Sell Data, Right = Recent transactions */}
+          {/* Main Split: Left = Sell Data, Right = Recent transactions */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left Card: Sell Data */}
-            <div className="lg:col-span-5 bg-white rounded-md border border-slate-200/90 p-5 shadow-2xs">
+            <div className="lg:col-span-5 bg-white rounded-md border border-slate-200/90 p-4 sm:p-5 shadow-2xs">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h2 className="text-sm font-bold text-slate-900">Sell Data</h2>
                 <button
                   type="button"
                   onClick={() => setShowBulkModal(true)}
-                  className="text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 uppercase transition-colors"
+                  className="text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 uppercase transition-colors"
                 >
                   <Grid className="w-3 h-3" />
                   <span>SEND BULK DATA</span>
                 </button>
               </div>
 
-              <form onSubmit={handleFormSubmit} className="mt-4 space-y-4">
+              <form onSubmit={handleFormSubmit} className="mt-4 space-y-3.5 sm:space-y-4">
                 {formError && (
                   <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -709,7 +794,7 @@ export default function DashboardPage() {
                 {/* SEND DATA Button */}
                 <button
                   type="submit"
-                  className="w-full bg-[#2b268f] hover:bg-[#231e78] text-white font-bold text-xs py-3 rounded-md uppercase tracking-wider shadow-xs transition-all cursor-pointer"
+                  className="w-full bg-[#2b268f] hover:bg-[#231e78] text-white font-bold text-xs py-3 rounded-md uppercase tracking-wider shadow-xs transition-all cursor-pointer min-h-[44px]"
                 >
                   SEND DATA
                 </button>
@@ -717,7 +802,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Right Card: Recent transactions */}
-            <div className="lg:col-span-7 bg-white rounded-md border border-slate-200/90 p-5 shadow-2xs min-h-[380px] flex flex-col justify-between">
+            <div className="lg:col-span-7 bg-white rounded-md border border-slate-200/90 p-4 sm:p-5 shadow-2xs min-h-[380px] flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h2 className="text-sm font-bold text-slate-900">Recent transactions</h2>
@@ -731,12 +816,12 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Content Area */}
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                   {orders.length === 0 ? (
                     /* Exact Empty State matching screenshot */
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
-                      <div className="w-14 h-14 rounded-full border-2 border-slate-300 text-slate-400 flex items-center justify-center mb-3">
-                        <Frown className="w-8 h-8" />
+                    <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center text-slate-400">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-slate-300 text-slate-400 flex items-center justify-center mb-3">
+                        <Frown className="w-7 h-7 sm:w-8 sm:h-8" />
                       </div>
                       <p className="text-xs font-medium text-slate-500">
                         Your transaction history will show up here
@@ -748,11 +833,11 @@ export default function DashboardPage() {
                       {orders.slice(0, viewAllTx ? 50 : 5).map((tx) => (
                         <div
                           key={tx.id}
-                          className="flex items-center justify-between p-3 rounded-md border border-slate-100 bg-slate-50/70 hover:bg-slate-100/70 transition-colors text-xs"
+                          className="flex items-center justify-between p-2.5 sm:p-3 rounded-md border border-slate-100 bg-slate-50/70 hover:bg-slate-100/70 transition-colors text-xs"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold shrink-0 ${
                                 tx.status === 'SUCCESS' || tx.status === 'successful'
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : tx.status === 'PENDING' || tx.status === 'pending'
@@ -762,22 +847,22 @@ export default function DashboardPage() {
                             >
                               {tx.status || 'SUCCESS'}
                             </span>
-                            <div>
-                              <div className="font-bold text-slate-800">
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-800 truncate">
                                 {tx.networkName || tx.network} • {tx.planName || tx.planSize}
                               </div>
-                              <div className="text-[11px] text-slate-500">
+                              <div className="text-[10px] sm:text-[11px] text-slate-500 truncate">
                                 To: {tx.phone || tx.phoneNumber}
                               </div>
                             </div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <div className="font-extrabold text-slate-900">
                               {formatCurrency(tx.amountPaid || tx.amount || 0)}
                             </div>
-                            <div className="text-[10px] text-slate-400">
-                              {tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString() : 'Just now'}
+                            <div className="text-[9px] sm:text-[10px] text-slate-400">
+                              {tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                             </div>
                           </div>
                         </div>
@@ -814,8 +899,8 @@ export default function DashboardPage() {
 
       {/* ================= FUND WALLET MODAL ================= */}
       {showFundModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2b268f] flex items-center justify-center">
@@ -825,7 +910,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => setShowFundModal(false)}
-                className="text-slate-400 hover:text-slate-700"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -836,19 +921,19 @@ export default function DashboardPage() {
             </p>
 
             {/* Account 1: Momo PSB */}
-            <div className="p-3.5 rounded-lg border border-amber-300 bg-amber-50/60 flex items-center justify-between">
-              <div>
+            <div className="p-3 sm:p-3.5 rounded-lg border border-amber-300 bg-amber-50/60 flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
                   MoMo PSB (MTN 671)
                 </span>
                 <span className="text-sm font-black font-mono text-slate-900 tracking-wider">
                   {momoAcc}
                 </span>
-                <span className="text-[10px] text-slate-500 block">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
+                <span className="text-[10px] text-slate-500 block truncate">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
               </div>
               <button
                 onClick={() => copyText(momoAcc, 'momo')}
-                className="px-2.5 py-1.5 rounded-md bg-white border border-amber-300 text-xs font-bold text-slate-700 hover:bg-amber-100 flex items-center gap-1 shadow-2xs"
+                className="px-2.5 py-1.5 rounded-md bg-white border border-amber-300 text-xs font-bold text-slate-700 hover:bg-amber-100 flex items-center gap-1 shadow-2xs shrink-0"
               >
                 {copiedMomo ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedMomo ? 'Copied' : 'Copy'}</span>
@@ -856,19 +941,19 @@ export default function DashboardPage() {
             </div>
 
             {/* Account 2: Smartcash PSB */}
-            <div className="p-3.5 rounded-lg border border-red-300 bg-red-50/60 flex items-center justify-between">
-              <div>
+            <div className="p-3 sm:p-3.5 rounded-lg border border-red-300 bg-red-50/60 flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block">
                   Smartcash PSB (Airtel 90)
                 </span>
                 <span className="text-sm font-black font-mono text-slate-900 tracking-wider">
                   {smartcashAcc}
                 </span>
-                <span className="text-[10px] text-slate-500 block">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
+                <span className="text-[10px] text-slate-500 block truncate">Account Name: DataAbeg / {profile?.displayName || 'User'}</span>
               </div>
               <button
                 onClick={() => copyText(smartcashAcc, 'smartcash')}
-                className="px-2.5 py-1.5 rounded-md bg-white border border-red-300 text-xs font-bold text-slate-700 hover:bg-red-100 flex items-center gap-1 shadow-2xs"
+                className="px-2.5 py-1.5 rounded-md bg-white border border-red-300 text-xs font-bold text-slate-700 hover:bg-red-100 flex items-center gap-1 shadow-2xs shrink-0"
               >
                 {copiedSmartcash ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedSmartcash ? 'Copied' : 'Copy'}</span>
@@ -877,7 +962,7 @@ export default function DashboardPage() {
 
             <button
               onClick={() => setShowFundModal(false)}
-              className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78] transition-colors"
+              className="w-full bg-[#2b268f] text-white py-2.5 rounded-md text-xs font-bold hover:bg-[#231e78] transition-colors min-h-[44px]"
             >
               Done / Close
             </button>
@@ -887,13 +972,13 @@ export default function DashboardPage() {
 
       {/* ================= BULK DATA MODAL ================= */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Send Bulk Data</h3>
               <button
                 onClick={() => setShowBulkModal(false)}
-                className="text-slate-400 hover:text-slate-700"
+                className="text-slate-400 hover:text-slate-700 p-1"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -918,7 +1003,7 @@ export default function DashboardPage() {
                   alert('Bulk dispatch queued. Orders will dispense sequentially via SMEPlug API.');
                   setShowBulkModal(false);
                 }}
-                className="px-4 py-2 text-xs font-bold text-white bg-[#2b268f] hover:bg-[#231e78] rounded-md"
+                className="px-4 py-2 text-xs font-bold text-white bg-[#2b268f] hover:bg-[#231e78] rounded-md min-h-[40px]"
               >
                 Start Bulk Dispense
               </button>
