@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
+  --background: #080d1a;
   --foreground: #f8fafc;
   --card: #0f172a;
   --card-foreground: #f8fafc;
-  --primary: #10b981;
-  --primary-foreground: #022c22;
-  --accent: #f59e0b;
+  --primary: #1E40AF;
+  --primary-foreground: #ffffff;
+  --accent: #38bdf8;
   --border: #1e293b;
 }
 
@@ -29,7 +29,7 @@ body {
 
 /* Glassmorphism utilities */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -41,12 +41,16 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.glow-emerald {
-  box-shadow: 0 0 35px -8px rgba(16, 185, 129, 0.35);
+.glow-brand {
+  box-shadow: 0 0 40px -6px rgba(30, 64, 175, 0.55);
 }
 
-.glow-amber {
-  box-shadow: 0 0 35px -8px rgba(245, 158, 11, 0.3);
+.glow-sky {
+  box-shadow: 0 0 35px -8px rgba(56, 189, 248, 0.4);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 35px -8px rgba(16, 185, 129, 0.35);
 }
 
 /* Custom Scrollbar */
@@ -54,7 +58,7 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #080d1a;
 }
 ::-webkit-scrollbar-thumb {
   background: #1e293b;

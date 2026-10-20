@@ -86,13 +86,13 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
                 1
               </span>
               Select Mobile Network
             </label>
             {autoDetectedMessage && (
-              <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 animate-pulse">
+              <span className="text-[11px] font-medium text-sky-400 bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800 animate-pulse">
                 ✓ {autoDetectedMessage}
               </span>
             )}
@@ -112,7 +112,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                   }}
                   className={`relative flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left group ${
                     isSelected
-                      ? `bg-slate-800/90 ${network.borderColor} ring-2 ring-emerald-500/30 shadow-lg`
+                      ? `bg-slate-800/90 ${network.borderColor} ring-2 ring-[#1E40AF] shadow-lg`
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/40'
                   }`}
                 >
@@ -128,11 +128,11 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
 
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white truncate">{network.displayName}</p>
-                    <p className="text-[10px] text-emerald-400 font-medium">From ₦285/GB</p>
+                    <p className="text-[10px] text-sky-400 font-medium">From ₦285/GB</p>
                   </div>
 
                   {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-[#1E40AF] text-white flex items-center justify-center shrink-0 shadow">
                       <Check className="w-3 h-3 stroke-[3]" />
                     </div>
                   )}
@@ -146,7 +146,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="recipient-phone-input" className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
                 2
               </span>
               Recipient Phone Number
@@ -167,17 +167,17 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
               maxLength={14}
               className={`w-full pl-11 pr-24 py-3.5 bg-slate-950/80 rounded-2xl text-white text-base sm:text-lg font-medium tracking-wide placeholder-slate-500 border transition-all outline-none focus:ring-2 ${
                 isPhoneValid
-                  ? 'border-emerald-500/70 focus:ring-emerald-500/30'
+                  ? 'border-sky-500/70 focus:ring-blue-500/30'
                   : phoneNumber.length > 3
-                  ? 'border-slate-700 focus:border-emerald-500 focus:ring-emerald-500/20'
-                  : 'border-slate-800 focus:border-slate-600 focus:ring-emerald-500/10'
+                  ? 'border-slate-700 focus:border-blue-500 focus:ring-blue-500/20'
+                  : 'border-slate-800 focus:border-slate-600 focus:ring-blue-500/10'
               }`}
             />
 
             {/* Quick Helper button on right */}
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
               {isPhoneValid ? (
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
+                <span className="flex items-center gap-1 text-xs font-semibold text-sky-400 bg-blue-950 px-2 py-1 rounded-lg border border-blue-800">
                   <Check className="w-3.5 h-3.5" /> Valid SIM
                 </span>
               ) : phoneNumber.length > 0 ? (
@@ -194,7 +194,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                     setPhoneNumber(sample);
                     setSelectedNetworkId(1);
                   }}
-                  className="text-xs text-slate-400 hover:text-emerald-400 transition-colors px-2 py-1 rounded bg-slate-800/60"
+                  className="text-xs text-slate-400 hover:text-sky-400 transition-colors px-2 py-1 rounded bg-slate-800/60"
                 >
                   Use Sample
                 </button>
@@ -203,7 +203,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
           </div>
 
           <p className="mt-1.5 text-[11px] text-slate-400 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Works with all Nigerian SIMs (including lines with DND enabled). 30-day validity.</span>
           </p>
         </div>
@@ -211,7 +211,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
         {/* Step 3: Plan Category Tabs */}
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
           <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1E40AF] text-white text-xs font-bold shadow-md shadow-blue-900/50">
               3
             </span>
             Choose Data Bundle
@@ -223,7 +223,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
               onClick={() => setCategoryFilter('ALL')}
               className={`px-3 py-1 rounded-lg transition-all ${
                 categoryFilter === 'ALL'
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -234,18 +234,18 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
               onClick={() => setCategoryFilter('SME')}
               className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 ${
                 categoryFilter === 'SME'
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Flame className="w-3 h-3" /> SME Super Cheap
+              <Flame className="w-3 h-3 text-amber-400" /> SME Super Cheap
             </button>
             <button
               type="button"
               onClick={() => setCategoryFilter('CORPORATE_GIFTING')}
               className={`px-3 py-1 rounded-lg transition-all ${
                 categoryFilter === 'CORPORATE_GIFTING'
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                  ? 'bg-[#1E40AF] text-white font-bold shadow'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -265,7 +265,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                 onClick={() => setSelectedPlanId(plan.id)}
                 className={`relative cursor-pointer rounded-2xl p-4 border transition-all text-left flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-emerald-500 shadow-xl ring-2 ring-emerald-500/40 glow-emerald'
+                    ? 'bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-[#1E40AF] shadow-xl ring-2 ring-blue-600/50 glow-brand'
                     : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/30'
                 }`}
               >
@@ -281,7 +281,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                     <span className="text-xl sm:text-2xl font-black text-white tracking-tight">
                       {plan.size}
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-[10px] font-bold text-sky-300 bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800">
                       Save {plan.savingsPercentage}%
                     </span>
                   </div>
@@ -291,7 +291,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
 
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-baseline justify-between">
                   <div>
-                    <span className="text-lg sm:text-xl font-extrabold text-emerald-400">
+                    <span className="text-lg sm:text-xl font-extrabold text-sky-400">
                       {formatCurrency(plan.sellingPrice)}
                     </span>
                     <span className="ml-1.5 text-xs text-slate-500 line-through">
@@ -300,7 +300,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                   </div>
 
                   <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                    isSelected ? 'border-emerald-400 bg-emerald-500 text-slate-950' : 'border-slate-600'
+                    isSelected ? 'border-blue-400 bg-[#1E40AF] text-white' : 'border-slate-600'
                   }`}>
                     {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                   </div>
@@ -312,7 +312,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
 
         {/* Step 5: Checkout Summary Bar */}
         {currentSelectedPlan && (
-          <div className="rounded-2xl bg-gradient-to-r from-slate-800/90 via-slate-900/90 to-slate-800/90 border border-slate-700/80 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-blue-900/50 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
             <div className="w-full sm:w-auto text-left">
               <div className="flex items-center gap-2">
                 <span
@@ -334,7 +334,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
             <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4">
               <div className="text-left sm:text-right">
                 <p className="text-[11px] text-slate-400 uppercase font-medium">Total Amount</p>
-                <p className="text-2xl font-black text-emerald-400">
+                <p className="text-2xl font-black text-sky-400">
                   {formatCurrency(currentSelectedPlan.sellingPrice)}
                 </p>
               </div>
@@ -343,7 +343,7 @@ export function DataPurchaseWidget({ onSelectPlanForCheckout, plans = CURATED_DA
                 type="button"
                 id="checkout-proceed-btn"
                 onClick={handleCheckoutClick}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 hover:from-blue-700 hover:to-blue-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Buy Now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />

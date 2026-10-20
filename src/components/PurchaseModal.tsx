@@ -13,7 +13,7 @@ import {
   CreditCard,
   Wallet,
   Zap,
-  ArrowRight,
+  Building2,
   ShieldCheck,
   Phone,
   RefreshCw
@@ -38,7 +38,7 @@ export function PurchaseModal({
   onOrderCompleted,
   customApiKey
 }: PurchaseModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet' | 'guest'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'momo_psb' | 'smartcash' | 'wallet'>('momo_psb');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
@@ -56,9 +56,8 @@ export function PurchaseModal({
     const txRef = generateTxReference('DABG');
 
     try {
-      // Step progress simulated delay for crisp UI feedback
       await new Promise((r) => setTimeout(r, 600));
-      setProcessingStep('Authorizing payment and locking wholesale bundle...');
+      setProcessingStep('Authorizing payment via PSB gateway...');
       await new Promise((r) => setTimeout(r, 600));
       setProcessingStep(`Dispensing ${plan.size} to ${phoneNumber}...`);
 
@@ -95,7 +94,7 @@ export function PurchaseModal({
           amount: plan.sellingPrice,
           status: 'successful',
           statusMessage: data.data?.msg || 'Transaction completed successfully.',
-          paymentMethod,
+          paymentMethod: 'card',
           createdAt: new Date().toISOString(),
           completedAt: new Date().toISOString()
         };
@@ -105,7 +104,6 @@ export function PurchaseModal({
           onOrderCompleted(newTx);
         }
 
-        // Trigger joyful confetti blast
         try {
           confetti({
             particleCount: 80,
@@ -113,7 +111,7 @@ export function PurchaseModal({
             origin: { y: 0.6 }
           });
         } catch {
-          // ignore in environments without canvas
+          // ignore
         }
       } else {
         setErrorMessage(data.msg || 'Transaction could not be processed by SMEPlug gateway. Please try again.');
@@ -158,13 +156,13 @@ export function PurchaseModal({
         {/* Content State: SUCCESS */}
         {isSuccess && completedTx ? (
           <div className="text-center py-2 animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-blue-950 text-sky-400 border border-blue-800 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
 
             <h3 className="text-2xl font-black text-white">Data Dispensed Successfully!</h3>
             <p className="text-sm text-slate-300 mt-1">
-              <span className="text-emerald-400 font-bold">{plan.size}</span> has been credited to{' '}
+              <span className="text-sky-400 font-bold">{plan.size}</span> has been credited to{' '}
               <span className="text-white font-mono font-bold">{phoneNumber}</span>.
             </p>
 
@@ -174,7 +172,7 @@ export function PurchaseModal({
                 <span className="text-slate-400">Transaction Ref:</span>
                 <button
                   onClick={handleCopyReference}
-                  className="font-mono text-emerald-400 flex items-center gap-1 hover:underline"
+                  className="font-mono text-sky-400 flex items-center gap-1 hover:underline"
                 >
                   {completedTx.reference}
                   {copiedRef ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -198,7 +196,7 @@ export function PurchaseModal({
 
               <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
                 <span className="text-slate-400">Amount Paid:</span>
-                <span className="font-black text-emerald-400 text-sm">
+                <span className="font-black text-sky-400 text-sm">
                   {formatCurrency(plan.sellingPrice)}
                 </span>
               </div>
@@ -220,7 +218,7 @@ export function PurchaseModal({
 
             <button
               onClick={handleResetAndClose}
-              className="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold hover:from-emerald-400 hover:to-teal-300 transition-all shadow-lg shadow-emerald-500/20"
+              className="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 text-white font-bold hover:from-blue-700 hover:to-blue-500 transition-all shadow-lg shadow-blue-900/40"
             >
               Buy Another Bundle
             </button>
@@ -246,7 +244,7 @@ export function PurchaseModal({
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-400">Recipient Phone:</span>
                 <span className="font-mono font-bold text-white text-base flex items-center gap-1.5">
-                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <Phone className="w-4 h-4 text-sky-400" />
                   {phoneNumber}
                 </span>
               </div>
@@ -258,13 +256,13 @@ export function PurchaseModal({
 
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-400">Validity:</span>
-                <span className="font-semibold text-emerald-400">{plan.validity}</span>
+                <span className="font-semibold text-sky-400">{plan.validity}</span>
               </div>
 
               <div className="flex justify-between items-center pt-2.5 border-t border-slate-800 text-base">
                 <span className="font-medium text-slate-300">Total Price:</span>
                 <div className="text-right">
-                  <span className="font-black text-emerald-400 text-xl">
+                  <span className="font-black text-sky-400 text-xl">
                     {formatCurrency(plan.sellingPrice)}
                   </span>
                   <span className="ml-2 text-xs text-slate-500 line-through">
@@ -274,26 +272,58 @@ export function PurchaseModal({
               </div>
             </div>
 
-            {/* Payment Method Selector */}
+            {/* Payment Method Selector with MoMo PSB & Smartcash */}
             <div className="mb-6">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                Select Payment Method
+                Select Instant Payment Option
               </label>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('momo_psb')}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                    paymentMethod === 'momo_psb'
+                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
+                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">MoMo PSB (671)</p>
+                    <p className="text-[10px] text-amber-300 font-semibold">MTN Auto Bank</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('smartcash')}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                    paymentMethod === 'smartcash'
+                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
+                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5 text-red-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">Smartcash PSB</p>
+                    <p className="text-[10px] text-red-300 font-semibold">Airtel Auto Bank</p>
+                  </div>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('card')}
                   className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
                     paymentMethod === 'card'
-                      ? 'bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/30'
+                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  <CreditCard className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <CreditCard className="w-5 h-5 text-sky-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">Card / USSD</p>
-                    <p className="text-[10px] text-slate-400">Instant Pay</p>
+                    <p className="text-xs font-bold text-white">Debit Card</p>
+                    <p className="text-[10px] text-slate-400">Mastercard / Visa</p>
                   </div>
                 </button>
 
@@ -302,14 +332,14 @@ export function PurchaseModal({
                   onClick={() => setPaymentMethod('wallet')}
                   className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
                     paymentMethod === 'wallet'
-                      ? 'bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/30'
+                      ? 'bg-blue-950/80 border-[#1E40AF] ring-2 ring-blue-600/50'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  <Wallet className="w-5 h-5 text-amber-400 shrink-0" />
+                  <Wallet className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-white">Wallet</p>
-                    <p className="text-[10px] text-emerald-400 font-semibold">Bal: ₦25,400</p>
+                    <p className="text-xs font-bold text-white">DataAbeg Wallet</p>
+                    <p className="text-[10px] text-emerald-300 font-semibold">Bal: ₦25,400</p>
                   </div>
                 </button>
               </div>
@@ -331,7 +361,7 @@ export function PurchaseModal({
               onClick={handlePurchase}
               disabled={isProcessing}
               id="confirm-pay-now-btn"
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#1E40AF] to-blue-600 hover:from-blue-700 hover:to-blue-500 text-white font-extrabold text-base shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isProcessing ? (
                 <>
@@ -340,15 +370,15 @@ export function PurchaseModal({
                 </>
               ) : (
                 <>
-                  <Zap className="w-5 h-5 fill-slate-950" />
-                  <span>Pay {formatCurrency(plan.sellingPrice)} & Dispense</span>
+                  <Zap className="w-5 h-5 fill-white" />
+                  <span>Pay {formatCurrency(plan.sellingPrice)} &amp; Dispense</span>
                 </>
               )}
             </button>
 
             <p className="text-center text-[11px] text-slate-500 mt-3 flex items-center justify-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              Automated VTU engine powered by SMEPlug.ng
+              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+              Automated VTU engine powered by SMEPlug.ng &bull; MoMo &amp; Smartcash Ready
             </p>
           </div>
         )}

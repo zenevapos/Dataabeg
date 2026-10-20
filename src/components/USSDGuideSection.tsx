@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { NETWORKS } from '@/lib/constants';
-import { Copy, Check, HelpCircle, PhoneCall, Radio } from 'lucide-react';
+import { Copy, Check, HelpCircle, Radio } from 'lucide-react';
 
 export function USSDGuideSection() {
   const [copiedNetwork, setCopiedNetwork] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export function USSDGuideSection() {
   return (
     <section id="ussd-check-codes" className="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold mb-3">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 text-xs font-semibold mb-3">
           <HelpCircle className="w-3.5 h-3.5" />
           <span>Quick USSD Guide</span>
         </div>
@@ -56,7 +56,7 @@ export function USSDGuideSection() {
               <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mb-1.5">
                 USSD Dial Code
               </p>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-emerald-400">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-sky-400">
                 <span>{network.ussdCheckCode}</span>
                 <button
                   onClick={() => handleCopy(network.name, network.ussdCheckCode)}
@@ -64,7 +64,7 @@ export function USSDGuideSection() {
                   title="Copy Code"
                 >
                   {copiedNetwork === network.name ? (
-                    <Check className="w-4 h-4 text-emerald-400" />
+                    <Check className="w-4 h-4 text-sky-400" />
                   ) : (
                     <Copy className="w-4 h-4" />
                   )}
