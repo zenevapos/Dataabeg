@@ -60,7 +60,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`scroll-smooth ${bricolage.variable} ${dmSans.variable}`}
+      data-scroll-behavior="smooth"
+      className={`${bricolage.variable} ${dmSans.variable}`}
       suppressHydrationWarning
       style={{ backgroundColor: '#f8fafc', color: '#0f172a', colorScheme: 'light' }}
     >

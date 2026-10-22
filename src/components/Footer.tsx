@@ -94,7 +94,7 @@ export function Footer({ onOpenSettings, onOpenTracker, onOpenUSSD }: FooterProp
               </li>
               <li>
                 <button onClick={onOpenSettings} className="hover:text-[#1E40AF] transition-colors text-left cursor-pointer">
-                  SMEPlug Gateway Drawer
+                  Glad Tidings Gateway Drawer
                 </button>
               </li>
               <li>
@@ -104,12 +104,12 @@ export function Footer({ onOpenSettings, onOpenTracker, onOpenUSSD }: FooterProp
               </li>
               <li>
                 <a
-                  href="https://smeplug.ng/dashboard/settings/api"
+                  href="https://gladtidingsdata.com/documentation/"
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[#1E40AF] transition-colors"
                 >
-                  SMEPlug Developer Portal
+                  Glad Tidings API Portal
                 </a>
               </li>
               <li>

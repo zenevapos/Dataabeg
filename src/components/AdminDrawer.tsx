@@ -79,7 +79,7 @@ export function AdminDrawer({
   if (!isOpen) return null;
 
   const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://dataabeg.com';
-  const webhookUrl = `${currentHost}/api/smeplug/webhook`;
+  const webhookUrl = `${currentHost}/api/gladtidings/webhook`;
 
   const handleSave = () => {
     const trimmed = inputKey.trim();
@@ -104,7 +104,7 @@ export function AdminDrawer({
                 <Key className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 font-heading">SMEPlug Gateway &amp; PSB</h3>
+                <h3 className="font-bold text-slate-900 font-heading">Glad Tidings Gateway</h3>
                 <p className="text-xs text-slate-500">API Credentials &amp; Live Balance</p>
               </div>
             </div>
@@ -138,7 +138,7 @@ export function AdminDrawer({
           {/* Live Balance Card */}
           <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1">
-              <span>SMEPlug Live Balance</span>
+              <span>Glad Tidings Live Balance</span>
               <button
                 onClick={() => fetchBalance(inputKey)}
                 disabled={isLoadingBalance}
@@ -162,24 +162,24 @@ export function AdminDrawer({
           <div className="mt-6 space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                SMEPlug Secret Key
+                Glad Tidings API Token
               </label>
               <input
                 type="password"
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
-                placeholder="Paste SMEPlug Secret Key..."
+                placeholder="Paste Glad Tidings Token (e26b9b...)"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-mono outline-none focus:bg-white focus:border-[#1E40AF] focus:ring-2 focus:ring-blue-100"
               />
               <p className="text-[11px] text-slate-500 mt-1">
                 From{' '}
                 <a
-                  href="https://smeplug.ng/dashboard/settings/api"
+                  href="https://gladtidingsdata.com/documentation/"
                   target="_blank"
                   rel="noreferrer"
                   className="text-[#1E40AF] hover:underline"
                 >
-                  smeplug.ng/dashboard/settings/api
+                  gladtidingsdata.com/documentation/
                 </a>
               </p>
             </div>
@@ -188,7 +188,7 @@ export function AdminDrawer({
               onClick={handleSave}
               className="w-full py-2.5 bg-[#1E40AF] hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
-              Save &amp; Verify Key
+              Save &amp; Verify Token
             </button>
           </div>
 
@@ -208,7 +208,7 @@ export function AdminDrawer({
               {webhookUrl}
             </p>
             <p className="text-[11px] text-slate-500 leading-tight">
-              Paste this in your SMEPlug Dashboard Webhook URL field to receive instant transaction callbacks.
+              Paste this in your Glad Tidings Dashboard Webhook URL field to receive instant transaction callbacks.
             </p>
           </div>
 

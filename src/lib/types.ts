@@ -1,4 +1,4 @@
-export type NetworkId = 1 | 2 | 3 | 4;
+export type NetworkId = 1 | 2 | 3 | 4 | 6 | number;
 
 export type NetworkType = 'MTN' | 'AIRTEL' | 'GLO' | '9MOBILE';
 
@@ -17,7 +17,7 @@ export interface NetworkInfo {
   description: string;
 }
 
-export type PlanCategory = 'SME' | 'CORPORATE_GIFTING' | 'DIRECT';
+export type PlanCategory = 'SME' | 'SME2' | 'CORPORATE_GIFTING' | 'GIFTING' | 'SPECIAL' | 'DATA_SHARE' | 'DIRECT';
 
 export interface DataPlan {
   id: string | number;
@@ -30,9 +30,9 @@ export interface DataPlan {
   size: string;
   sizeInMB: number;
   validity: string;
-  costPrice: number; // What SMEPlug charges
+  costPrice: number; // Wholesale API cost
   sellingPrice: number; // What customer pays on DataAbeg
-  retailPrice: number; // What Banks/Telcos charge (~₦1,000 per GB)
+  retailPrice: number; // Benchmark retail price
   isPopular?: boolean;
   savingsPercentage: number;
 }
@@ -58,6 +58,97 @@ export interface Transaction {
   completedAt?: string;
   timestamp?: string;
   notes?: string;
+  serviceType?: 'data' | 'airtime' | 'electricity' | 'cable';
+  // Electricity fields
+  discoId?: number;
+  discoName?: string;
+  meterNumber?: string;
+  meterType?: 'Prepaid' | 'Postpaid';
+  meterToken?: string;
+  customerName?: string;
+  customerAddress?: string;
+  // Cable fields
+  cableId?: number;
+  cableName?: string;
+  cablePlanId?: number;
+  cablePlanName?: string;
+  smartCardNumber?: string;
+}
+
+// Glad Tidings & Provider Interfaces
+export interface GladTidingsBalanceResponse {
+  status: boolean;
+  msg?: string;
+  data?: {
+    balance: string | number;
+    user?: {
+      id?: number;
+      username?: string;
+      email?: string;
+      phone?: string;
+      user_type?: string;
+    };
+  };
+}
+
+export interface ElectricityDisco {
+  id: number;
+  name: string;
+  code: string;
+  state: string;
+}
+
+export interface MeterValidationResponse {
+  invalid: boolean;
+  name?: string;
+  address?: string;
+  error?: string;
+}
+
+export interface ElectricityPaymentResponse {
+  status: boolean;
+  msg: string;
+  token?: string;
+  data?: {
+    id?: number;
+    ident?: string;
+    token?: string;
+    amount?: number | string;
+    meter_number?: string;
+    paid_amount?: number;
+    Status?: string;
+  };
+}
+
+export interface CableProvider {
+  id: number;
+  name: string;
+}
+
+export interface CablePlan {
+  id: number;
+  cableId: number;
+  name: string;
+  amount: number;
+  retailPrice: number;
+}
+
+export interface CableValidationResponse {
+  invalid: boolean;
+  name?: string;
+  error?: string;
+}
+
+export interface CableSubscriptionResponse {
+  status: boolean;
+  msg: string;
+  data?: {
+    id?: number;
+    ident?: string;
+    package?: string;
+    smart_card_number?: string;
+    Status?: string;
+  };
 }
 
 export interface SMEPlugBalanceResponse {

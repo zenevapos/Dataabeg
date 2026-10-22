@@ -35,7 +35,7 @@ export function EnterpriseSection() {
             <div>
               <h3 className="text-lg font-bold text-slate-900 mb-2 font-heading">99.98% Gateway Switch Uptime</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Dual-redundant telco gateway routing powered by SMEPlug ensures your SIM receives data bundles without delay, even during midnight traffic spikes.
+                Dual-redundant telco gateway routing powered by Glad Tidings ensures your SIM receives data bundles and bill tokens without delay, even during midnight traffic spikes.
               </p>
             </div>
           </article>

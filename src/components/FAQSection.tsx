@@ -17,7 +17,7 @@ const FAQS_WITH_PSB = [
   {
     question: 'Why are DataAbeg prices so much cheaper than commercial bank apps?',
     answer:
-      'Commercial banking apps sell retail packages with short 1-day or 2-day validity and high markups (up to ₦1,000 for 1GB). DataAbeg pools wholesale Telecom SME and Corporate Gifting quotas directly via SMEPlug, passing bulk savings directly to you with guaranteed 30-day validity.'
+      'Commercial banking apps sell retail packages with short 1-day or 2-day validity and high markups (up to ₦1,000 for 1GB). DataAbeg pools wholesale Telecom SME and Corporate Gifting quotas directly via Glad Tidings Automated Cloud Gateway, passing bulk savings directly to you with guaranteed 30-day validity.'
   },
   {
     question: 'How do I verify my data balance after buying?',

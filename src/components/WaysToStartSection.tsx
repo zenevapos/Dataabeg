@@ -131,14 +131,14 @@ export function WaysToStartSection({ onOpenSettings }: WaysToStartSectionProps) 
                     <Terminal className="w-6 h-6" />
                   </div>
                   <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-sky-100 text-sky-900 border border-sky-200">
-                    SMEPlug REST API
+                    Glad Tidings Automated API
                   </span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 font-heading">
                   Developer API &amp; Reseller Automation
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Connect your own mobile app, Telegram vending bot, WhatsApp reselling store, or e-commerce website directly to our SMEPlug gateway. Full webhooks supported.
+                  Connect your own mobile app, Telegram vending bot, WhatsApp reselling store, or e-commerce website directly to our Glad Tidings automated gateway. Full webhooks and utility bills supported.
                 </p>
               </div>
               <button

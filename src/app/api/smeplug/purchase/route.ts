@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SMEPlugClient } from '@/lib/smeplug';
+import { GladTidingsClient } from '@/lib/gladtidings';
 import { isValidNigerianPhone, normalizePhone, generateTxReference } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { network_id, plan_id, phone, customer_reference } = body;
+    const { network_id, network, plan_id, plan, phone, mobile_number, customer_reference } = body;
 
-    if (!network_id || !plan_id || !phone) {
+    const netId = network_id || network;
+    const planId = plan_id || plan;
+    const rawPhone = phone || mobile_number;
+
+    if (!netId || !planId || !rawPhone) {
       return NextResponse.json(
-        { status: false, msg: 'Missing required fields: network_id, plan_id, and phone are required.' },
+        { status: false, msg: 'Missing required fields: network, plan, and phone are required.' },
         { status: 400 }
       );
     }
 
-    const cleanPhone = normalizePhone(phone);
+    const cleanPhone = normalizePhone(rawPhone);
     if (!isValidNigerianPhone(cleanPhone)) {
       return NextResponse.json(
         { status: false, msg: 'Invalid Nigerian phone number. Must be 11 digits (e.g. 08031234567).' },
@@ -22,15 +26,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const txRef = customer_reference || generateTxReference();
-    const customKey = req.headers.get('x-smeplug-key') || undefined;
+    const txRef = customer_reference || generateTxReference('DABG');
+    const customToken = req.headers.get('x-gladtidings-key') || req.headers.get('x-smeplug-key') || undefined;
 
-    const client = new SMEPlugClient(customKey);
+    const client = new GladTidingsClient(customToken);
     const purchaseResult = await client.purchaseData({
-      network_id: Number(network_id),
-      plan_id,
-      phone: cleanPhone,
-      customer_reference: txRef
+      network: Number(netId),
+      plan: planId,
+      mobile_number: cleanPhone,
+      Ported_number: true
     });
 
     return NextResponse.json({

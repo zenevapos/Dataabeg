@@ -147,21 +147,37 @@ export async function updateOrderStatusInFirestore(
   }
 }
 
+// Cached Admin Settings to prevent redundant network calls & permission spam
+let cachedSettings: AdminSettings | null = null;
+let settingsFetchPromise: Promise<AdminSettings> | null = null;
+
 /**
- * Get Admin settings from Firestore
+ * Get Admin settings from Firestore (gracefully cached and falls back silently)
  */
 export async function getAdminSettings(): Promise<AdminSettings> {
-  try {
-    const settingsRef = doc(db, 'settings', 'general');
-    const snap = await getDoc(settingsRef);
-    if (snap.exists()) {
-      return { ...DEFAULT_ADMIN_SETTINGS, ...snap.data() } as AdminSettings;
+  if (cachedSettings) return cachedSettings;
+  if (settingsFetchPromise) return settingsFetchPromise;
+
+  settingsFetchPromise = (async () => {
+    try {
+      const settingsRef = doc(db, 'settings', 'general');
+      const snap = await getDoc(settingsRef);
+      if (snap.exists()) {
+        cachedSettings = { ...DEFAULT_ADMIN_SETTINGS, ...snap.data() } as AdminSettings;
+        return cachedSettings;
+      }
+      cachedSettings = DEFAULT_ADMIN_SETTINGS;
+      return cachedSettings;
+    } catch {
+      // Gracefully fall back to DEFAULT_ADMIN_SETTINGS if firestore rules restrict reading
+      cachedSettings = DEFAULT_ADMIN_SETTINGS;
+      return DEFAULT_ADMIN_SETTINGS;
+    } finally {
+      settingsFetchPromise = null;
     }
-    return DEFAULT_ADMIN_SETTINGS;
-  } catch (err) {
-    console.warn('Error fetching admin settings from Firestore:', err);
-    return DEFAULT_ADMIN_SETTINGS;
-  }
+  })();
+
+  return settingsFetchPromise;
 }
 
 /**

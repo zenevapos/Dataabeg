@@ -4,12 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { DataPurchaseWidget } from '@/components/DataPurchaseWidget';
-import { ShowreelMarquee } from '@/components/ShowreelMarquee';
 import { PriceComparisonSection } from '@/components/PriceComparisonSection';
 import { USSDGuideSection } from '@/components/USSDGuideSection';
 import { FAQSection } from '@/components/FAQSection';
 import { Footer } from '@/components/Footer';
-import { PurchaseModal } from '@/components/PurchaseModal';
+import { PurchaseModal, ElectricityCheckoutDetails, CableCheckoutDetails } from '@/components/PurchaseModal';
 import { AdminDrawer } from '@/components/AdminDrawer';
 import { TrackOrderModal } from '@/components/TrackOrderModal';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
@@ -20,9 +19,13 @@ export default function Home() {
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
 
+  // Active checkout state
+  const [checkoutServiceType, setCheckoutServiceType] = useState<'data' | 'airtime' | 'electricity' | 'cable'>('data');
   const [checkoutPlan, setCheckoutPlan] = useState<DataPlan | null>(null);
   const [checkoutPhone, setCheckoutPhone] = useState<string>('');
   const [checkoutNetwork, setCheckoutNetwork] = useState<NetworkInfo | null>(null);
+  const [checkoutElectricity, setCheckoutElectricity] = useState<ElectricityCheckoutDetails | null>(null);
+  const [checkoutCable, setCheckoutCable] = useState<CableCheckoutDetails | null>(null);
 
   const [apiKey, setApiKey] = useState<string>('');
   const [isSMEPlugConnected, setIsSMEPlugConnected] = useState<boolean>(false);
@@ -68,9 +71,33 @@ export default function Home() {
   };
 
   const handleSelectPlanForCheckout = (plan: DataPlan, phone: string, network: NetworkInfo) => {
+    const isAirtime = String(plan.id).startsWith('airtime-') || plan.planId === 0;
+    setCheckoutServiceType(isAirtime ? 'airtime' : 'data');
     setCheckoutPlan(plan);
     setCheckoutPhone(phone);
     setCheckoutNetwork(network);
+    setCheckoutElectricity(null);
+    setCheckoutCable(null);
+    setIsPurchaseModalOpen(true);
+  };
+
+  const handleSelectElectricityForCheckout = (details: ElectricityCheckoutDetails) => {
+    setCheckoutServiceType('electricity');
+    setCheckoutElectricity(details);
+    setCheckoutPhone(details.phone);
+    setCheckoutPlan(null);
+    setCheckoutNetwork(null);
+    setCheckoutCable(null);
+    setIsPurchaseModalOpen(true);
+  };
+
+  const handleSelectCableForCheckout = (details: CableCheckoutDetails) => {
+    setCheckoutServiceType('cable');
+    setCheckoutCable(details);
+    setCheckoutPhone(details.phone);
+    setCheckoutPlan(null);
+    setCheckoutNetwork(null);
+    setCheckoutElectricity(null);
     setIsPurchaseModalOpen(true);
   };
 
@@ -102,21 +129,28 @@ export default function Home() {
       />
 
       {/* Hero Section */}
-      <HeroSection onLearnMoMo={() => {
-        const el = document.getElementById('data-purchase-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }} />
+      <HeroSection
+        onLearnMoMo={() => {
+          const el = document.getElementById('data-purchase-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
       {/* Main Interactive Purchasing Engine */}
       <div className="hero-aura my-4 sm:my-6">
         <DataPurchaseWidget
           onSelectPlanForCheckout={handleSelectPlanForCheckout}
+          onSelectElectricityForCheckout={handleSelectElectricityForCheckout}
+          onSelectCableForCheckout={handleSelectCableForCheckout}
           plans={CURATED_DATA_PLANS}
         />
       </div>
 
       {/* Commercial Banks vs DataAbeg Price Comparison */}
       <PriceComparisonSection />
+
+      {/* Interactive USSD Balance Check Codes */}
+      <USSDGuideSection />
 
       {/* Split-Column FAQ Section */}
       <FAQSection />
@@ -128,13 +162,16 @@ export default function Home() {
         onOpenUSSD={scrollToUSSD}
       />
 
-      {/* Purchase & Checkout Modal */}
+      {/* Unified Purchase & Checkout Modal */}
       <PurchaseModal
         isOpen={isPurchaseModalOpen}
         onClose={() => setIsPurchaseModalOpen(false)}
+        serviceType={checkoutServiceType}
         plan={checkoutPlan}
         phoneNumber={checkoutPhone}
         network={checkoutNetwork}
+        electricityDetails={checkoutElectricity}
+        cableDetails={checkoutCable}
         onOrderCompleted={handleOrderCompleted}
         customApiKey={apiKey}
       />

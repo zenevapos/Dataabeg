@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const envKey = process.env.SMEPLUG_SECRET_KEY || '';
-  const isConfigured = Boolean(envKey && envKey.trim().length > 8 && !envKey.includes('your_smeplug'));
+  const gladKey = process.env.GLADTIDINGS_API_TOKEN || process.env.NEXT_PUBLIC_GLADTIDINGS_TOKEN || '';
+  const smeKey = process.env.SMEPLUG_SECRET_KEY || '';
+  
+  const activeKey = gladKey || smeKey;
+  const isGladTidings = Boolean(gladKey && gladKey.trim().length > 10);
+  const isConfigured = Boolean(activeKey && activeKey.trim().length > 8 && !activeKey.includes('your_'));
 
   return NextResponse.json({
     status: true,
     isConfigured,
-    maskedKey: isConfigured ? `${envKey.substring(0, 4)}...${envKey.substring(envKey.length - 4)}` : null,
-    provider: 'SMEPlug VTU Engine (https://smeplug.ng)'
+    maskedKey: isConfigured ? `${activeKey.substring(0, 4)}...${activeKey.substring(activeKey.length - 4)}` : null,
+    provider: isGladTidings ? 'Glad Tidings Data (https://gladtidingsdata.com)' : 'SMEPlug VTU Engine'
   });
 }

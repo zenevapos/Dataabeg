@@ -27,7 +27,7 @@ const TOUR_FEATURES: TourFeature[] = [
     details: {
       heading: 'Instant SIM crediting with 0 human intervention',
       description:
-        'Our direct integration with SMEPlug and telecom switches ensures your line receives data bundles within 5 seconds of payment confirmation.',
+        'Our direct integration with Glad Tidings automated gateway and telecom switches ensures your line receives data bundles and bill tokens within 5 seconds of payment confirmation.',
       highlight: 'Average delivery speed: 4.8 seconds',
       bullets: [
         'Direct switch API integration with MTN, Airtel, Glo & 9mobile',
