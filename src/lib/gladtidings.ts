@@ -8,6 +8,45 @@ import {
 
 const GLADTIDINGS_BASE_URL = 'https://www.gladtidingsdata.com';
 
+export function extractErrorMessage(input: unknown, defaultMessage = 'Transaction could not be processed'): string {
+  if (!input) return defaultMessage;
+  if (typeof input === 'string') return input;
+  if (Array.isArray(input)) {
+    const joined = input
+      .map(item => extractErrorMessage(item, ''))
+      .filter(Boolean)
+      .join(', ');
+    return joined || defaultMessage;
+  }
+  if (typeof input === 'object') {
+    const obj = input as Record<string, unknown>;
+    const candidate =
+      obj.api_response ||
+      obj.msg ||
+      obj.message ||
+      obj.error ||
+      obj.detail ||
+      obj.non_field_errors;
+    if (candidate && candidate !== input) {
+      return extractErrorMessage(candidate, defaultMessage);
+    }
+    const parts: string[] = [];
+    for (const [key, val] of Object.entries(obj)) {
+      if (key !== 'status' && key !== 'Status' && key !== 'data') {
+        const str = extractErrorMessage(val, '');
+        if (str) parts.push(`${key}: ${str}`);
+      }
+    }
+    if (parts.length > 0) return parts.join(' | ');
+    try {
+      return JSON.stringify(input);
+    } catch {
+      return defaultMessage;
+    }
+  }
+  return String(input);
+}
+
 export class GladTidingsClient {
   private token: string;
 
@@ -139,12 +178,14 @@ export class GladTidingsClient {
         };
       }
 
-      const errorMsg =
+      const errorMsg = extractErrorMessage(
         json.api_response ||
         json.error ||
         json.detail ||
         json.message ||
-        (Array.isArray(json) ? json.join(', ') : 'Transaction was not successful on the telecom network.');
+        json,
+        'Transaction was not successful on the telecom network.'
+      );
 
       return {
         status: false,
@@ -216,7 +257,7 @@ export class GladTidingsClient {
 
       return {
         status: false,
-        msg: json.error || json.detail || json.message || 'Airtime top-up failed.',
+        msg: extractErrorMessage(json.error || json.detail || json.message || json, 'Airtime top-up failed.'),
         data: json
       };
     } catch (err: unknown) {
@@ -258,7 +299,7 @@ export class GladTidingsClient {
       if (json.invalid === true || json.name === 'INVALID' || !json.name) {
         return {
           invalid: true,
-          error: json.detail || json.message || 'Invalid meter number. Please verify with your Disco.'
+          error: extractErrorMessage(json.detail || json.message || json.error || json, 'Invalid meter number. Please verify with your Disco.')
         };
       }
 
@@ -348,7 +389,7 @@ export class GladTidingsClient {
 
       return {
         status: false,
-        msg: json.error || json.detail || json.message || 'Electricity bill payment failed.',
+        msg: extractErrorMessage(json.error || json.detail || json.message || json, 'Electricity bill payment failed.'),
         data: json
       };
     } catch (err: unknown) {
@@ -388,7 +429,7 @@ export class GladTidingsClient {
       if (json.invalid === true || !json.name) {
         return {
           invalid: true,
-          error: json.detail || json.message || 'Invalid smartcard number.'
+          error: extractErrorMessage(json.detail || json.message || json.error || json, 'Invalid smartcard number.')
         };
       }
 
@@ -456,7 +497,7 @@ export class GladTidingsClient {
 
       return {
         status: false,
-        msg: json.error || json.detail || json.message || 'Cable subscription failed.',
+        msg: extractErrorMessage(json.error || json.detail || json.message || json, 'Cable subscription failed.'),
         data: json
       };
     } catch (err: unknown) {

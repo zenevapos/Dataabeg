@@ -248,9 +248,23 @@ export function PurchaseModal({
           // ignore
         }
       } else {
-        const rawMsg = data.msg || data.data?.msg || data.error || data.message || '';
+        const raw = data.msg ?? data.data?.msg ?? data.error ?? data.message ?? data.detail ?? '';
+        const rawMsg = typeof raw === 'string'
+          ? raw
+          : Array.isArray(raw)
+          ? raw.map((item: any) => (typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item))).join(', ')
+          : typeof raw === 'object' && raw !== null
+          ? ((raw as any).detail || (raw as any).message || (raw as any).error || (raw as any).msg || JSON.stringify(raw))
+          : String(raw || '');
+
         let friendlyMsg = rawMsg;
-        if (rawMsg.toLowerCase().includes('insufficient') || rawMsg.toLowerCase().includes('wallet')) {
+        const lowerMsg = rawMsg.toLowerCase();
+        if (
+          lowerMsg.includes('insufficient') ||
+          lowerMsg.includes('wallet') ||
+          lowerMsg.includes('balance') ||
+          lowerMsg.includes('fund')
+        ) {
           friendlyMsg = 'Gateway Notice: Insufficient wallet balance on merchant account. Please fund your balance on gladtidingsdata.com to dispense.';
         }
         setErrorMessage(friendlyMsg || 'Transaction could not be processed by gateway. Please verify your details and try again.');
