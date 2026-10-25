@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ADMIN_EMAIL } from '@/lib/firebase';
 import { Zap, ArrowLeft, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react';
+import { isValidNigerianPhone, normalizePhone } from '@/lib/utils';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -49,6 +50,12 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMsg('');
 
+    const cleanPhone = normalizePhone(phone);
+    if (!isValidNigerianPhone(cleanPhone)) {
+      setErrorMsg('Please enter a valid 11-digit Nigerian phone number (e.g. 08031234567).');
+      return;
+    }
+
     if (password.length < 6) {
       setErrorMsg('Password must be at least 6 characters long.');
       return;
@@ -56,7 +63,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      const newUser = await signUpWithEmail(email.trim(), password, name.trim());
+      const newUser = await signUpWithEmail(email.trim(), password, name.trim(), cleanPhone);
       if (newUser.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
         router.push('/admin-salam');
       } else {
@@ -162,8 +169,9 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Phone Number (Optional)
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>Phone Number</span>
+                <span className="text-[10px] text-[#1E40AF] font-bold lowercase tracking-normal">required for instant wallet</span>
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -173,6 +181,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0803 123 4567"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-900 bg-slate-50 outline-none focus:bg-white focus:border-[#1E40AF] focus:ring-2 focus:ring-blue-100"
+                  required
                 />
               </div>
             </div>

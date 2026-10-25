@@ -123,7 +123,12 @@ export function Footer({ onOpenSettings, onOpenTracker, onOpenUSSD }: FooterProp
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
-          <p>© 2026 DataAbeg. All rights reserved. Automated VTU Provider &bull; Brand Color #1E40AF.</p>
+          <div className="flex items-center gap-4">
+            <p>© 2026 DataAbeg. All rights reserved.</p>
+            <Link href="/privacy" className="text-slate-600 hover:text-[#1E40AF] underline">
+              Privacy Policy
+            </Link>
+          </div>
 
           <p className="flex items-center gap-1">
             Built with <Heart className="w-3.5 h-3.5 text-blue-600 fill-[#1E40AF]" /> for Nigerian Internet Users

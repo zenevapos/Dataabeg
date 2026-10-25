@@ -20,7 +20,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<User>;
   signInWithEmail: (email: string, pass: string) => Promise<User>;
-  signUpWithEmail: (email: string, pass: string, displayName?: string) => Promise<User>;
+  signUpWithEmail: (email: string, pass: string, displayName?: string, phoneNumber?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -32,14 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchProfile = async (currentUser: User) => {
+  const fetchProfile = async (currentUser: User, customPhone?: string) => {
     try {
       const p = await getOrCreateUserProfile({
         uid: currentUser.uid,
         email: currentUser.email,
         displayName: currentUser.displayName,
         photoURL: currentUser.photoURL,
-        phoneNumber: currentUser.phoneNumber
+        phoneNumber: customPhone || currentUser.phoneNumber
       });
       setProfile(p);
     } catch (err) {
@@ -73,12 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return cred.user;
   };
 
-  const signUpWithEmail = async (email: string, pass: string, displayName?: string): Promise<User> => {
+  const signUpWithEmail = async (email: string, pass: string, displayName?: string, phoneNumber?: string): Promise<User> => {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     if (displayName) {
       await updateProfile(cred.user, { displayName });
     }
-    await fetchProfile(cred.user);
+    await fetchProfile(cred.user, phoneNumber);
     return cred.user;
   };
 
