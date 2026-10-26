@@ -17,12 +17,16 @@ import { Transaction } from './types';
 
 export interface AdminSettings {
   smeplugApiKey: string;
+  gladtidingsApiKey?: string;
+  activeProvider?: 'gladtidings' | 'smeplug';
   bankName: string;
   accountNumber: string;
   accountName: string;
   supportPhone: string;
   adminPin: string;
   globalDiscountNotice: string;
+  broadcastNotice?: string;
+  broadcastActive?: boolean;
   momoAccountNumber?: string;
   momoAccountName?: string;
   smartcashAccountNumber?: string;
@@ -31,12 +35,16 @@ export interface AdminSettings {
 
 export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   smeplugApiKey: '',
+  gladtidingsApiKey: '230b1f76866a191134045e619ae5f914b2c7cd3f',
+  activeProvider: 'gladtidings',
   bankName: 'Moniepoint MFB / OPay',
-  accountNumber: '08154276838',
+  accountNumber: '1855365255',
   accountName: 'DataAbeg VTU Ventures',
   supportPhone: '08154276838',
   adminPin: 'salam2026',
-  globalDiscountNotice: '⚡ Save up to 71% • Direct Bank Transfer & Instant Debit Card Automated Dispenser'
+  globalDiscountNotice: '⚡ Save up to 71% • Direct Bank Transfer & Instant Debit Card Automated Dispenser',
+  broadcastNotice: '⚡ Super-fast 5-second carrier delivery active across MTN, Airtel, Glo & 9mobile!',
+  broadcastActive: true
 };
 
 /**
@@ -381,5 +389,68 @@ export async function updateUserProfilePhone(
     console.warn('Notice: Firestore profile phone update fallback:', err?.message || err);
   }
 }
+
+/**
+ * Fetch all registered users from Firestore (for Admin)
+ */
+export async function fetchAllUsersFromFirestore(max: number = 100): Promise<UserProfile[]> {
+  try {
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, limit(max));
+    const snap = await getDocs(q);
+    const users: UserProfile[] = [];
+    snap.forEach((docSnap) => {
+      users.push(docSnap.data() as UserProfile);
+    });
+    return users.sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  } catch (err) {
+    console.warn('Could not fetch users from Firestore:', err);
+    return [];
+  }
+}
+
+/**
+ * Admin manual credit/debit adjustment for any user with audit log
+ */
+export async function adminAdjustUserBalance(
+  uid: string,
+  amount: number,
+  type: 'CREDIT' | 'DEBIT',
+  reason: string = 'Admin manual adjustment'
+): Promise<number> {
+  const userRef = doc(db, 'users', uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    throw new Error('User profile does not exist in Firestore');
+  }
+  const current = (snap.data().walletBalance || 0) as number;
+  const newBalance = type === 'CREDIT' ? current + amount : Math.max(0, current - amount);
+  await updateDoc(userRef, {
+    walletBalance: newBalance,
+    updatedAt: serverTimestamp()
+  });
+
+  // Record audit transaction
+  const ref = `ADJUST-${Date.now()}`;
+  await saveOrderToFirestore({
+    id: ref,
+    reference: ref,
+    network: 'MTN',
+    phone: snap.data().phoneNumber || 'Admin Manual',
+    planName: `Wallet ${type}: ₦${amount.toLocaleString()} (${reason})`,
+    planSize: `${type}`,
+    amount: amount,
+    status: 'SUCCESS',
+    paymentMethod: 'ADMIN_MANUAL',
+    createdAt: new Date().toISOString()
+  });
+
+  return newBalance;
+}
+
 
 

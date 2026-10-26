@@ -113,6 +113,7 @@ export default function DashboardLayout({
     { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
     { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
     { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
+    { label: 'Admin Portal', href: '/admin-salam', icon: ShieldCheck },
   ];
 
   if (authLoading || !user) {
