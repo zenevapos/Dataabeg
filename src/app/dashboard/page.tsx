@@ -212,7 +212,10 @@ export default function DashboardOverviewPage() {
           {/* Card 1: Main Naira Wallet */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between h-[132px]">
             <div className="flex items-center justify-between">
-              <span className="text-2xl" role="img" aria-label="Nigeria">🇳🇬</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg leading-none" role="img" aria-label="Nigeria">🇳🇬</span>
+                <span className="text-xs font-bold text-slate-800">NG</span>
+              </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                 Active
               </span>
@@ -243,9 +246,7 @@ export default function DashboardOverviewPage() {
             className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all flex flex-col justify-between h-[132px] cursor-pointer"
           >
             <div className="flex items-center justify-between">
-              <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center font-black text-[11px] text-slate-950">
-                MTN
-              </div>
+              <NetworkLogo network="MTN" size={28} roundedClassName="rounded-xl" />
               <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
                 SME
               </span>
@@ -264,13 +265,11 @@ export default function DashboardOverviewPage() {
           {/* Card 3: Airtel Corporate */}
           <Link
             href="/dashboard/data"
-            onClick={() => { setSelectedNetworkId('2'); setSelectedPlanId(''); }}
+            onClick={() => { setSelectedNetworkId('3'); setSelectedPlanId(''); }}
             className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs hover:border-rose-300 hover:shadow-xs transition-all flex flex-col justify-between h-[132px] cursor-pointer"
           >
             <div className="flex items-center justify-between">
-              <div className="w-7 h-7 rounded-full bg-rose-600 flex items-center justify-center font-black text-[11px] text-white">
-                AIR
-              </div>
+              <NetworkLogo network="AIRTEL" size={28} roundedClassName="rounded-xl" />
               <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
                 CG
               </span>
@@ -289,13 +288,11 @@ export default function DashboardOverviewPage() {
           {/* Card 4: Glo SME & CG */}
           <Link
             href="/dashboard/data"
-            onClick={() => { setSelectedNetworkId('3'); setSelectedPlanId(''); }}
+            onClick={() => { setSelectedNetworkId('2'); setSelectedPlanId(''); }}
             className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs hover:border-emerald-300 hover:shadow-xs transition-all flex flex-col justify-between h-[132px] cursor-pointer"
           >
             <div className="flex items-center justify-between">
-              <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center font-black text-[11px] text-white">
-                GLO
-              </div>
+              <NetworkLogo network="GLO" size={28} roundedClassName="rounded-xl" />
               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                 Direct
               </span>
@@ -314,13 +311,11 @@ export default function DashboardOverviewPage() {
           {/* Card 5: 9mobile */}
           <Link
             href="/dashboard/data"
-            onClick={() => { setSelectedNetworkId('4'); setSelectedPlanId(''); }}
+            onClick={() => { setSelectedNetworkId('6'); setSelectedPlanId(''); }}
             className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs hover:border-emerald-400 hover:shadow-xs transition-all flex flex-col justify-between h-[132px] cursor-pointer"
           >
             <div className="flex items-center justify-between">
-              <div className="w-7 h-7 rounded-full bg-emerald-800 flex items-center justify-center font-black text-[11px] text-lime-400">
-                9M
-              </div>
+              <NetworkLogo network="9MOBILE" size={28} roundedClassName="rounded-xl" />
               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                 High-Speed
               </span>
@@ -406,12 +401,12 @@ export default function DashboardOverviewPage() {
             {/* MTN Pair */}
             <div className="bg-slate-50/80 rounded-xl p-3 text-center border border-slate-100 space-y-1">
               <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700">
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                <NetworkLogo network="MTN" size={16} roundedClassName="rounded-xs" />
                 <span>MTN</span>
                 <span className="text-slate-400 text-[10px]">→</span>
                 <span>NGN</span>
               </div>
-              <div className="text-[11px] font-extrabold text-slate-900">
+              <div className="text-[11px] font-extrabold text-slate-900 font-space">
                 1 GB = ₦290
               </div>
             </div>
@@ -419,12 +414,12 @@ export default function DashboardOverviewPage() {
             {/* Airtel Pair */}
             <div className="bg-slate-50/80 rounded-xl p-3 text-center border border-slate-100 space-y-1">
               <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700">
-                <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                <NetworkLogo network="AIRTEL" size={16} roundedClassName="rounded-xs" />
                 <span>AIR</span>
                 <span className="text-slate-400 text-[10px]">→</span>
                 <span>NGN</span>
               </div>
-              <div className="text-[11px] font-extrabold text-slate-900">
+              <div className="text-[11px] font-extrabold text-slate-900 font-space">
                 1 GB = ₦295
               </div>
             </div>
@@ -432,12 +427,12 @@ export default function DashboardOverviewPage() {
             {/* Glo Pair */}
             <div className="bg-slate-50/80 rounded-xl p-3 text-center border border-slate-100 space-y-1">
               <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700">
-                <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                <NetworkLogo network="GLO" size={16} roundedClassName="rounded-xs" />
                 <span>GLO</span>
                 <span className="text-slate-400 text-[10px]">→</span>
                 <span>NGN</span>
               </div>
-              <div className="text-[11px] font-extrabold text-slate-900">
+              <div className="text-[11px] font-extrabold text-slate-900 font-space">
                 1 GB = ₦275
               </div>
             </div>

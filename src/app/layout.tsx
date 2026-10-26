@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import NextTopLoader from '@/components/NextTopLoader';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -85,6 +86,7 @@ export default function RootLayout({
         suppressHydrationWarning
         style={{ backgroundColor: '#f8fafc', color: '#0f172a' }}
       >
+        <NextTopLoader color="#4F46E5" height={3} showSpinner={false} />
         <AuthProvider>
           {children}
         </AuthProvider>
