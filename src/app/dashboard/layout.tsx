@@ -27,7 +27,12 @@ import {
   MoreHorizontal,
   ShieldCheck,
   Smartphone,
-  Clock
+  Clock,
+  PhoneCall,
+  Zap,
+  Tv,
+  Grid,
+  Code
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -84,28 +89,28 @@ export default function DashboardLayout({
   // Page title resolution based on current path
   const getPageTitle = () => {
     if (pathname === '/dashboard') return 'Dashboard';
-    if (pathname.startsWith('/dashboard/data')) return 'Payments & Data';
-    if (pathname.startsWith('/dashboard/airtime')) return 'Airtime Recharge';
-    if (pathname.startsWith('/dashboard/electricity')) return 'Pay Bills';
+    if (pathname.startsWith('/dashboard/data')) return 'Buy Mobile Data';
+    if (pathname.startsWith('/dashboard/airtime')) return 'Airtime Topup';
+    if (pathname.startsWith('/dashboard/electricity')) return 'Electricity Bills';
     if (pathname.startsWith('/dashboard/cable')) return 'Cable TV Renewal';
-    if (pathname.startsWith('/dashboard/wallet')) return 'Cards & Accounts';
-    if (pathname.startsWith('/dashboard/bulk-data')) return 'Rewards & Bulk';
+    if (pathname.startsWith('/dashboard/wallet')) return 'Accounts & Wallet';
+    if (pathname.startsWith('/dashboard/bulk-data')) return 'Sell Bulk Data';
     if (pathname.startsWith('/dashboard/transactions')) return 'Transactions';
-    if (pathname.startsWith('/dashboard/api-docs')) return 'Perks & API';
+    if (pathname.startsWith('/dashboard/api-docs')) return 'API Docs & Plan IDs';
     return 'Dashboard';
   };
 
-  // Nav Items exactly matching Raenest (Image 1) in label, order, icon & style
+  // Original DataAbeg Nav Items with increased font size and Raenest spacing
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
-    { label: 'Cards', href: '/dashboard/wallet', icon: CreditCard },
-    { label: 'Payments', href: '/dashboard/data', icon: Wallet, hasChevron: true },
-    { label: 'Pay bills', href: '/dashboard/electricity', icon: FileText },
-    { label: 'Invoices', href: '/dashboard/transactions', icon: Receipt },
-    { label: 'Accounts', href: '/dashboard/wallet', icon: Home },
-    { label: 'Rewards', href: '/dashboard/bulk-data', icon: Gift },
-    { label: 'Perks', href: '/dashboard/api-docs', icon: Sparkles },
+    { label: 'Buy Data', href: '/dashboard/data', icon: Smartphone },
+    { label: 'Airtime', href: '/dashboard/airtime', icon: PhoneCall },
+    { label: 'Pay bills', href: '/dashboard/electricity', icon: Zap },
+    { label: 'Cable TV', href: '/dashboard/cable', icon: Tv },
+    { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
+    { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
+    { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
   ];
 
   if (authLoading || !user) {
@@ -122,7 +127,7 @@ export default function DashboardLayout({
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full bg-white text-slate-700">
       <div>
-        {/* Brand / Logo Area exactly matching Raenest (Image 1) */}
+        {/* Brand / Logo Area matching Raenest (Image 1) */}
         <div className="flex items-center gap-2.5 pt-8 pb-8 px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             {/* Raenest-style open ring glyph */}
@@ -134,14 +139,14 @@ export default function DashboardLayout({
                 strokeLinecap="round"
               />
             </svg>
-            <span className="text-[22px] font-black tracking-tight text-[#4f46e5] font-heading lowercase">
+            <span className="text-[23px] font-black tracking-tight text-[#4f46e5] font-heading lowercase">
               dataabeg
             </span>
           </Link>
         </div>
 
-        {/* Raenest-style Navigation Items with airy vertical spacing (Image 1) */}
-        <nav className="px-4 space-y-3.5 text-[14px] font-medium">
+        {/* Navigation Items with larger font size and airy Raenest spacing */}
+        <nav className="px-4 space-y-2.5 text-[15.5px] font-medium">
           {navItems.map((item) => {
             const isActive =
               item.href === '/dashboard'
@@ -152,19 +157,14 @@ export default function DashboardLayout({
               <Link
                 key={item.label}
                 href={item.href}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left ${
+                className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left ${
                   isActive
-                    ? 'bg-[#F0EFFF] text-[#4F46E5] font-semibold'
-                    : 'text-[#64748b] hover:text-slate-900 hover:bg-[#F8F9FA]'
+                    ? 'bg-[#F0EFFF] text-[#4F46E5] font-semibold shadow-2xs'
+                    : 'text-[#52525b] hover:text-slate-900 hover:bg-[#F8F9FA]'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#4F46E5] stroke-[1.8]' : 'text-[#94a3b8] stroke-[1.5]'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.hasChevron && (
-                  <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#4F46E5]' : 'text-[#94a3b8]'}`} />
-                )}
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#4F46E5] stroke-[1.8]' : 'text-[#9ca3af] stroke-[1.5]'}`} />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
@@ -172,12 +172,10 @@ export default function DashboardLayout({
           {isAdmin && (
             <Link
               href="/admin-salam"
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-amber-700 bg-amber-50/70 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-4"
+              className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-amber-700 bg-amber-50/70 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-3"
             >
-              <div className="flex items-center gap-4">
-                <ShieldCheck className="w-[18px] h-[18px] text-amber-600 shrink-0 stroke-[1.6]" />
-                <span>Admin Console</span>
-              </div>
+              <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 stroke-[1.6]" />
+              <span className="truncate">Admin Console</span>
             </Link>
           )}
         </nav>
