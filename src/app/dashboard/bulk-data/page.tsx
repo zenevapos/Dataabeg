@@ -114,7 +114,7 @@ export default function BulkDataPage() {
           <form onSubmit={handleStartBulk} className="space-y-5">
             {/* 1. Network */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 font-space">
                 1. Select Telecom Network:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -141,7 +141,7 @@ export default function BulkDataPage() {
 
             {/* 2. Plan */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 font-space">
                 2. Choose Bundle Size:
               </label>
               <select
@@ -160,7 +160,7 @@ export default function BulkDataPage() {
             {/* 3. Phone Numbers TextArea */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider font-space">
                   3. Paste Recipient Phone Numbers:
                 </label>
                 <span className="text-[11px] text-slate-500">

@@ -20,6 +20,13 @@ html {
   scroll-behavior: smooth;
 }
 
+@theme {
+  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-space: var(--font-space), 'Space Grotesk', system-ui, sans-serif;
+  --font-jakarta: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: var(--font-space), 'Space Grotesk', system-ui, sans-serif;
+}
+
 body {
   background-color: #ffffff;
   color: #1e2022;
@@ -27,7 +34,11 @@ body {
   overflow-x: hidden;
 }
 
-input, button, select, textarea {
+.font-sans {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+input, button, select, textarea, label {
   font-family: inherit;
 }
 

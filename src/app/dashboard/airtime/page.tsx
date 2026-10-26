@@ -84,7 +84,7 @@ export default function AirtimePage() {
           <form onSubmit={handleRecharge} className="space-y-6">
             {/* 1. Network Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 font-space">
                 1. Select Telecom Network
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -114,7 +114,7 @@ export default function AirtimePage() {
 
             {/* 2. Recipient Phone */}
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 font-space">
                 2. Recipient Phone Number
               </label>
               <input
@@ -129,7 +129,7 @@ export default function AirtimePage() {
 
             {/* 3. Amount */}
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 font-space">
                 3. Recharge Amount (₦)
               </label>
               <div className="flex flex-wrap gap-2 mb-3">

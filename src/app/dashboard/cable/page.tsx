@@ -169,7 +169,7 @@ export default function CablePage() {
           <form onSubmit={handleProceedToPurchase} className="space-y-5">
             {/* 1. Provider Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 font-space">
                 1. Select Cable Provider:
               </label>
               <div className="grid grid-cols-3 gap-3 max-w-md">
@@ -198,7 +198,7 @@ export default function CablePage() {
 
             {/* 2. Smartcard Number + Verification */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 font-space">
                 2. IUC / SmartCard Number:
               </label>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -258,7 +258,7 @@ export default function CablePage() {
 
             {/* 3. Package Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 font-space">
                 3. Choose Cable Package:
               </label>
               <select
@@ -276,15 +276,15 @@ export default function CablePage() {
 
             {/* 4. Recipient Phone */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 font-space">
                 4. Notification Phone Number:
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 08012345678"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                placeholder="e.g. 0801 234 5678"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-space font-bold focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
                 required
               />
             </div>

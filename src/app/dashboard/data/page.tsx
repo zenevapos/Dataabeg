@@ -115,7 +115,7 @@ export default function BuyDataPage() {
 
       {/* Network Picker Tabs */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-5">
-        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider font-space">
           1. Select Mobile Telecom Network
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -147,7 +147,7 @@ export default function BuyDataPage() {
 
         {/* Recipient Phone Input */}
         <div className="pt-2">
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 font-space">
             2. Recipient Phone Number
           </label>
           <div className="max-w-md">
@@ -183,10 +183,10 @@ export default function BuyDataPage() {
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold font-space uppercase tracking-wide transition-all cursor-pointer ${
                   categoryFilter === cat
                     ? 'bg-[#4f46e5] text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80'
                 }`}
               >
                 {cat === 'ALL' ? 'All Plans' : cat.replace('_', ' ')}

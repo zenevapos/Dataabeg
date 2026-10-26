@@ -394,7 +394,7 @@ export function DataPurchaseWidget({
           <div className="space-y-6 animate-in fade-in duration-200">
             {/* Step 1: Phone Number Input with Auto-Network Detection */}
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between font-space">
                 <span>1. Enter Recipient Phone Number</span>
                 {autoDetectedMessage && (
                   <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 animate-in fade-in">
@@ -421,7 +421,7 @@ export function DataPurchaseWidget({
 
             {/* Step 2: Network Selector */}
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block font-space">
                 2. Select Mobile Network
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
@@ -457,16 +457,16 @@ export function DataPurchaseWidget({
 
             {/* Step 3: Plan Category Filter */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
-              <span className="font-bold text-slate-500 uppercase text-[11px] shrink-0 mr-1">Filter:</span>
+              <span className="font-bold text-slate-500 uppercase text-[11px] shrink-0 mr-1 font-space">Filter:</span>
               {(['ALL', 'SME', 'SME2', 'SPECIAL', 'CORPORATE_GIFTING', 'GIFTING'] as const).map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setCategoryFilter(cat)}
-                  className={`px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer shrink-0 ${
+                  className={`px-3.5 py-1.5 rounded-full font-bold font-space uppercase tracking-wide transition-all cursor-pointer shrink-0 text-xs ${
                     categoryFilter === cat
                       ? 'bg-[#1E40AF] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {cat === 'ALL' ? 'All Plans' : cat.replace('_', ' ')}
@@ -474,9 +474,9 @@ export function DataPurchaseWidget({
               ))}
             </div>
 
-            {/* Step 4: Plan Selection Grid */}
+            {/* Step 3: Plan Selection Grid */}
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block font-space">
                 3. Choose Data Bundle
               </label>
 
