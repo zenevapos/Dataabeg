@@ -4,30 +4,30 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { DataAbegLogo } from '@/components/DataAbegLogo';
 import {
   LayoutDashboard,
-  Smartphone,
-  PhoneCall,
-  Zap,
-  Tv,
+  ArrowLeftRight,
+  CreditCard,
   Wallet,
-  Grid,
-  Clock,
-  Code,
-  ShieldCheck,
+  FileText,
+  Receipt,
+  Home,
+  Gift,
+  Sparkles,
+  ChevronDown,
+  ChevronLeft,
   Menu,
   X,
   Bell,
-  ChevronDown,
-  ChevronLeft,
   LogOut,
   Edit2,
   MessageCircle,
   User,
   RefreshCw,
   MoreHorizontal,
-  Layers
+  ShieldCheck,
+  Smartphone,
+  Clock
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -84,27 +84,28 @@ export default function DashboardLayout({
   // Page title resolution based on current path
   const getPageTitle = () => {
     if (pathname === '/dashboard') return 'Dashboard';
-    if (pathname.startsWith('/dashboard/data')) return 'Buy Mobile Data';
-    if (pathname.startsWith('/dashboard/airtime')) return 'Airtime Topup';
-    if (pathname.startsWith('/dashboard/electricity')) return 'Electricity Bills';
+    if (pathname.startsWith('/dashboard/data')) return 'Payments & Data';
+    if (pathname.startsWith('/dashboard/airtime')) return 'Airtime Recharge';
+    if (pathname.startsWith('/dashboard/electricity')) return 'Pay Bills';
     if (pathname.startsWith('/dashboard/cable')) return 'Cable TV Renewal';
-    if (pathname.startsWith('/dashboard/wallet')) return 'All Accounts & Wallet';
-    if (pathname.startsWith('/dashboard/bulk-data')) return 'Sell Bulk Data';
+    if (pathname.startsWith('/dashboard/wallet')) return 'Cards & Accounts';
+    if (pathname.startsWith('/dashboard/bulk-data')) return 'Rewards & Bulk';
     if (pathname.startsWith('/dashboard/transactions')) return 'Transactions';
-    if (pathname.startsWith('/dashboard/api-docs')) return 'API Docs & Plan IDs';
+    if (pathname.startsWith('/dashboard/api-docs')) return 'Perks & API';
     return 'Dashboard';
   };
 
+  // Nav Items exactly matching Raenest (Image 1) in label, order, icon & style
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Transactions', href: '/dashboard/transactions', icon: Clock },
-    { label: 'Buy Data', href: '/dashboard/data', icon: Smartphone },
-    { label: 'Airtime', href: '/dashboard/airtime', icon: PhoneCall },
-    { label: 'Pay bills', href: '/dashboard/electricity', icon: Zap },
-    { label: 'Cable TV', href: '/dashboard/cable', icon: Tv },
-    { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
-    { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
-    { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
+    { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
+    { label: 'Cards', href: '/dashboard/wallet', icon: CreditCard },
+    { label: 'Payments', href: '/dashboard/data', icon: Wallet, hasChevron: true },
+    { label: 'Pay bills', href: '/dashboard/electricity', icon: FileText },
+    { label: 'Invoices', href: '/dashboard/transactions', icon: Receipt },
+    { label: 'Accounts', href: '/dashboard/wallet', icon: Home },
+    { label: 'Rewards', href: '/dashboard/bulk-data', icon: Gift },
+    { label: 'Perks', href: '/dashboard/api-docs', icon: Sparkles },
   ];
 
   if (authLoading || !user) {
@@ -120,39 +121,50 @@ export default function DashboardLayout({
 
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full bg-white text-slate-700">
-      <div className="p-6">
-        {/* Brand / Logo Area matching Raenest exact sizing */}
-        <div className="flex items-center gap-2.5 pb-8 pt-1">
+      <div>
+        {/* Brand / Logo Area exactly matching Raenest (Image 1) */}
+        <div className="flex items-center gap-2.5 pt-8 pb-8 px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#4f46e5] to-[#7c3aed] text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Zap className="w-4 h-4 fill-white" />
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 font-heading">
-              data<span className="text-[#4f46e5]">abeg</span>
+            {/* Raenest-style open ring glyph */}
+            <svg className="w-7 h-7 text-[#4f46e5] group-hover:scale-105 transition-transform" viewBox="0 0 28 28" fill="none">
+              <path
+                d="M14 3.5C8.201 3.5 3.5 8.201 3.5 14C3.5 19.799 8.201 24.5 14 24.5C19.799 24.5 24.5 19.799 24.5 14C24.5 11.2 23.4 8.65 21.6 6.75"
+                stroke="currentColor"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="text-[22px] font-black tracking-tight text-[#4f46e5] font-heading lowercase">
+              dataabeg
             </span>
           </Link>
         </div>
 
-        {/* Raenest-style Navigation Items */}
-        <nav className="space-y-1.5 text-[13.5px] font-medium">
+        {/* Raenest-style Navigation Items with airy vertical spacing (Image 1) */}
+        <nav className="px-4 space-y-3.5 text-[14px] font-medium">
           {navItems.map((item) => {
             const isActive =
               item.href === '/dashboard'
                 ? pathname === '/dashboard'
-                : pathname.startsWith(item.href);
+                : pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl transition-all cursor-pointer text-left ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all cursor-pointer text-left ${
                   isActive
-                    ? 'bg-[#f0efff] text-[#4f46e5] font-semibold'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
+                    ? 'bg-[#F0EFFF] text-[#4F46E5] font-semibold'
+                    : 'text-[#64748b] hover:text-slate-900 hover:bg-[#F8F9FA]'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4f46e5]' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-4">
+                  <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#4F46E5] stroke-[1.8]' : 'text-[#94a3b8] stroke-[1.5]'}`} />
+                  <span>{item.label}</span>
+                </div>
+                {item.hasChevron && (
+                  <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#4F46E5]' : 'text-[#94a3b8]'}`} />
+                )}
               </Link>
             );
           })}
@@ -160,27 +172,29 @@ export default function DashboardLayout({
           {isAdmin && (
             <Link
               href="/admin-salam"
-              className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-amber-700 bg-amber-50/80 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-4"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-amber-700 bg-amber-50/70 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-4"
             >
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>Admin Console</span>
+              <div className="flex items-center gap-4">
+                <ShieldCheck className="w-[18px] h-[18px] text-amber-600 shrink-0 stroke-[1.6]" />
+                <span>Admin Console</span>
+              </div>
             </Link>
           )}
         </nav>
       </div>
 
-      {/* Raenest-style bottom user profile widget */}
-      <div className="p-4 border-t border-slate-100/80 m-2">
-        <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-slate-50 transition-colors">
+      {/* Raenest-style bottom user profile floating capsule matching Image 1 */}
+      <div className="p-4 pb-6 mt-auto">
+        <div className="bg-[#f8f9fa] border border-[#f1f3f5] rounded-2xl p-2.5 px-3 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-white border border-slate-200/80 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
               {userInitials}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 truncate">
+              <div className="text-[13px] font-semibold text-slate-900 truncate">
                 {userFullName}
               </div>
-              <div className="text-[11px] text-slate-400 font-medium truncate">
+              <div className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
                 Individual
               </div>
             </div>
@@ -189,7 +203,7 @@ export default function DashboardLayout({
           <div className="relative">
             <button
               onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors cursor-pointer"
+              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
               title="Account menu"
             >
               <MoreHorizontal className="w-4 h-4" />
@@ -226,7 +240,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#f8f9fc] text-slate-900 flex font-sans antialiased">
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-slate-200/70 flex-shrink-0 flex-col justify-between min-h-screen z-30 sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-[240px] bg-white border-r border-[#f1f3f5] flex-shrink-0 flex-col justify-between min-h-screen z-30 sticky top-0 h-screen">
         {renderSidebarContent()}
       </aside>
 
@@ -238,12 +252,17 @@ export default function DashboardLayout({
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="relative w-72 max-w-[85vw] bg-white flex flex-col justify-between z-10 shadow-2xl h-full border-r border-slate-200 animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#4f46e5] text-white flex items-center justify-center font-bold">
-                  <Zap className="w-3.5 h-3.5 fill-white" />
-                </div>
-                <span className="font-bold text-slate-900 font-heading">DataAbeg</span>
+            <div className="flex items-center justify-between px-6 pt-6 pb-2">
+              <div className="flex items-center gap-2.5">
+                <svg className="w-6 h-6 text-[#4f46e5]" viewBox="0 0 28 28" fill="none">
+                  <path
+                    d="M14 3.5C8.201 3.5 3.5 8.201 3.5 14C3.5 19.799 8.201 24.5 14 24.5C19.799 24.5 24.5 19.799 24.5 14C24.5 11.2 23.4 8.65 21.6 6.75"
+                    stroke="currentColor"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="text-xl font-black text-[#4f46e5] lowercase font-heading">dataabeg</span>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -260,7 +279,7 @@ export default function DashboardLayout({
       {/* ================= MAIN CONTENT CANVAS ================= */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Distinction Clean Top Bar */}
-        <header className="h-16 bg-white border-b border-slate-200/70 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
+        <header className="h-16 bg-white border-b border-[#f1f3f5] px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -401,7 +420,7 @@ export default function DashboardLayout({
       </div>
 
       {/* ================= NATIVE MOBILE BOTTOM NAVIGATION BAR ================= */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 py-2 flex items-center justify-around shadow-xl">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#f1f3f5] px-2 py-2 flex items-center justify-around shadow-xl">
         <Link
           href="/dashboard"
           className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold transition-colors ${
@@ -418,7 +437,7 @@ export default function DashboardLayout({
             pathname.startsWith('/dashboard/transactions') ? 'text-[#4f46e5]' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
-          <Clock className="w-5 h-5" />
+          <ArrowLeftRight className="w-5 h-5" />
           <span>History</span>
         </Link>
 
@@ -428,7 +447,7 @@ export default function DashboardLayout({
           className="flex flex-col items-center -mt-5 group"
         >
           <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#4f46e5] to-[#7c3aed] text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-            <Zap className="w-5 h-5 fill-white" />
+            <Smartphone className="w-5 h-5 fill-white" />
           </div>
           <span className="text-[10px] font-extrabold text-[#4f46e5] mt-1">Dispense</span>
         </Link>
@@ -439,16 +458,16 @@ export default function DashboardLayout({
             pathname.startsWith('/dashboard/wallet') ? 'text-[#4f46e5]' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
-          <Wallet className="w-5 h-5" />
-          <span>Accounts</span>
+          <CreditCard className="w-5 h-5" />
+          <span>Cards</span>
         </Link>
 
         <button
           onClick={() => setIsMobileMenuOpen(true)}
           className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
         >
-          <Grid className="w-5 h-5" />
-          <span>Services</span>
+          <MoreHorizontal className="w-5 h-5" />
+          <span>More</span>
         </button>
       </nav>
 
