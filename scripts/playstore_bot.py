@@ -1,13 +1,26 @@
+import sys
 import time
+
+# Ensure UTF-8 output on Windows console
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from playwright.sync_api import sync_playwright
 
 DATA_ABEG_CONFIG = {
     "developer_id": "7521602128207298151",
+    "app_id": "4972711226603665900",
     "app_name": "DataAbeg - Cheap Data & Bills",
     "short_desc": "Buy ultra-cheap MTN, Airtel, Glo & 9mobile data, airtime, and electricity bills.",
     "privacy_policy_url": "https://dataabeg.vercel.app/privacy",
     "website_url": "https://dataabeg.vercel.app",
     "admin_email": "kokoroowoabdulsalam@gmail.com",
+    "phone": "+2348154276838",
+    "category": "Finance",  # or "Tools"
     "full_desc": """⚡ DataAbeg – Ultra-Cheap Mobile Data & Utility Bill Payments in Nigeria
 
 Get access to wholesale SME and Corporate Gifting data bundles at up to 71% discount compared to regular bank and retail rates. Automated instant delivery within 5 seconds!
@@ -36,15 +49,16 @@ def sleep(seconds):
     time.sleep(seconds)
 
 def run_bot():
-    print("🚀 Connecting to running Chrome browser on port 9222...")
+    print("🚀 Connecting to running Brave/Chrome browser on port 9222...")
     with sync_playwright() as p:
         try:
             browser = p.chromium.connect_over_cdp("http://localhost:9222")
         except Exception as e:
-            print("❌ Could not connect to Chrome on port 9222.")
+            print("❌ Could not connect to browser on port 9222.")
             print(f"Details: {e}")
-            print("\n👉 To fix this, close all Chrome background processes and restart Chrome with:")
-            print('& "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --remote-debugging-port=9222')
+            print("\n👉 To fix this, close your current Brave window and restart Brave from PowerShell with:")
+            print('Stop-Process -Name brave -Force -ErrorAction SilentlyContinue')
+            print('& "C:\\Users\\Bello Imam\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe" --remote-debugging-port=9222')
             return
 
         context = browser.contexts[0] if browser.contexts else browser.new_context()
@@ -59,23 +73,13 @@ def run_bot():
 
         if not page:
             page = context.new_page()
-            page.goto(f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/home")
+            dashboard_url = f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/app/{DATA_ABEG_CONFIG['app_id']}/app-dashboard"
+            print(f"Opening dashboard: {dashboard_url}")
+            page.goto(dashboard_url)
 
         print(f"✅ Found Play Console tab: {page.url}")
         page.bring_to_front()
         sleep(2)
-
-        # 1. Click DataAbeg in app list if on home page
-        print("📱 Looking for DataAbeg in the app list...")
-        try:
-            app_link = page.locator("text=DataAbeg").first
-            if app_link.is_visible():
-                app_link.click()
-                sleep(3)
-        except Exception:
-            pass
-
-        print(f"📍 Current URL: {page.url}")
 
         def click_save():
             print("💾 Saving step...")
@@ -84,145 +88,129 @@ def run_bot():
             if save_btn.is_visible():
                 save_btn.click()
                 sleep(2.5)
+                print("✅ Saved successfully!")
+            else:
+                print("ℹ️ Save button not active or not visible.")
 
-        # 2. Privacy Policy
-        print("🔒 Checking Privacy Policy...")
+        # -------------------------------------------------------------
+        # STEP 1: App Category and Contact Details
+        # -------------------------------------------------------------
+        print("\n📂 Checking 'Select an app category and provide contact details'...")
         try:
-            privacy_link = page.locator('a:has-text("Privacy policy"), button:has-text("Set privacy policy")').first
-            if privacy_link.is_visible():
-                privacy_link.click()
+            category_link = page.locator('text="Select an app category and provide contact details"').first
+            if category_link.is_visible():
+                print("Clicking 'Select an app category and provide contact details'...")
+                category_link.click()
+                sleep(3)
+            elif "store-settings" not in page.url:
+                settings_url = f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/app/{DATA_ABEG_CONFIG['app_id']}/store-settings"
+                print(f"Navigating directly to store settings: {settings_url}")
+                page.goto(settings_url)
+                sleep(3)
+
+            # In Store Settings, contact details are behind the 'Store listing contact details' Edit button modal
+            contact_section = page.locator('text="Store listing contact details"').first
+            if contact_section.is_visible():
+                print("Found 'Store listing contact details' section...")
+            
+            # Find and click the Edit button for contact details
+            edit_btns = page.locator('button:has-text("Edit")').all()
+            if len(edit_btns) >= 2:
+                print("Clicking Contact Details 'Edit' button...")
+                edit_btns[1].click()
                 sleep(2)
-                url_input = page.locator('input[type="url"], input[aria-label*="Privacy"]').first
-                if url_input.is_visible():
-                    url_input.fill(DATA_ABEG_CONFIG["privacy_policy_url"])
-                    click_save()
-                page.go_back()
+            elif len(edit_btns) == 1:
+                print("Clicking Edit button...")
+                edit_btns[0].click()
                 sleep(2)
+
+            # Fill inputs inside the modal
+            print(f"Filling contact email: {DATA_ABEG_CONFIG['admin_email']}")
+            page.evaluate(f'''() => {{
+                const inputs = Array.from(document.querySelectorAll('input'));
+                const emailInp = inputs.find(i => i.type === 'email' || (i.getAttribute('aria-label') || '').toLowerCase().includes('email'));
+                if (emailInp) {{
+                    emailInp.value = "{DATA_ABEG_CONFIG['admin_email']}";
+                    emailInp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    emailInp.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                }}
+                const phoneInp = inputs.find(i => i.type === 'tel' || (i.getAttribute('aria-label') || '').toLowerCase().includes('phone'));
+                if (phoneInp) {{
+                    phoneInp.value = "{DATA_ABEG_CONFIG['phone']}";
+                    phoneInp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    phoneInp.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                }}
+                const webInp = inputs.find(i => i.type === 'url' || (i.getAttribute('aria-label') || '').toLowerCase().includes('website'));
+                if (webInp) {{
+                    webInp.value = "{DATA_ABEG_CONFIG['website_url']}";
+                    webInp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    webInp.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                }}
+            }}''')
+            sleep(1)
+
+            # Click Save inside the modal
+            modal_save = page.locator('.modal button:has-text("Save"), material-dialog button:has-text("Save"), button:has-text("Save")').last
+            if modal_save.is_visible():
+                print("Clicking modal Save button...")
+                modal_save.click()
+                sleep(3)
+                print("✅ Contact details saved!")
+
+            # Go back to dashboard
+            dashboard_url = f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/app/{DATA_ABEG_CONFIG['app_id']}/app-dashboard"
+            page.goto(dashboard_url)
+            sleep(3)
         except Exception as e:
-            print(f"Privacy policy step skipped: {e}")
+            print(f"Error in Category & Contact Details: {e}")
 
-        # 3. App Access
-        print("🔑 Checking App Access...")
+        # -------------------------------------------------------------
+        # STEP 2: Main Store Listing Setup
+        # -------------------------------------------------------------
+        print("\n📝 Checking 'Set up your store listing'...")
         try:
-            access_link = page.locator('a:has-text("App access"), button:has-text("App access")').first
-            if access_link.is_visible():
-                access_link.click()
-                sleep(2)
-                radio_all = page.locator('material-radio:has-text("All functionality"), input[type="radio"]').first
-                if radio_all.is_visible():
-                    radio_all.click()
-                    click_save()
-                page.go_back()
-                sleep(2)
-        except Exception as e:
-            print(f"App access step skipped: {e}")
-
-        # 4. Ads
-        print("📢 Checking Ads Declaration...")
-        try:
-            ads_link = page.locator('a:has-text("Ads"), button:has-text("Set ads")').first
-            if ads_link.is_visible():
-                ads_link.click()
-                sleep(2)
-                radio_no_ads = page.locator('material-radio:has-text("No"), label:has-text("No")').first
-                if radio_no_ads.is_visible():
-                    radio_no_ads.click()
-                    click_save()
-                page.go_back()
-                sleep(2)
-        except Exception as e:
-            print(f"Ads step skipped: {e}")
-
-        # 5. Content Rating
-        print("🎯 Checking Content Rating questionnaire...")
-        try:
-            rating_link = page.locator('a:has-text("Content rating"), button:has-text("Start questionnaire")').first
-            if rating_link.is_visible():
-                rating_link.click()
-                sleep(2.5)
-                email_box = page.locator('input[type="email"], input[aria-label*="Email"]').first
-                if email_box.is_visible():
-                    email_box.fill(DATA_ABEG_CONFIG["admin_email"])
-                    cat_radio = page.locator('material-radio:has-text("Utility"), label:has-text("Utility")').first
-                    if cat_radio.is_visible():
-                        cat_radio.click()
-                    next_btn = page.locator('button:has-text("Next")').first
-                    if next_btn.is_visible():
-                        next_btn.click()
-                    sleep(2)
-
-                    no_radios = page.locator('material-radio:has-text("No"), label:has-text("No")')
-                    for i in range(no_radios.count()):
-                        no_radios.nth(i).click()
-                        sleep(0.15)
-                    click_save()
-        except Exception as e:
-            print(f"Content rating step skipped: {e}")
-
-        # 6. Target Audience
-        print("👥 Checking Target Audience...")
-        try:
-            target_link = page.locator('a:has-text("Target audience")').first
-            if target_link.is_visible():
-                target_link.click()
-                sleep(2)
-                age_18 = page.locator('material-checkbox:has-text("18 and over"), label:has-text("18 and over")').first
-                if age_18.is_visible():
-                    age_18.click()
-                next_btn = page.locator('button:has-text("Next")').first
-                if next_btn.is_visible():
-                    next_btn.click()
-                sleep(1.5)
-                appeal_no = page.locator('material-radio:has-text("No"), label:has-text("No")').first
-                if appeal_no.is_visible():
-                    appeal_no.click()
-                click_save()
-                page.go_back()
-                sleep(2)
-        except Exception as e:
-            print(f"Target audience step skipped: {e}")
-
-        # 7. News Apps
-        print("📰 Checking News App declaration...")
-        try:
-            news_link = page.locator('a:has-text("News apps")').first
-            if news_link.is_visible():
-                news_link.click()
-                sleep(2)
-                no_news = page.locator('material-radio:has-text("No"), label:has-text("No")').first
-                if no_news.is_visible():
-                    no_news.click()
-                click_save()
-                page.go_back()
-                sleep(2)
-        except Exception as e:
-            print(f"News app step skipped: {e}")
-
-        # 8. Main Store Listing
-        print("📝 Checking Main Store Listing...")
-        try:
-            store_link = page.locator('a:has-text("Main store listing")').first
+            store_link = page.locator('text="Set up your store listing", a:has-text("Main store listing")').first
             if store_link.is_visible():
+                print("Clicking 'Set up your store listing'...")
                 store_link.click()
-                sleep(2.5)
+                sleep(3)
+            elif "main-store-listing" not in page.url and "key-assets" not in page.url:
+                store_url = f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/app/{DATA_ABEG_CONFIG['app_id']}/key-assets"
+                print(f"Navigating directly to store listing: {store_url}")
+                page.goto(store_url)
+                sleep(3)
 
-                title_input = page.locator('input[aria-label*="App name"]').first
-                if title_input.is_visible():
-                    title_input.fill(DATA_ABEG_CONFIG["app_name"])
+            # App Name
+            title_input = page.locator('input[aria-label*="App name" i], input[data-test-id="app-name"]').first
+            if title_input.is_visible():
+                print(f"Setting App Name: {DATA_ABEG_CONFIG['app_name']}")
+                title_input.fill(DATA_ABEG_CONFIG["app_name"])
+                sleep(0.5)
 
-                short_desc = page.locator('textarea[aria-label*="Short description"]').first
-                if short_desc.is_visible():
-                    short_desc.fill(DATA_ABEG_CONFIG["short_desc"])
+            # Short Description
+            short_desc = page.locator('textarea[aria-label*="Short description" i], textarea[data-test-id="short-description"]').first
+            if short_desc.is_visible():
+                print("Setting Short Description...")
+                short_desc.fill(DATA_ABEG_CONFIG["short_desc"])
+                sleep(0.5)
 
-                full_desc = page.locator('textarea[aria-label*="Full description"]').first
-                if full_desc.is_visible():
-                    full_desc.fill(DATA_ABEG_CONFIG["full_desc"])
+            # Full Description
+            full_desc = page.locator('textarea[aria-label*="Full description" i], textarea[data-test-id="full-description"]').first
+            if full_desc.is_visible():
+                print("Setting Full Description...")
+                full_desc.fill(DATA_ABEG_CONFIG["full_desc"])
+                sleep(0.5)
 
-                click_save()
+            click_save()
+            sleep(2)
+
+            # Return to dashboard to see updated progress
+            dashboard_url = f"https://play.google.com/console/u/1/developers/{DATA_ABEG_CONFIG['developer_id']}/app/{DATA_ABEG_CONFIG['app_id']}/app-dashboard"
+            page.goto(dashboard_url)
+            sleep(3)
+            print("🎉 Automation routine completed! You can now check your dashboard for 11 of 11 complete!")
         except Exception as e:
-            print(f"Store listing step skipped: {e}")
-
-        print("🎉 Finished executing automation bot!")
+            print(f"Error in Store Listing: {e}")
 
 if __name__ == "__main__":
     run_bot()

@@ -14,9 +14,10 @@ export function normalizePhone(raw: string): string {
   let cleaned = raw.replace(/\D/g, '');
   if (cleaned.startsWith('234') && cleaned.length >= 13) {
     cleaned = '0' + cleaned.slice(3);
-  }
-  if (cleaned.startsWith('234') && cleaned.length === 12) {
+  } else if (cleaned.startsWith('234') && cleaned.length === 12) {
     cleaned = '0' + cleaned.slice(3);
+  } else if (cleaned.length === 10 && /^(70|80|81|90|91)\d{8}$/.test(cleaned)) {
+    cleaned = '0' + cleaned;
   }
   return cleaned;
 }

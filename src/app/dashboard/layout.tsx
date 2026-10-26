@@ -25,7 +25,9 @@ import {
   Edit2,
   MessageCircle,
   User,
-  RefreshCw
+  RefreshCw,
+  MoreHorizontal,
+  Layers
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -60,7 +62,9 @@ export default function DashboardLayout({
   const userFullName =
     profile?.displayName ||
     user?.displayName ||
-    (user?.email ? user.email.split('@')[0] : 'Bello Imam');
+    (user?.email ? user.email.split('@')[0] : 'Imamshaffy Bello');
+
+  const userFirstName = userFullName.split(' ')[0] || 'Tobi';
 
   const userInitials =
     userFullName
@@ -69,7 +73,7 @@ export default function DashboardLayout({
       .map((w: string) => w[0])
       .join('')
       .slice(0, 2)
-      .toUpperCase() || 'BI';
+      .toUpperCase() || 'IB';
 
   const userDisplayPhone =
     profile?.phoneNumber ||
@@ -84,7 +88,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/dashboard/airtime')) return 'Airtime Topup';
     if (pathname.startsWith('/dashboard/electricity')) return 'Electricity Bills';
     if (pathname.startsWith('/dashboard/cable')) return 'Cable TV Renewal';
-    if (pathname.startsWith('/dashboard/wallet')) return 'Fund Wallet';
+    if (pathname.startsWith('/dashboard/wallet')) return 'All Accounts & Wallet';
     if (pathname.startsWith('/dashboard/bulk-data')) return 'Sell Bulk Data';
     if (pathname.startsWith('/dashboard/transactions')) return 'Transactions';
     if (pathname.startsWith('/dashboard/api-docs')) return 'API Docs & Plan IDs';
@@ -93,21 +97,21 @@ export default function DashboardLayout({
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Buy Data', href: '/dashboard/data', icon: Smartphone },
-    { label: 'Airtime Topup', href: '/dashboard/airtime', icon: PhoneCall },
-    { label: 'Electricity Bills', href: '/dashboard/electricity', icon: Zap },
-    { label: 'Cable TV', href: '/dashboard/cable', icon: Tv },
-    { label: 'Fund Wallet', href: '/dashboard/wallet', icon: Wallet },
-    { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
     { label: 'Transactions', href: '/dashboard/transactions', icon: Clock },
-    { label: 'API Docs & IDs', href: '/dashboard/api-docs', icon: Code },
+    { label: 'Buy Data', href: '/dashboard/data', icon: Smartphone },
+    { label: 'Airtime', href: '/dashboard/airtime', icon: PhoneCall },
+    { label: 'Pay bills', href: '/dashboard/electricity', icon: Zap },
+    { label: 'Cable TV', href: '/dashboard/cable', icon: Tv },
+    { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
+    { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
+    { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
   ];
 
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-slate-500 text-sm">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#1e40af]" />
+          <RefreshCw className="w-8 h-8 animate-spin text-[#4f46e5]" />
           <span>Opening your DataAbeg dashboard...</span>
         </div>
       </div>
@@ -116,16 +120,21 @@ export default function DashboardLayout({
 
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full bg-white text-slate-700">
-      <div className="p-4 sm:p-5">
-        {/* Brand / Logo Area matching Distinction */}
-        <div className="flex items-center gap-2.5 pb-6 pt-1">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <DataAbegLogo size={32} showText={true} />
+      <div className="p-6">
+        {/* Brand / Logo Area matching Raenest exact sizing */}
+        <div className="flex items-center gap-2.5 pb-8 pt-1">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#4f46e5] to-[#7c3aed] text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <Zap className="w-4 h-4 fill-white" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-slate-900 font-heading">
+              data<span className="text-[#4f46e5]">abeg</span>
+            </span>
           </Link>
         </div>
 
-        {/* Clean Distinction Navigation Items */}
-        <nav className="space-y-1 text-sm font-medium">
+        {/* Raenest-style Navigation Items */}
+        <nav className="space-y-1.5 text-[13.5px] font-medium">
           {navItems.map((item) => {
             const isActive =
               item.href === '/dashboard'
@@ -136,13 +145,13 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-colors cursor-pointer text-left ${
+                className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl transition-all cursor-pointer text-left ${
                   isActive
-                    ? 'bg-blue-50/80 text-[#1d4ed8] font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-[#f0efff] text-[#4f46e5] font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#1d4ed8]' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4f46e5]' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -151,57 +160,73 @@ export default function DashboardLayout({
           {isAdmin && (
             <Link
               href="/admin-salam"
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold"
+              className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-amber-700 bg-amber-50/80 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-4"
             >
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
               <span>Admin Console</span>
             </Link>
           )}
         </nav>
       </div>
 
-      {/* Bottom Distinction-style primary button & user profile */}
-      <div className="p-4 sm:p-5 border-t border-slate-100 space-y-3">
-        <Link
-          href="/dashboard/data"
-          className="w-full bg-[#1e3a8a] hover:bg-[#1d4ed8] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <span>New Purchase</span>
-        </Link>
-
-        <div className="flex items-center justify-between pt-1">
-          <button
-            onClick={() => {
-              setCustomPhone(userDisplayPhone);
-              setIsEditPhoneOpen(true);
-            }}
-            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity text-left"
-            title="Update phone number"
-          >
-            <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-xs">
-              <Smartphone className="w-3.5 h-3.5" />
+      {/* Raenest-style bottom user profile widget */}
+      <div className="p-4 border-t border-slate-100/80 m-2">
+        <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-slate-50 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+              {userInitials}
             </div>
-            <div className="text-[11px] font-medium text-slate-600 truncate max-w-[110px]">
-              {userDisplayPhone}
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-900 truncate">
+                {userFullName}
+              </div>
+              <div className="text-[11px] text-slate-400 font-medium truncate">
+                Individual
+              </div>
             </div>
-          </button>
+          </div>
 
-          <button
-            onClick={() => logout()}
-            className="text-slate-400 hover:text-rose-600 transition-colors p-1"
-            title="Log out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors cursor-pointer"
+              title="Account menu"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {isUserDropdownOpen && (
+              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50 text-xs">
+                <button
+                  onClick={() => {
+                    setIsUserDropdownOpen(false);
+                    setCustomPhone(userDisplayPhone);
+                    setIsEditPhoneOpen(true);
+                  }}
+                  className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Update Phone</span>
+                </button>
+                <button
+                  onClick={() => logout()}
+                  className="w-full text-left px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl flex items-center gap-2 font-medium cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex font-sans antialiased">
+    <div className="min-h-screen bg-[#f8f9fc] text-slate-900 flex font-sans antialiased">
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-slate-200/80 flex-shrink-0 flex-col justify-between min-h-screen z-30 sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-64 bg-white border-r border-slate-200/70 flex-shrink-0 flex-col justify-between min-h-screen z-30 sticky top-0 h-screen">
         {renderSidebarContent()}
       </aside>
 
@@ -212,12 +237,17 @@ export default function DashboardLayout({
             className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-64 max-w-[80vw] bg-white flex flex-col justify-between z-10 shadow-2xl h-full border-r border-slate-200">
-            <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-slate-100">
-              <DataAbegLogo size={28} showText={true} />
+          <div className="relative w-72 max-w-[85vw] bg-white flex flex-col justify-between z-10 shadow-2xl h-full border-r border-slate-200 animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#4f46e5] text-white flex items-center justify-center font-bold">
+                  <Zap className="w-3.5 h-3.5 fill-white" />
+                </div>
+                <span className="font-bold text-slate-900 font-heading">DataAbeg</span>
+              </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -230,33 +260,51 @@ export default function DashboardLayout({
       {/* ================= MAIN CONTENT CANVAS ================= */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Distinction Clean Top Bar */}
-        <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
+        <header className="h-16 bg-white border-b border-slate-200/70 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               title="Open Navigation"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Breadcrumb matching Distinction: (←) Dashboard */}
+            {/* Mobile Greeting / Desktop Breadcrumb */}
             <div className="flex items-center gap-2.5">
-              <Link
-                href="/dashboard"
-                className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
-                title="Back to dashboard home"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Link>
-              <span className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
-                {getPageTitle()}
-              </span>
+              <div className="lg:hidden inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200/80 text-xs font-semibold text-slate-700">
+                <User className="w-3.5 h-3.5 text-slate-500" />
+                <span>Hi, {userFirstName}</span>
+              </div>
+
+              <div className="hidden lg:flex items-center gap-2">
+                {pathname !== '/dashboard' && (
+                  <Link
+                    href="/dashboard"
+                    className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+                    title="Back to dashboard home"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Link>
+                )}
+                <span className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                  {getPageTitle()}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Right section: Bell icon, Plan pill, and User profile capsule */}
+          {/* Right section: Balance capsule, Bell icon, and User profile */}
           <div className="flex items-center gap-3 sm:gap-4 relative">
+            {/* Quick Wallet Balance Pill */}
+            <Link
+              href="/dashboard/wallet"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 transition-colors cursor-pointer"
+            >
+              <span className="text-slate-400 font-normal">Bal:</span>
+              <span className="text-[#4f46e5]">₦{(profile?.walletBalance || 0).toLocaleString()}</span>
+            </Link>
+
             {/* Notification Bell */}
             <div className="relative">
               <button
@@ -265,7 +313,7 @@ export default function DashboardLayout({
                 title="Notifications"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#4f46e5] rounded-full"></span>
               </button>
 
               {isNotificationsOpen && (
@@ -274,15 +322,15 @@ export default function DashboardLayout({
                     <span>Notifications</span>
                     <button
                       onClick={() => setIsNotificationsOpen(false)}
-                      className="text-slate-400 hover:text-slate-700"
+                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl space-y-1">
-                    <div className="font-bold text-blue-900">Glad Tidings VTU Live</div>
+                  <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-xl space-y-1">
+                    <div className="font-bold text-indigo-900">Instant Automated VTU Live</div>
                     <div className="text-slate-600 text-[11px]">
-                      Instant 5-second carrier delivery active across MTN, Airtel, Glo &amp; 9mobile.
+                      5-second direct carrier dispense across MTN, Airtel, Glo &amp; 9mobile.
                     </div>
                   </div>
                   <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
@@ -295,30 +343,14 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* Plan Badge Pill */}
-            <Link
-              href="/dashboard/wallet"
-              className="hidden sm:inline-flex items-center border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold transition-colors"
-            >
-              Basic Plan
-            </Link>
-
-            {/* Distinction User Avatar Capsule: BI initials + Name + Role + Dropdown */}
+            {/* User Avatar Capsule */}
             <div className="relative">
               <button
                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                className="flex items-center gap-2.5 pl-1 cursor-pointer hover:opacity-90 transition-opacity"
+                className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
               >
-                <div className="w-8 h-8 rounded-full bg-[#bfdbfe] text-[#1e40af] font-bold text-xs flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#f0efff] text-[#4f46e5] font-bold text-xs flex items-center justify-center shrink-0 border border-indigo-100">
                   {userInitials}
-                </div>
-                <div className="hidden md:flex flex-col text-left">
-                  <span className="text-xs font-bold text-slate-900 leading-tight">
-                    {userFullName}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    {isAdmin ? 'Administrator' : 'Student'}
-                  </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
               </button>
@@ -333,7 +365,7 @@ export default function DashboardLayout({
                     href="/dashboard/wallet"
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                   >
-                    <Wallet className="w-3.5 h-3.5 text-blue-600" />
+                    <Wallet className="w-3.5 h-3.5 text-[#4f46e5]" />
                     <span>Wallet (₦{(profile?.walletBalance || 0).toFixed(2)})</span>
                   </Link>
                   <button
@@ -342,7 +374,7 @@ export default function DashboardLayout({
                       setCustomPhone(userDisplayPhone);
                       setIsEditPhoneOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-slate-500" />
                     <span>Update Phone Number</span>
@@ -350,7 +382,7 @@ export default function DashboardLayout({
                   <div className="border-t border-slate-100 pt-1">
                     <button
                       onClick={() => logout()}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors text-left font-semibold"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors text-left font-semibold cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Log Out</span>
@@ -362,34 +394,86 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Dynamic Page Content */}
-        <div className="flex-1">
+        {/* Dynamic Page Content with mobile-safe padding bottom for bottom bar */}
+        <div className="flex-1 pb-24 lg:pb-8">
           {children}
         </div>
       </div>
 
-      {/* Floating Action / Support Button matching Distinction */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* ================= NATIVE MOBILE BOTTOM NAVIGATION BAR ================= */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 py-2 flex items-center justify-around shadow-xl">
+        <Link
+          href="/dashboard"
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold transition-colors ${
+            pathname === '/dashboard' ? 'text-[#4f46e5]' : 'text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span>Home</span>
+        </Link>
+
+        <Link
+          href="/dashboard/transactions"
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold transition-colors ${
+            pathname.startsWith('/dashboard/transactions') ? 'text-[#4f46e5]' : 'text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <Clock className="w-5 h-5" />
+          <span>History</span>
+        </Link>
+
+        {/* Elevated Center Action: Buy Data */}
+        <Link
+          href="/dashboard/data"
+          className="flex flex-col items-center -mt-5 group"
+        >
+          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#4f46e5] to-[#7c3aed] text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+            <Zap className="w-5 h-5 fill-white" />
+          </div>
+          <span className="text-[10px] font-extrabold text-[#4f46e5] mt-1">Dispense</span>
+        </Link>
+
+        <Link
+          href="/dashboard/wallet"
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold transition-colors ${
+            pathname.startsWith('/dashboard/wallet') ? 'text-[#4f46e5]' : 'text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <Wallet className="w-5 h-5" />
+          <span>Accounts</span>
+        </Link>
+
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[10px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+        >
+          <Grid className="w-5 h-5" />
+          <span>Services</span>
+        </button>
+      </nav>
+
+      {/* Floating Action / Support Button (Offset on mobile so it doesn't block the nav) */}
+      <div className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-30">
         <a
           href="https://wa.me/2348154276838?text=Hello%20DataAbeg%20Support"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-12 h-12 rounded-full bg-[#1e40af] hover:bg-[#1d4ed8] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105"
-          title="Chat with Support"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105"
+          title="Chat on WhatsApp"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
         </a>
       </div>
 
       {/* ================= MODAL: EDIT PHONE NUMBER ================= */}
       {isEditPhoneOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Update Your Phone Number</h3>
               <button
                 onClick={() => setIsEditPhoneOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -402,7 +486,7 @@ export default function DashboardLayout({
               value={customPhone}
               onChange={(e) => setCustomPhone(e.target.value)}
               placeholder="e.g. 08012345678"
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#4f46e5]"
             />
             <button
               onClick={() => {
@@ -413,7 +497,7 @@ export default function DashboardLayout({
                   alert('Please enter a valid phone number.');
                 }
               }}
-              className="w-full bg-[#1e3a8a] hover:bg-[#1d4ed8] text-white py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              className="w-full bg-[#4f46e5] hover:bg-indigo-700 text-white py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-md shadow-indigo-500/20"
             >
               Save Phone Number
             </button>

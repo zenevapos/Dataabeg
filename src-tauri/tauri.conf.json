@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DataAbeg",
+  "version": "1.0.0",
+  "identifier": "com.dataabeg.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:3000",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "https://dataabeg.vercel.app"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "DataAbeg",
+        "width": 430,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon-512.png"
+    ],
+    "android": {
+      "minSdkVersion": 24
+    }
+  }
+}

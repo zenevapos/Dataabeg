@@ -63,7 +63,7 @@ export default function AirtimePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-heading">
             Instant Airtime Topup
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
@@ -71,20 +71,20 @@ export default function AirtimePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full">
-          <Zap className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-indigo-50 border border-indigo-100 text-[#4f46e5] text-xs font-bold px-3.5 py-1.5 rounded-full">
+          <Zap className="w-3.5 h-3.5" />
           <span>2% Instant Cash Discount</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Form (8 cols) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-7 shadow-xs space-y-5">
-          <form onSubmit={handleRecharge} className="space-y-5">
+        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs space-y-6">
+          <form onSubmit={handleRecharge} className="space-y-6">
             {/* 1. Network Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
-                1. Select Telecom Network:
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                1. Select Telecom Network
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {NETWORKS.map((net) => {
@@ -94,14 +94,14 @@ export default function AirtimePage() {
                       key={net.id}
                       type="button"
                       onClick={() => setSelectedNetworkId(net.id)}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
                         isSelected
-                          ? 'border-[#1e3a8a] bg-blue-50/70 ring-2 ring-blue-600/20 shadow-xs'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-[#4f46e5] bg-[#f0efff]/60 ring-2 ring-indigo-500/20 shadow-xs'
+                          : 'border-slate-200/80 hover:border-slate-300 bg-white'
                       }`}
                     >
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs"
                         style={{ backgroundColor: net.color, color: net.id === 1 ? '#000' : '#fff' }}
                       >
                         {net.name.slice(0, 3)}
@@ -118,23 +118,23 @@ export default function AirtimePage() {
 
             {/* 2. Recipient Phone */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                2. Recipient Phone Number:
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                2. Recipient Phone Number
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. 08012345678"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
                 required
               />
             </div>
 
             {/* 3. Amount */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
-                3. Recharge Amount (₦):
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                3. Recharge Amount (₦)
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
                 {[100, 200, 500, 1000, 2000, 5000].map((amt) => (
@@ -142,10 +142,10 @@ export default function AirtimePage() {
                     key={amt}
                     type="button"
                     onClick={() => handlePresetAmount(amt)}
-                    className={`px-3.5 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       amount === amt
-                        ? 'border-[#1e3a8a] bg-blue-50 text-[#1e3a8a]'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        ? 'border-[#4f46e5] bg-[#f0efff] text-[#4f46e5]'
+                        : 'border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     ₦{amt.toLocaleString()}
@@ -159,78 +159,84 @@ export default function AirtimePage() {
                 value={customAmountInput}
                 onChange={handleCustomChange}
                 placeholder="Enter amount (min ₦50)"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
                 required
               />
             </div>
 
             {/* Summary card */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-xs">
               <div>
-                <span className="text-slate-500 font-medium">You Pay (2% Discount):</span>
-                <div className="text-base font-extrabold text-[#1e3a8a]">
+                <span className="text-slate-400 font-medium">You Pay (2% Discount):</span>
+                <div className="text-lg font-black text-[#4f46e5] font-heading">
                   {formatCurrency(discountedAmount)}
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-                You Save: {formatCurrency(amount - discountedAmount)}
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+                Save: {formatCurrency(amount - discountedAmount)}
               </span>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#1e3a8a] hover:bg-[#1d4ed8] text-white font-bold text-xs sm:text-sm py-3.5 rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[46px]"
+              className="w-full bg-[#4f46e5] hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-500/20 text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <PhoneCall className="w-4 h-4" />
-              <span>Recharge Airtime Now</span>
+              <span>Recharge {formatCurrency(amount)} Now</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
 
         {/* Right Info (4 cols) */}
-        <div className="lg:col-span-4 space-y-5">
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-3">
-            <h3 className="text-base font-bold text-slate-900">Direct VTU Switch</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Airtime recharge credits directly on your recipient line within 3 to 5 seconds with zero network delay.
-            </p>
-            <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Supports all Nigerian networks</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Instant 2% reseller discount</span>
-              </div>
-            </div>
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Airtime Features
+            </h3>
+            <ul className="space-y-2 text-xs text-slate-600">
+              <li className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Instant 3-second delivery</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Automatic 2% instant discount</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Supports MTN, Airtel, Glo, 9mobile</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Funds directly from wallet or card</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
 
-      {/* Checkout Modal */}
+      {/* Purchase Modal */}
       <PurchaseModal
         isOpen={isPurchaseModalOpen}
         onClose={() => setIsPurchaseModalOpen(false)}
-        serviceType="airtime"
-        phoneNumber={phone}
-        network={currentNetwork}
         plan={{
-          id: `airtime-${amount}`,
-          planId: 0,
-          networkId: currentNetwork.id,
+          id: `airtime-${selectedNetworkId}-${amount}`,
+          networkId: selectedNetworkId,
           networkName: currentNetwork.name,
-          name: `${currentNetwork.name} ₦${amount} Airtime`,
+          name: `${formatCurrency(amount)} Airtime`,
+          planId: 0,
           category: 'SME',
           categoryLabel: 'Airtime',
-          size: `₦${amount}`,
+          size: `${formatCurrency(amount)} Airtime`,
           sizeInMB: 0,
-          validity: 'Instant Topup',
+          validity: 'Instant',
           costPrice: discountedAmount,
           sellingPrice: discountedAmount,
           retailPrice: amount,
           savingsPercentage: 2
         }}
+        phoneNumber={phone}
+        network={currentNetwork}
         onOrderCompleted={() => refreshProfile()}
       />
     </div>

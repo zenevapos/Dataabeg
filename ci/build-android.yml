@@ -1,0 +1,78 @@
+name: Build Android APK and AAB (DataAbeg)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK & Build Tools
+        run: |
+          sdkmanager --install "ndk;25.2.9519653" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyD_8yhjcZg_kJHi6-v6xZFPh77o2pM46qo' }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dataabeg-41f9b' }}
+
+      - name: Initialize Tauri Android (if not present)
+        run: |
+          if [ ! -d "src-tauri/gen/android" ]; then
+            npx @tauri-apps/cli android init
+          fi
+        env:
+          NDK_HOME: ${{ steps.setup-android.outputs.ANDROID_HOME }}/ndk/25.2.9519653
+
+      - name: Build Android APK & AAB
+        run: |
+          npx @tauri-apps/cli android build --apk
+          npx @tauri-apps/cli android build --aab
+        env:
+          NDK_HOME: ${{ steps.setup-android.outputs.ANDROID_HOME }}/ndk/25.2.9519653
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DataAbeg-Release-APK
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
+
+      - name: Upload AAB (Google Play Store Bundle) Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DataAbeg-GooglePlay-AAB
+          path: src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: warn

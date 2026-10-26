@@ -2,11 +2,14 @@ const { chromium } = require('playwright-core');
 
 const DATA_ABEG_CONFIG = {
   developerId: '7521602128207298151',
+  appId: '4972711226603665900',
   appName: 'DataAbeg - Cheap Data & Bills',
   shortDesc: 'Buy ultra-cheap MTN, Airtel, Glo & 9mobile data, airtime, and electricity bills.',
   privacyPolicyUrl: 'https://dataabeg.vercel.app/privacy',
   websiteUrl: 'https://dataabeg.vercel.app',
   adminEmail: 'kokoroowoabdulsalam@gmail.com',
+  phone: '+2348154276838',
+  category: 'Finance',
   fullDesc: `⚡ DataAbeg – Ultra-Cheap Mobile Data & Utility Bill Payments in Nigeria
 
 Get access to wholesale SME and Corporate Gifting data bundles at up to 71% discount compared to regular bank and retail rates. Automated instant delivery within 5 seconds!
@@ -36,15 +39,15 @@ function sleep(ms) {
 }
 
 async function runBot() {
-  console.log('🚀 Connecting to your running Brave browser on port 9222...');
+  console.log('🚀 Connecting to running Brave/Chrome browser on port 9222...');
   
   let browser;
   try {
     browser = await chromium.connectOverCDP('http://localhost:9222');
   } catch (err) {
-    console.error('❌ Could not connect to Brave.');
-    console.error('👉 Make sure you started Brave with:');
-    console.error('& "$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\Application\\brave.exe" --remote-debugging-port=9222');
+    console.error('❌ Could not connect to browser on port 9222.');
+    console.error('👉 Make sure you close all running Brave windows and start Brave with:');
+    console.error('& "C:\\Users\\Bello Imam\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe" --remote-debugging-port=9222');
     console.error(err.message);
     process.exit(1);
   }
@@ -57,26 +60,14 @@ async function runBot() {
   let page = pages.find((p) => p.url().includes('play.google.com/console'));
   if (!page) {
     page = await context.newPage();
-    await page.goto(`https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/home`);
+    const dashboardUrl = `https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/app/${DATA_ABEG_CONFIG.appId}/app-dashboard`;
+    console.log('Navigating to dashboard:', dashboardUrl);
+    await page.goto(dashboardUrl);
   }
 
   console.log('✅ Connected to Play Console tab:', page.url());
   await page.bringToFront();
   await sleep(2000);
-
-  // 1. Locate and click DataAbeg in the app list
-  console.log('📱 Looking for DataAbeg in the app list...');
-  try {
-    const appLink = page.locator('text=DataAbeg').first();
-    await appLink.waitFor({ timeout: 8000 });
-    await appLink.click();
-    await sleep(3000);
-  } catch {
-    console.log('Already on DataAbeg page or navigating...');
-  }
-
-  const currentUrl = page.url();
-  console.log('📍 Current Console URL:', currentUrl);
 
   // Helper to click Save button
   async function clickSave() {
@@ -86,162 +77,125 @@ async function runBot() {
     if (await saveBtn.isVisible()) {
       await saveBtn.click();
       await sleep(2500);
+      console.log('✅ Saved successfully!');
+    } else {
+      console.log('ℹ️ Save button not active or not visible.');
     }
   }
 
-  // 2. Task: Privacy Policy
-  console.log('🔒 Checking Privacy Policy...');
+  // -------------------------------------------------------------
+  // STEP 1: App Category & Contact Details
+  // -------------------------------------------------------------
+  console.log('\n📂 Checking "Select an app category and provide contact details"...');
   try {
-    const privacyLink = page.locator('a:has-text("Privacy policy"), button:has-text("Set privacy policy")').first();
-    if (await privacyLink.isVisible()) {
-      await privacyLink.click();
-      await sleep(2000);
-      const urlInput = page.locator('input[type="url"], input[aria-label*="Privacy"]').first();
-      if (await urlInput.isVisible()) {
-        await urlInput.fill(DATA_ABEG_CONFIG.privacyPolicyUrl);
-        await clickSave();
-      }
-      await page.goBack();
-      await sleep(2000);
+    const categoryLink = page.locator('text="Select an app category and provide contact details"').first();
+    if (await categoryLink.isVisible()) {
+      await categoryLink.click();
+      await sleep(3000);
+    } else if (!page.url().includes('store-settings')) {
+      await page.goto(`https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/app/${DATA_ABEG_CONFIG.appId}/store-settings`);
+      await sleep(3000);
     }
-  } catch (e) {
-    console.log('Privacy policy step skipped or already completed');
-  }
 
-  // 3. Task: App Access
-  console.log('🔑 Checking App Access...');
-  try {
-    const accessLink = page.locator('a:has-text("App access"), button:has-text("App access")').first();
-    if (await accessLink.isVisible()) {
-      await accessLink.click();
-      await sleep(2000);
-      const radioAll = page.locator('material-radio:has-text("All functionality"), input[type="radio"]').first();
-      if (await radioAll.isVisible()) {
-        await radioAll.click();
-        await clickSave();
-      }
-      await page.goBack();
-      await sleep(2000);
+    // App radio
+    const appRadio = page.locator('material-radio:has-text("App"), label:has-text("App")').first();
+    if (await appRadio.isVisible()) {
+      await appRadio.click();
+      await sleep(1000);
     }
-  } catch (e) {
-    console.log('App access step skipped or already completed');
-  }
 
-  // 4. Task: Ads
-  console.log('📢 Checking Ads Declaration...');
-  try {
-    const adsLink = page.locator('a:has-text("Ads"), button:has-text("Set ads")').first();
-    if (await adsLink.isVisible()) {
-      await adsLink.click();
-      await sleep(2000);
-      const radioNoAds = page.locator('material-radio:has-text("No"), label:has-text("No")').first();
-      if (await radioNoAds.isVisible()) {
-        await radioNoAds.click();
-        await clickSave();
-      }
-      await page.goBack();
-      await sleep(2000);
-    }
-  } catch (e) {
-    console.log('Ads step skipped or already completed');
-  }
-
-  // 5. Task: Content Rating (IARC)
-  console.log('🎯 Checking Content Rating questionnaire...');
-  try {
-    const ratingLink = page.locator('a:has-text("Content rating"), button:has-text("Start questionnaire")').first();
-    if (await ratingLink.isVisible()) {
-      await ratingLink.click();
-      await sleep(2500);
-
-      const emailBox = page.locator('input[type="email"], input[aria-label*="Email"]').first();
-      if (await emailBox.isVisible()) {
-        await emailBox.fill(DATA_ABEG_CONFIG.adminEmail);
-        const catRadio = page.locator('material-radio:has-text("Utility"), label:has-text("Utility")').first();
-        if (await catRadio.isVisible()) await catRadio.click();
-        
-        const nextBtn = page.locator('button:has-text("Next")').first();
-        if (await nextBtn.isVisible()) await nextBtn.click();
-        await sleep(2000);
-
-        const noRadios = page.locator('material-radio:has-text("No"), label:has-text("No")');
-        const count = await noRadios.count();
-        for (let i = 0; i < count; i++) {
-          await noRadios.nth(i).click();
-          await sleep(150);
+    // Category dropdown
+    try {
+      const catDropdown = page.locator('material-dropdown-select[aria-label*="Category" i], [role="combobox"]').first();
+      if (await catDropdown.isVisible()) {
+        await catDropdown.click();
+        await sleep(1000);
+        const financeOpt = page.locator('material-select-dropdown-item:has-text("Finance"), [role="option"]:has-text("Finance")').first();
+        if (await financeOpt.isVisible()) {
+          await financeOpt.click();
+          await sleep(1000);
         }
-        await clickSave();
       }
+    } catch (e) {
+      console.log('Category dropdown note:', e.message);
     }
-  } catch (e) {
-    console.log('Content rating step skipped or already completed');
+
+    // Contact Email
+    const emailInput = page.locator('input[type="email"], input[aria-label*="email" i]').first();
+    if (await emailInput.isVisible()) {
+      await emailInput.fill(DATA_ABEG_CONFIG.adminEmail);
+      await sleep(500);
+    }
+
+    // Phone
+    const phoneInput = page.locator('input[type="tel"], input[aria-label*="phone" i]').first();
+    if (await phoneInput.isVisible()) {
+      await phoneInput.fill(DATA_ABEG_CONFIG.phone);
+      await sleep(500);
+    }
+
+    // Website
+    const websiteInput = page.locator('input[type="url"], input[aria-label*="website" i]').first();
+    if (await websiteInput.isVisible()) {
+      await websiteInput.fill(DATA_ABEG_CONFIG.websiteUrl);
+      await sleep(500);
+    }
+
+    await clickSave();
+    await sleep(2000);
+
+    // Return to dashboard
+    await page.goto(`https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/app/${DATA_ABEG_CONFIG.appId}/app-dashboard`);
+    await sleep(3000);
+  } catch (err) {
+    console.error('Error in category & contact details:', err.message);
   }
 
-  // 6. Task: Target Audience
-  console.log('👥 Checking Target Audience...');
+  // -------------------------------------------------------------
+  // STEP 2: Main Store Listing Setup
+  // -------------------------------------------------------------
+  console.log('\n📝 Checking "Set up your store listing"...');
   try {
-    const targetLink = page.locator('a:has-text("Target audience")').first();
-    if (await targetLink.isVisible()) {
-      await targetLink.click();
-      await sleep(2000);
-      const age18 = page.locator('material-checkbox:has-text("18 and over"), label:has-text("18 and over")').first();
-      if (await age18.isVisible()) await age18.click();
-      
-      const nextBtn = page.locator('button:has-text("Next")').first();
-      if (await nextBtn.isVisible()) await nextBtn.click();
-      await sleep(1500);
-
-      const appealNo = page.locator('material-radio:has-text("No"), label:has-text("No")').first();
-      if (await appealNo.isVisible()) await appealNo.click();
-      await clickSave();
-      await page.goBack();
-      await sleep(2000);
+    const storeLink = page.locator('text="Set up your store listing", a:has-text("Main store listing")').first();
+    if (await storeLink.isVisible()) {
+      await storeLink.click();
+      await sleep(3000);
+    } else if (!page.url().includes('main-store-listing') && !page.url().includes('key-assets')) {
+      await page.goto(`https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/app/${DATA_ABEG_CONFIG.appId}/key-assets`);
+      await sleep(3000);
     }
-  } catch (e) {
-    console.log('Target audience step skipped or already completed');
-  }
 
-  // 7. Task: News App
-  console.log('📰 Checking News App...');
-  try {
-    const newsLink = page.locator('a:has-text("News apps")').first();
-    if (await newsLink.isVisible()) {
-      await newsLink.click();
-      await sleep(2000);
-      const noNews = page.locator('material-radio:has-text("No"), label:has-text("No")').first();
-      if (await noNews.isVisible()) await noNews.click();
-      await clickSave();
-      await page.goBack();
-      await sleep(2000);
+    // App name
+    const titleInput = page.locator('input[aria-label*="App name" i], input[data-test-id="app-name"]').first();
+    if (await titleInput.isVisible()) {
+      await titleInput.fill(DATA_ABEG_CONFIG.appName);
+      await sleep(500);
     }
-  } catch (e) {
-    console.log('News app step skipped or already completed');
-  }
 
-  // 8. Task: Main Store Listing Text
-  console.log('📝 Checking Main Store Listing...');
-  try {
-    const storeListingLink = page.locator('a:has-text("Main store listing")').first();
-    if (await storeListingLink.isVisible()) {
-      await storeListingLink.click();
-      await sleep(2500);
-
-      const titleInput = page.locator('input[aria-label*="App name"]').first();
-      if (await titleInput.isVisible()) await titleInput.fill(DATA_ABEG_CONFIG.appName);
-
-      const shortDescInput = page.locator('textarea[aria-label*="Short description"]').first();
-      if (await shortDescInput.isVisible()) await shortDescInput.fill(DATA_ABEG_CONFIG.shortDesc);
-
-      const fullDescInput = page.locator('textarea[aria-label*="Full description"]').first();
-      if (await fullDescInput.isVisible()) await fullDescInput.fill(DATA_ABEG_CONFIG.fullDesc);
-
-      await clickSave();
+    // Short description
+    const shortDescInput = page.locator('textarea[aria-label*="Short description" i], textarea[data-test-id="short-description"]').first();
+    if (await shortDescInput.isVisible()) {
+      await shortDescInput.fill(DATA_ABEG_CONFIG.shortDesc);
+      await sleep(500);
     }
-  } catch (e) {
-    console.log('Store listing step skipped or already completed');
-  }
 
-  console.log('🎉 Automation routine completed!');
+    // Full description
+    const fullDescInput = page.locator('textarea[aria-label*="Full description" i], textarea[data-test-id="full-description"]').first();
+    if (await fullDescInput.isVisible()) {
+      await fullDescInput.fill(DATA_ABEG_CONFIG.fullDesc);
+      await sleep(500);
+    }
+
+    await clickSave();
+    await sleep(2000);
+
+    // Return to dashboard
+    await page.goto(`https://play.google.com/console/u/1/developers/${DATA_ABEG_CONFIG.developerId}/app/${DATA_ABEG_CONFIG.appId}/app-dashboard`);
+    await sleep(3000);
+    console.log('🎉 Automation routine completed! Check dashboard for 11 of 11 complete!');
+  } catch (err) {
+    console.error('Error in store listing:', err.message);
+  }
 }
 
 runBot().catch(console.error);

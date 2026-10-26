@@ -13,13 +13,21 @@ import {
   RefreshCw,
   Clock,
   ArrowRight,
-  Info
+  Info,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Zap,
+  ArrowDownLeft,
+  Share2
 } from 'lucide-react';
 
 export default function WalletPage() {
   const { user, profile, refreshProfile } = useAuth();
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
 
   useEffect(() => {
     getAdminSettings()
@@ -33,157 +41,187 @@ export default function WalletPage() {
     setTimeout(() => setCopiedAccount(null), 2000);
   };
 
+  const userFullName = profile?.displayName || user?.displayName || 'Imamshaffy Bello';
+  const balance = profile?.walletBalance || 0;
+
   const virtualAccounts = [
     {
       bank: adminSettings.bankName || 'Moniepoint MFB',
       accountNumber: adminSettings.accountNumber || '08154276838',
       accountName: adminSettings.accountName || 'DataAbeg VTU Ventures',
       speed: 'Instant (30s)',
-      key: 'moniepoint'
+      key: 'moniepoint',
+      logo: '🏦'
     },
     {
       bank: 'OPay Digital Services',
       accountNumber: '8154276838',
       accountName: adminSettings.accountName || 'DataAbeg VTU Ventures',
       speed: 'Instant (30s)',
-      key: 'opay'
+      key: 'opay',
+      logo: '📱'
     }
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1100px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-[1200px] mx-auto">
+      {/* Top Total Balance Header (Raenest Mobile & Web Style) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Fund Your DataAbeg Wallet
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Make a bank transfer to your dedicated account number below. Your wallet balance credits automatically within 30 seconds.
-          </p>
+          <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold mb-1">
+            <span>Total balance</span>
+            <button
+              onClick={() => setShowBalance(!showBalance)}
+              className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-heading">
+              {showBalance ? `₦${balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : '••••••••'}
+            </h1>
+            <button
+              onClick={() => refreshProfile()}
+              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              title="Refresh Balance"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Current Balance */}
-        <div className="flex items-center gap-2.5 bg-[#1e293b] text-white px-4 py-2 rounded-2xl shadow-xs self-start sm:self-auto">
-          <Wallet className="w-4 h-4 text-amber-400" />
-          <div className="text-right">
-            <div className="text-[10px] text-slate-400 font-bold uppercase">BALANCE</div>
-            <div className="text-sm font-extrabold text-amber-400">
-              ₦{(profile?.walletBalance || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </div>
+        {/* Action Pills */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => refreshProfile()}
-            className="p-1 hover:text-amber-300 transition-colors cursor-pointer ml-1"
-            title="Refresh balance"
+            onClick={() => handleCopy(adminSettings.accountNumber || '08154276838', 'top')}
+            className="px-4 py-2.5 rounded-full bg-[#4f46e5] hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <span>+ Add money</span>
           </button>
+          <a
+            href="https://wa.me/2348154276838?text=Hello%20DataAbeg%20Support"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+          >
+            Support
+          </a>
         </div>
       </div>
 
-      {/* Virtual Account Cards Grid */}
-      <div className="space-y-4">
-        <h2 className="text-base font-bold text-slate-900">
-          Dedicated Automated Transfer Accounts
-        </h2>
+      {/* RAENEST CARDS PREVIEW SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Raenest Virtual Card (Screenshot 4 Style) */}
+        <div className="lg:col-span-1">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Virtual Card
+          </div>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e1b4b] via-[#0f172a] to-[#1e293b] p-6 text-white shadow-xl shadow-indigo-950/20 aspect-[1.58/1] flex flex-col justify-between">
+            {/* Top Card Row */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium tracking-wide text-slate-300">
+                Virtual Card
+              </span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-[#4f46e5] flex items-center justify-center text-[10px] font-black">
+                  D
+                </div>
+                <span className="font-bold text-sm tracking-tight">dataabeg</span>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {virtualAccounts.map((acc) => (
-            <div
-              key={acc.key}
-              className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
+            {/* Middle Chip & Number */}
+            <div className="space-y-2 my-auto">
+              <div className="w-8 h-6 rounded-md bg-amber-400/80 border border-amber-300/40"></div>
+              <div className="font-mono text-base tracking-widest text-slate-200 font-semibold">
+                •••• •••• •••• {user?.uid ? user.uid.slice(-4) : '4912'}
+              </div>
+            </div>
+
+            {/* Bottom Card Row */}
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-[9px] text-slate-400 uppercase font-semibold">Cardholder</div>
+                <div className="text-xs font-bold tracking-wide uppercase truncate max-w-[140px]">
+                  {userFullName}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {/* Mastercard-style overlapping circles */}
+                <div className="w-6 h-6 rounded-full bg-[#eb001b] opacity-90 -mr-3"></div>
+                <div className="w-6 h-6 rounded-full bg-[#f79e1b] opacity-90"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* All Accounts (Raenest Screenshot 2 & 3 Style) */}
+        <div className="lg:col-span-2 space-y-3">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            All Dedicated Accounts
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {virtualAccounts.map((acc) => (
+              <div
+                key={acc.key}
+                className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-indigo-200 transition-colors"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-blue-600" />
-                    <span>{acc.bank}</span>
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{acc.logo}</span>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">{acc.bank}</div>
+                      <div className="text-[10px] text-slate-400">{acc.accountName}</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                     {acc.speed}
                   </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between">
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">
-                      ACCOUNT NUMBER
-                    </div>
-                    <div className="text-lg font-black font-mono tracking-wider text-slate-900">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase">Dedicated Account No.</div>
+                    <div className="text-base font-black font-mono tracking-wider text-slate-900">
                       {acc.accountNumber}
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleCopy(acc.accountNumber, acc.key)}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1.5 border border-blue-200 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shadow-xs"
+                    title="Copy Account Number"
                   >
                     {copiedAccount === acc.key ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Copied</span>
-                      </>
+                      <Check className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy</span>
-                      </>
+                      <Copy className="w-4 h-4" />
                     )}
                   </button>
                 </div>
 
-                <div className="text-xs text-slate-600">
-                  <span className="text-slate-400">Account Name:</span>{' '}
-                  <span className="font-bold text-slate-800">{acc.accountName}</span>
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span>Fee: 0% Free</span>
+                  <span className="font-semibold text-indigo-600">Auto-credits wallet</span>
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Auto-credited via direct webhook. No manual approval needed.</span>
-              </div>
+          {/* Transfer Instructions Callout */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs flex items-start gap-3.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#4f46e5] flex items-center justify-center shrink-0 mt-0.5">
+              <Zap className="w-4 h-4" />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Step-by-Step Instructions */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-7 shadow-xs space-y-4">
-        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Info className="w-4 h-4 text-blue-600" />
-          <span>How Automated Wallet Funding Works</span>
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600">
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-            <span className="w-6 h-6 rounded-full bg-[#1e3a8a] text-white font-bold flex items-center justify-center text-xs">
-              1
-            </span>
-            <div className="font-bold text-slate-900 pt-1">Copy Account Number</div>
-            <p className="leading-relaxed">
-              Open your banking app (GTBank, Access, Zenith, OPay, PalmPay, Kuda, etc.) and initiate a bank transfer.
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-            <span className="w-6 h-6 rounded-full bg-[#1e3a8a] text-white font-bold flex items-center justify-center text-xs">
-              2
-            </span>
-            <div className="font-bold text-slate-900 pt-1">Transfer Any Amount</div>
-            <p className="leading-relaxed">
-              Transfer your desired amount (e.g. ₦1,000, ₦5,000, ₦20,000). Ensure the beneficiary matches the account name.
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-            <span className="w-6 h-6 rounded-full bg-[#1e3a8a] text-white font-bold flex items-center justify-center text-xs">
-              3
-            </span>
-            <div className="font-bold text-slate-900 pt-1">Instant Auto-Credit</div>
-            <p className="leading-relaxed">
-              Our automated banking switch detects the credit in 30 seconds and your wallet updates instantly.
-            </p>
+            <div className="text-xs text-slate-600 space-y-1">
+              <div className="font-bold text-slate-900">How Instant Funding Works</div>
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                Open your Nigerian banking app (OPay, PalmPay, Kuda, GTBank, Zenith, Access, etc.), transfer to your dedicated Moniepoint or OPay account number above. Your DataAbeg balance updates automatically within 30 seconds.
+              </p>
+            </div>
           </div>
         </div>
       </div>
