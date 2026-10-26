@@ -8,6 +8,7 @@ import { NETWORKS, CURATED_DATA_PLANS } from '@/lib/constants';
 import { fetchOrdersByUser, getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
 import { formatCurrency } from '@/lib/utils';
 import { PurchaseModal } from '@/components/PurchaseModal';
+import NetworkLogo from '@/components/NetworkLogo';
 import {
   Smartphone,
   Zap,
@@ -513,10 +514,7 @@ export default function DashboardOverviewPage() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
                 }`}
               >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: net.color }}
-                />
+                <NetworkLogo network={net.name} size={18} roundedClassName="rounded-xs" />
                 <span>{net.displayName}</span>
               </button>
             );
@@ -532,8 +530,8 @@ export default function DashboardOverviewPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="08012345678"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
+              placeholder="0801 234 5678"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-space font-bold placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
             />
           </div>
 

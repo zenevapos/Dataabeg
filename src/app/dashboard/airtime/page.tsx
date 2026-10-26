@@ -6,6 +6,7 @@ import { NETWORKS } from '@/lib/constants';
 import { formatCurrency, isValidNigerianPhone, normalizePhone } from '@/lib/utils';
 import { PhoneCall, CheckCircle2, Zap, ArrowRight, Check } from 'lucide-react';
 import { PurchaseModal } from '@/components/PurchaseModal';
+import NetworkLogo from '@/components/NetworkLogo';
 
 export default function AirtimePage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -100,15 +101,10 @@ export default function AirtimePage() {
                           : 'border-slate-200/80 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-xs"
-                        style={{ backgroundColor: net.color, color: net.id === 1 ? '#000' : '#fff' }}
-                      >
-                        {net.name.slice(0, 3)}
-                      </div>
+                      <NetworkLogo network={net.name} size={36} roundedClassName="rounded-xl" />
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-900 truncate">{net.displayName}</div>
-                        <div className="text-[10px] text-emerald-600 font-bold">2% OFF</div>
+                        <div className="text-[10px] text-emerald-600 font-bold font-space">2% OFF</div>
                       </div>
                     </button>
                   );
@@ -125,8 +121,8 @@ export default function AirtimePage() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 08012345678"
-                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
+                placeholder="e.g. 0801 234 5678"
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-base text-slate-900 font-space font-bold tracking-wide focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
                 required
               />
             </div>
@@ -142,7 +138,7 @@ export default function AirtimePage() {
                     key={amt}
                     type="button"
                     onClick={() => handlePresetAmount(amt)}
-                    className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold font-space transition-all cursor-pointer ${
                       amount === amt
                         ? 'border-[#4f46e5] bg-[#f0efff] text-[#4f46e5]'
                         : 'border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50'
@@ -159,7 +155,7 @@ export default function AirtimePage() {
                 value={customAmountInput}
                 onChange={handleCustomChange}
                 placeholder="Enter amount (min ₦50)"
-                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 text-base text-slate-900 font-space font-bold focus:outline-none focus:bg-white focus:border-[#4f46e5] transition-colors"
                 required
               />
             </div>
@@ -168,11 +164,11 @@ export default function AirtimePage() {
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-xs">
               <div>
                 <span className="text-slate-400 font-medium">You Pay (2% Discount):</span>
-                <div className="text-lg font-black text-[#4f46e5] font-heading">
+                <div className="text-xl font-black text-[#4f46e5] font-space tracking-tight">
                   {formatCurrency(discountedAmount)}
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full font-space">
                 Save: {formatCurrency(amount - discountedAmount)}
               </span>
             </div>
@@ -181,7 +177,7 @@ export default function AirtimePage() {
               type="submit"
               className="w-full bg-[#4f46e5] hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-500/20 text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Recharge {formatCurrency(amount)} Now</span>
+              <span>Recharge <span className="font-space">{formatCurrency(amount)}</span> Now</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

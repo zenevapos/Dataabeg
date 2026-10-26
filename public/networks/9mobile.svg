@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- 9mobile Dark Forest Green Container -->
+  <rect width="100" height="100" rx="22" fill="#0A3326"/>
+
+  <!-- Stylized 9 Logo in Lime Green -->
+  <g transform="translate(4, -4)">
+    <!-- Main loop of the 9 -->
+    <path d="M48 24 C36 24 28 33 28 44 C28 56 36 64 48 64 C54 64 59 62 63 58 L46 82 L34 82 L52 56 C44 58 38 52 38 44 C38 36 43 31 50 31 C57 31 62 36 62 44 L62 48 C62 50 64 52 66 52 C68 52 70 50 70 48 L70 44 C70 32 60 24 48 24 Z" fill="#88C43F"/>
+    
+    <!-- Inner White Bullseye / Node -->
+    <circle cx="48" cy="44" r="6" fill="#FFFFFF"/>
+
+    <!-- Radio / Signal Waves from 9 -->
+    <path d="M56 20 C64 22 70 28 73 35" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+    <path d="M62 14 C73 17 80 25 84 35" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- 9mobile Text -->
+  <text x="50" y="88" font-family="'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="-0.3">9mobile</text>
+</svg>

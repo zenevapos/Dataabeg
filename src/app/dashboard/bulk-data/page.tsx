@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { NETWORKS, CURATED_DATA_PLANS } from '@/lib/constants';
 import { formatCurrency, isValidNigerianPhone, normalizePhone } from '@/lib/utils';
 import { Grid, Send, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import NetworkLogo from '@/components/NetworkLogo';
 
 export default function BulkDataPage() {
   const { profile, refreshProfile } = useAuth();
@@ -130,12 +131,7 @@ export default function BulkDataPage() {
                           : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                     >
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs"
-                        style={{ backgroundColor: net.color, color: net.id === 1 ? '#000' : '#fff' }}
-                      >
-                        {net.name.slice(0, 3)}
-                      </div>
+                      <NetworkLogo network={net.name} size={32} roundedClassName="rounded-xl" />
                       <span className="text-xs font-bold text-slate-900 truncate">{net.displayName}</span>
                     </button>
                   );

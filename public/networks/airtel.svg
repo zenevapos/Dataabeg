@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- Crisp Light Card Background -->
+  <rect width="100" height="100" rx="22" fill="#FFFFFF"/>
+  <rect width="100" height="100" rx="22" fill="none" stroke="#FEE2E2" stroke-width="2"/>
+  
+  <!-- Airtel Ribbon Wave / Swirl -->
+  <path d="M50 14 C36 14, 25 25, 25 39 C25 54, 38 62, 53 62 C57 62, 60 61, 62 59 C65 56, 65 52, 62 49 C59 46, 55 46, 52 48 C48 50, 44 50, 40 48 C34 45, 34 38, 38 33 C42 28, 50 25, 57 28 C64 31, 65 38, 62 44 C60 48, 62 53, 66 55 C70 57, 75 55, 77 50 C81 40, 78 28, 69 20 C64 16, 57 14, 50 14 Z" fill="#ED1C24"/>
+  <path d="M48 37 C42 37, 38 41, 38 46 C38 51, 43 54, 49 53 C52 52, 55 49, 55 45 C55 41, 52 37, 48 37 Z" fill="#ED1C24"/>
+
+  <!-- Lowercase airtel text -->
+  <text x="50" y="82" font-family="'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif" font-size="16" font-weight="800" fill="#ED1C24" text-anchor="middle" letter-spacing="-0.5">airtel</text>
+</svg>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { NETWORKS } from '@/lib/constants';
 import { Copy, Check, HelpCircle, Radio } from 'lucide-react';
+import NetworkLogo from '@/components/NetworkLogo';
 
 export function USSDGuideSection() {
   const [copiedNetwork, setCopiedNetwork] = useState<string | null>(null);
@@ -36,15 +37,7 @@ export function USSDGuideSection() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold"
-                  style={{
-                    backgroundColor: network.color,
-                    color: network.name === 'MTN' ? '#000' : '#fff'
-                  }}
-                >
-                  {network.name}
-                </span>
+                <NetworkLogo network={network.name} size={36} roundedClassName="rounded-xl" />
                 <Radio className="w-4 h-4 text-slate-400" />
               </div>
 

@@ -27,16 +27,23 @@ body {
   overflow-x: hidden;
 }
 
-.font-space {
-  font-family: var(--font-space), 'Space Grotesk', system-ui, sans-serif;
+input, button, select, textarea {
+  font-family: inherit;
+}
+
+.font-space,
+.font-number,
+.font-heading {
+  font-family: var(--font-space), 'Space Grotesk', system-ui, sans-serif !important;
+  font-feature-settings: "tnum" 1;
 }
 
 .font-jakarta {
-  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif !important;
 }
 
 h1, h2, h3, h4, .heading-space {
-  font-family: var(--font-space), 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-space), 'Space Grotesk', system-ui, sans-serif !important;
 }
 
 /* Light Theme Hero Aura */

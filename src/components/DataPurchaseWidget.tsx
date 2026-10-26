@@ -5,6 +5,7 @@ import { NETWORKS, CURATED_DATA_PLANS, DISCOS, CABLE_PROVIDERS, CABLE_PLANS } fr
 import { NetworkInfo, DataPlan, PlanCategory, ElectricityDisco, CableProvider, CablePlan } from '@/lib/types';
 import { detectNetworkFromPhone, isValidNigerianPhone, normalizePhone, formatCurrency } from '@/lib/utils';
 import { ElectricityCheckoutDetails, CableCheckoutDetails } from '@/components/PurchaseModal';
+import NetworkLogo from '@/components/NetworkLogo';
 import {
   Check,
   Phone,
@@ -442,10 +443,7 @@ export function DataPurchaseWidget({
                       }`}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: net.color }}
-                        />
+                        <NetworkLogo network={net.name} size={24} roundedClassName="rounded-md" />
                         <span className="text-sm font-bold">{net.displayName}</span>
                       </div>
                       {isSelected && (
@@ -588,10 +586,7 @@ export function DataPurchaseWidget({
                       }`}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: net.color }}
-                        />
+                        <NetworkLogo network={net.name} size={24} roundedClassName="rounded-md" />
                         <span className="text-sm font-bold">{net.displayName}</span>
                       </div>
                     </button>
