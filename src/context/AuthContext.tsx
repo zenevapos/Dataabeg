@@ -10,7 +10,7 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { auth, googleProvider, ADMIN_EMAIL } from '@/lib/firebase';
+import { auth, googleProvider, ADMIN_EMAIL, isAuthorizedAdmin } from '@/lib/firebase';
 import { getOrCreateUserProfile, updateUserProfilePhone, UserProfile } from '@/lib/firebaseDb';
 
 interface AuthContextType {
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
+  const isAdmin = isAuthorizedAdmin(user?.email);
 
   return (
     <AuthContext.Provider

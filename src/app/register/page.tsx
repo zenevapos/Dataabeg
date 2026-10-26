@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ADMIN_EMAIL } from '@/lib/firebase';
+import { ADMIN_EMAIL, isAuthorizedAdmin } from '@/lib/firebase';
 import {
   Zap,
   ArrowLeft,
@@ -61,7 +61,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (user) {
-      if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(user.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');
@@ -82,7 +82,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const loggedIn = await signInWithGoogle();
-      if (loggedIn.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(loggedIn.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');
@@ -102,7 +102,7 @@ export default function RegisterPage() {
     try {
       setIsSubmitting(true);
       const newUser = await signUpWithEmail(email.trim(), password, name.trim(), cleanPhone);
-      if (newUser.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(newUser.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');

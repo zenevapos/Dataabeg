@@ -50,7 +50,7 @@ export default function WalletPage() {
   const virtualAccounts = [
     {
       bank: adminSettings.bankName || 'Moniepoint MFB',
-      accountNumber: adminSettings.accountNumber || '08154276838',
+      accountNumber: adminSettings.accountNumber || '1855365255',
       accountName: adminSettings.accountName || 'DataAbeg VTU Ventures',
       speed: 'Instant (30s)',
       key: 'moniepoint',
@@ -97,7 +97,7 @@ export default function WalletPage() {
         {/* Action Pills */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleCopy(adminSettings.accountNumber || '08154276838', 'top')}
+            onClick={() => handleCopy(adminSettings.accountNumber || '1855365255', 'top')}
             className="px-4 py-2.5 rounded-full bg-[#4f46e5] hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all cursor-pointer"
           >
             <span>+ Add money</span>
@@ -172,8 +172,12 @@ export default function WalletPage() {
                 <div className="text-sm font-bold text-slate-900 font-mono flex items-center gap-1.5 mt-0.5">
                   <span>
                     {profile?.phoneNumber ||
-                      (typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '') ||
-                      '08154276838'}
+                      (typeof window !== 'undefined'
+                        ? localStorage.getItem('dataabeg_phone') !== '08154276838'
+                          ? localStorage.getItem('dataabeg_phone')
+                          : ''
+                        : '') ||
+                      'No phone added yet'}
                   </span>
                   {profile?.phoneVerified && (
                     <span title="Verified via WhatsApp" className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
@@ -267,6 +271,7 @@ export default function WalletPage() {
         isOpen={isEditPhoneOpen}
         onClose={() => setIsEditPhoneOpen(false)}
         initialPhone={profile?.phoneNumber || ''}
+        onSuccess={() => refreshProfile()}
       />
     </div>
   );

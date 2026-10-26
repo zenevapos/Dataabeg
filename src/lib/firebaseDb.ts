@@ -221,19 +221,34 @@ export async function getOrCreateUserProfile(user: {
   phoneNumber?: string | null;
 }): Promise<UserProfile> {
   const localCached = typeof window !== 'undefined' ? localStorage.getItem(PROFILE_LOCAL_KEY + user.uid) : null;
-  let fallbackProfile: UserProfile = localCached
-    ? JSON.parse(localCached)
-    : {
-        uid: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || user.email?.split('@')[0] || 'User',
-        photoURL: user.photoURL || '',
-        phoneNumber: user.phoneNumber || '08154276838',
-        walletBalance: 0,
-        momoVirtualAccount: '671' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
-        smartcashVirtualAccount: '90' + (user.phoneNumber ? user.phoneNumber.slice(-8) : Math.floor(10000000 + Math.random() * 90000000).toString()),
-        createdAt: new Date().toISOString()
-      };
+  const storedUserPhone = typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '';
+  const initialPhone = user.phoneNumber || (storedUserPhone && storedUserPhone !== '08154276838' ? storedUserPhone : '');
+
+  let fallbackProfile: UserProfile = {
+    uid: user.uid,
+    email: user.email || '',
+    displayName: user.displayName || user.email?.split('@')[0] || 'User',
+    photoURL: user.photoURL || '',
+    phoneNumber: initialPhone,
+    phoneVerified: Boolean(initialPhone),
+    walletBalance: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  if (localCached) {
+    try {
+      const parsed = JSON.parse(localCached);
+      // Remove stale hardcoded default if present
+      if (parsed.phoneNumber === '08154276838') {
+        parsed.phoneNumber = initialPhone;
+        parsed.phoneVerified = Boolean(initialPhone);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(PROFILE_LOCAL_KEY + user.uid, JSON.stringify(parsed));
+        }
+      }
+      fallbackProfile = { ...fallbackProfile, ...parsed };
+    } catch (_) {}
+  }
 
   try {
     const userRef = doc(db, 'users', user.uid);
@@ -241,6 +256,12 @@ export async function getOrCreateUserProfile(user: {
 
     if (snap.exists()) {
       const dbProfile = snap.data() as UserProfile;
+      // If Firestore had the old default '08154276838', overwrite it with the user's real phone or empty
+      if (dbProfile.phoneNumber === '08154276838') {
+        dbProfile.phoneNumber = initialPhone;
+        dbProfile.phoneVerified = Boolean(initialPhone);
+        await setDoc(userRef, { phoneNumber: initialPhone, phoneVerified: Boolean(initialPhone) }, { merge: true });
+      }
       if (typeof window !== 'undefined') {
         localStorage.setItem(PROFILE_LOCAL_KEY + user.uid, JSON.stringify(dbProfile));
       }

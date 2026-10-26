@@ -38,7 +38,7 @@ import {
 import { Transaction, DataPlan } from '@/lib/types';
 import { CURATED_DATA_PLANS, NETWORKS } from '@/lib/constants';
 import { useAuth } from '@/context/AuthContext';
-import { ADMIN_EMAIL } from '@/lib/firebase';
+import { ADMIN_EMAIL, ADMIN_EMAILS, isAuthorizedAdmin } from '@/lib/firebase';
 import {
   fetchAllOrdersFromFirestore,
   updateOrderStatusInFirestore,
@@ -107,8 +107,8 @@ export default function AdminSalamPage() {
     }
   }, []);
 
-  // Determine if admin is authorized
-  const isEmailAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
+  // Determine if admin is authorized (Restricted to kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com)
+  const isEmailAdmin = isAuthorizedAdmin(user?.email);
   const isAuthenticated = isEmailAdmin || pinAuthenticated;
 
   // Fetch initial data once authenticated
@@ -186,8 +186,8 @@ export default function AdminSalamPage() {
     setIsSubmittingAuth(true);
     try {
       const signedInUser = await signInWithGoogle();
-      if (signedInUser.email?.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
-        setAuthError(`Access Denied: ${signedInUser.email} is not authorized.`);
+      if (!isAuthorizedAdmin(signedInUser.email)) {
+        setAuthError(`Access Denied: ${signedInUser.email} is not authorized. Only kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com can access this portal.`);
       }
     } catch (err: any) {
       setAuthError(err.message || 'Google sign-in failed.');
@@ -202,8 +202,8 @@ export default function AdminSalamPage() {
     setIsSubmittingAuth(true);
     try {
       const signedInUser = await signInWithEmail(inputEmail.trim(), inputPassword);
-      if (signedInUser.email?.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
-        setAuthError(`Access Denied: ${signedInUser.email} is not authorized.`);
+      if (!isAuthorizedAdmin(signedInUser.email)) {
+        setAuthError(`Access Denied: ${signedInUser.email} is not authorized. Only kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com can access this portal.`);
       }
     } catch (err: any) {
       setAuthError(err.message || 'Email authentication failed.');
@@ -349,7 +349,7 @@ export default function AdminSalamPage() {
             DataAbeg <span className="text-[#818cf8]">Command Center</span>
           </h1>
           <p className="text-xs text-slate-400 mt-2">
-            Master Administrator Portal • Restricted Access
+            Restricted to: <span className="text-indigo-400 font-mono text-[11px]">kokoroowoabdulsalam@gmail.com</span> &amp; <span className="text-indigo-400 font-mono text-[11px]">belloimam431@gmail.com</span>
           </p>
 
           {/* Login Method Tabs */}
@@ -419,7 +419,7 @@ export default function AdminSalamPage() {
                 disabled={isSubmittingAuth}
                 className="w-full py-3 px-4 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
               >
-                <span>Continue with Google ({ADMIN_EMAIL})</span>
+                <span>Continue with Authorized Google Account</span>
               </button>
 
               <form onSubmit={handleEmailSignIn} className="space-y-3 pt-2">

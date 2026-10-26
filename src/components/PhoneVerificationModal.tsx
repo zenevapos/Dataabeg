@@ -57,10 +57,12 @@ export default function PhoneVerificationModal({
   // Initialize phone when opened
   useEffect(() => {
     if (isOpen) {
+      const storedPhone = typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '';
       const defaultPhone =
-        initialPhone ||
-        profile?.phoneNumber ||
-        (typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '');
+        (initialPhone && initialPhone !== '08154276838' ? initialPhone : '') ||
+        (profile?.phoneNumber && profile.phoneNumber !== '08154276838' ? profile.phoneNumber : '') ||
+        (storedPhone !== '08154276838' ? storedPhone : '') ||
+        '';
       setPhoneNumber(defaultPhone);
       setStep('input');
       setChallenge(null);

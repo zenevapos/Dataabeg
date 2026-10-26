@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ADMIN_EMAIL } from '@/lib/firebase';
+import { ADMIN_EMAIL, isAuthorizedAdmin } from '@/lib/firebase';
 import { Zap, ArrowLeft, Mail, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      if (user.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(user.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');
@@ -31,7 +31,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const loggedIn = await signInWithGoogle();
-      if (loggedIn.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(loggedIn.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');
@@ -49,7 +49,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const loggedIn = await signInWithEmail(email.trim(), password);
-      if (loggedIn.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (isAuthorizedAdmin(loggedIn.email)) {
         router.push('/admin-salam');
       } else {
         router.push('/dashboard');

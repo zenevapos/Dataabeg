@@ -2,8 +2,19 @@ import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
 
-// Admin authorized email
-export const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "kokoroowoabdulsalam@gmail.com").toLowerCase().trim();
+// Admin authorized emails (Restricted to these two emails only)
+export const ADMIN_EMAILS = [
+  "kokoroowoabdulsalam@gmail.com",
+  "belloimam431@gmail.com"
+];
+
+export const ADMIN_EMAIL = ADMIN_EMAILS[0];
+
+export function isAuthorizedAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return ADMIN_EMAILS.some((adm) => adm.toLowerCase().trim() === normalized);
+}
 
 // Your web app's Firebase configuration
 export const firebaseConfig = {

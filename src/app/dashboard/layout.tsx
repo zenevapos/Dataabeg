@@ -43,7 +43,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, profile, isAdmin, logout, loading: authLoading } = useAuth();
+  const { user, profile, isAdmin, logout, refreshProfile, loading: authLoading } = useAuth();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -85,8 +85,12 @@ export default function DashboardLayout({
     profile?.phoneNumber ||
     user?.phoneNumber ||
     customPhone ||
-    (typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '') ||
-    (user?.email ? user.email.split('@')[0] : '08154276838');
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('dataabeg_phone') !== '08154276838'
+        ? localStorage.getItem('dataabeg_phone') || ''
+        : ''
+      : '') ||
+    '';
 
   // Page title resolution based on current path
   const getPageTitle = () => {
@@ -99,11 +103,12 @@ export default function DashboardLayout({
     if (pathname.startsWith('/dashboard/bulk-data')) return 'Sell Bulk Data';
     if (pathname.startsWith('/dashboard/transactions')) return 'Transactions';
     if (pathname.startsWith('/dashboard/api-docs')) return 'API Docs & Plan IDs';
+    if (pathname.startsWith('/admin-salam')) return 'Admin Portal';
     return 'Dashboard';
   };
 
   // Original DataAbeg Nav Items with increased font size and Raenest spacing
-  const navItems = [
+  const baseNavItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
     { label: 'Buy Data', href: '/dashboard/data', icon: Smartphone },
@@ -113,8 +118,12 @@ export default function DashboardLayout({
     { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
     { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
     { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
-    { label: 'Admin Portal', href: '/admin-salam', icon: ShieldCheck },
   ];
+
+  // Only show Admin Portal to designated admin emails (kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com)
+  const navItems = isAdmin
+    ? [...baseNavItems, { label: 'Admin Portal', href: '/admin-salam', icon: ShieldCheck }]
+    : baseNavItems;
 
   if (authLoading || !user) {
     return (
@@ -196,11 +205,25 @@ export default function DashboardLayout({
                 {userFullName}
               </div>
               <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5 flex items-center gap-1">
-                <span>{userDisplayPhone}</span>
-                {profile?.phoneVerified && (
-                  <span title="Verified Nigerian Phone Number">
-                    <ShieldCheck className="w-3 h-3 text-emerald-500 inline" />
-                  </span>
+                {userDisplayPhone ? (
+                  <>
+                    <span>{userDisplayPhone}</span>
+                    {profile?.phoneVerified && (
+                      <span title="Verified Nigerian Phone Number">
+                        <ShieldCheck className="w-3 h-3 text-emerald-500 inline" />
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setCustomPhone('');
+                      setIsEditPhoneOpen(true);
+                    }}
+                    className="text-[#4f46e5] hover:underline font-semibold cursor-pointer text-[10px]"
+                  >
+                    + Add Phone Number
+                  </button>
                 )}
               </div>
             </div>
@@ -495,6 +518,10 @@ export default function DashboardLayout({
         isOpen={isEditPhoneOpen}
         onClose={() => setIsEditPhoneOpen(false)}
         initialPhone={userDisplayPhone}
+        onSuccess={(newPhone) => {
+          setCustomPhone(newPhone);
+          refreshProfile();
+        }}
       />
     </div>
   );
