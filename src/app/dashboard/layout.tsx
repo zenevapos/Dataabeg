@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import PhoneVerificationModal from '@/components/PhoneVerificationModal';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -84,6 +85,7 @@ export default function DashboardLayout({
     profile?.phoneNumber ||
     user?.phoneNumber ||
     customPhone ||
+    (typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '') ||
     (user?.email ? user.email.split('@')[0] : '08154276838');
 
   // Page title resolution based on current path
@@ -192,8 +194,13 @@ export default function DashboardLayout({
               <div className="text-[13px] font-semibold text-slate-900 truncate">
                 {userFullName}
               </div>
-              <div className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
-                Individual
+              <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5 flex items-center gap-1">
+                <span>{userDisplayPhone}</span>
+                {profile?.phoneVerified && (
+                  <span title="Verified Nigerian Phone Number">
+                    <ShieldCheck className="w-3 h-3 text-emerald-500 inline" />
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -482,45 +489,12 @@ export default function DashboardLayout({
         </a>
       </div>
 
-      {/* ================= MODAL: EDIT PHONE NUMBER ================= */}
-      {isEditPhoneOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">Update Your Phone Number</h3>
-              <button
-                onClick={() => setIsEditPhoneOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-600">
-              Enter your primary mobile number for orders and receipts:
-            </p>
-            <input
-              type="tel"
-              value={customPhone}
-              onChange={(e) => setCustomPhone(e.target.value)}
-              placeholder="e.g. 08012345678"
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#4f46e5]"
-            />
-            <button
-              onClick={() => {
-                if (customPhone.trim().length >= 10) {
-                  localStorage.setItem('dataabeg_phone', customPhone.trim());
-                  setIsEditPhoneOpen(false);
-                } else {
-                  alert('Please enter a valid phone number.');
-                }
-              }}
-              className="w-full bg-[#4f46e5] hover:bg-indigo-700 text-white py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-md shadow-indigo-500/20"
-            >
-              Save Phone Number
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ================= MODAL: EDIT & VERIFY PHONE NUMBER ================= */}
+      <PhoneVerificationModal
+        isOpen={isEditPhoneOpen}
+        onClose={() => setIsEditPhoneOpen(false)}
+        initialPhone={userDisplayPhone}
+      />
     </div>
   );
 }

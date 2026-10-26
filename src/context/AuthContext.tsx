@@ -11,7 +11,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider, ADMIN_EMAIL } from '@/lib/firebase';
-import { getOrCreateUserProfile, UserProfile } from '@/lib/firebaseDb';
+import { getOrCreateUserProfile, updateUserProfilePhone, UserProfile } from '@/lib/firebaseDb';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +23,7 @@ interface AuthContextType {
   signUpWithEmail: (email: string, pass: string, displayName?: string, phoneNumber?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateUserPhone: (phoneNumber: string, phoneVerified?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,6 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserPhone = async (phoneNumber: string, phoneVerified = true): Promise<void> => {
+    if (!user) return;
+    await updateUserProfilePhone(user.uid, phoneNumber, phoneVerified);
+    setProfile((prev) => (prev ? { ...prev, phoneNumber, phoneVerified } : null));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dataabeg_phone', phoneNumber);
+    }
+  };
+
   const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
 
   return (
@@ -107,7 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         logout,
-        refreshProfile
+        refreshProfile,
+        updateUserPhone
       }}
     >
       {children}

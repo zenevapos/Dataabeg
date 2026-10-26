@@ -20,14 +20,17 @@ import {
   Sparkles,
   Zap,
   ArrowDownLeft,
-  Share2
+  Share2,
+  Smartphone
 } from 'lucide-react';
+import PhoneVerificationModal from '@/components/PhoneVerificationModal';
 
 export default function WalletPage() {
   const { user, profile, refreshProfile } = useAuth();
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
   const [showBalance, setShowBalance] = useState(true);
+  const [isEditPhoneOpen, setIsEditPhoneOpen] = useState(false);
 
   useEffect(() => {
     getAdminSettings()
@@ -155,6 +158,39 @@ export default function WalletPage() {
               </div>
             </div>
           </div>
+
+          {/* Registered Phone Verification Card */}
+          <div className="mt-4 bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#4f46e5] flex items-center justify-center shrink-0">
+                <Smartphone className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Verified Mobile Line
+                </div>
+                <div className="text-sm font-bold text-slate-900 font-mono flex items-center gap-1.5 mt-0.5">
+                  <span>
+                    {profile?.phoneNumber ||
+                      (typeof window !== 'undefined' ? localStorage.getItem('dataabeg_phone') || '' : '') ||
+                      '08154276838'}
+                  </span>
+                  {profile?.phoneVerified && (
+                    <span title="Verified via WhatsApp" className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                      <span>Verified</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsEditPhoneOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+            >
+              Update Phone
+            </button>
+          </div>
         </div>
 
         {/* All Accounts (Raenest Screenshot 2 & 3 Style) */}
@@ -225,6 +261,13 @@ export default function WalletPage() {
           </div>
         </div>
       </div>
+
+      {/* Phone Verification Modal */}
+      <PhoneVerificationModal
+        isOpen={isEditPhoneOpen}
+        onClose={() => setIsEditPhoneOpen(false)}
+        initialPhone={profile?.phoneNumber || ''}
+      />
     </div>
   );
 }

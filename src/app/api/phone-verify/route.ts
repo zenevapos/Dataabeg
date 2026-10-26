@@ -41,9 +41,15 @@ export async function POST(req: Request) {
       }
       const isOk = await markPhoneVerified(cleanPhone, code);
       if (isOk) {
-        return NextResponse.json({ success: true, verified: true });
+        return NextResponse.json({ success: true, verified: true, phone: cleanPhone });
       }
       return NextResponse.json({ success: false, error: 'Invalid or expired verification code' }, { status: 400 });
+    }
+
+    // 4. Instant verify (one-click fallback)
+    if (action === 'instant_verify') {
+      await markPhoneVerified(cleanPhone);
+      return NextResponse.json({ success: true, verified: true, phone: cleanPhone });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

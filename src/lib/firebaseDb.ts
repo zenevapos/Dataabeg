@@ -189,6 +189,7 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string;
   phoneNumber?: string;
+  phoneVerified?: boolean;
   walletBalance: number;
   momoVirtualAccount?: string;
   smartcashVirtualAccount?: string;
@@ -341,6 +342,43 @@ export async function saveAdminSettings(settings: Partial<AdminSettings>): Promi
   } catch (err) {
     console.error('Error saving admin settings to Firestore:', err);
     throw err;
+  }
+}
+
+/**
+ * Update user phone number in Firestore and local storage cache
+ */
+export async function updateUserProfilePhone(
+  uid: string,
+  phoneNumber: string,
+  phoneVerified: boolean = true
+): Promise<void> {
+  const localCached = typeof window !== 'undefined' ? localStorage.getItem(PROFILE_LOCAL_KEY + uid) : null;
+  if (localCached && typeof window !== 'undefined') {
+    try {
+      const parsed = JSON.parse(localCached);
+      parsed.phoneNumber = phoneNumber;
+      parsed.phoneVerified = phoneVerified;
+      localStorage.setItem(PROFILE_LOCAL_KEY + uid, JSON.stringify(parsed));
+    } catch (_) {}
+  }
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dataabeg_phone', phoneNumber);
+  }
+
+  try {
+    const userRef = doc(db, 'users', uid);
+    await setDoc(
+      userRef,
+      {
+        phoneNumber,
+        phoneVerified,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+  } catch (err: any) {
+    console.warn('Notice: Firestore profile phone update fallback:', err?.message || err);
   }
 }
 
