@@ -55,7 +55,7 @@ export class GladTidingsClient {
       customToken ||
       process.env.GLADTIDINGS_API_TOKEN ||
       process.env.NEXT_PUBLIC_GLADTIDINGS_TOKEN ||
-      'e26b9b7363ce6abdcb6f2c5b4e7d434f5da32d23';
+      '230b1f76866a191134045e619ae5f914b2c7cd3f';
   }
 
   public isConfigured(): boolean {
