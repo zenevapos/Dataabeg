@@ -998,6 +998,90 @@ export default function AdminSalamPage() {
                 />
               </div>
 
+              {/* Paystack Payment Gateway Box */}
+              <div className="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 font-space flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-[#4f46e5]" />
+                      <span>Paystack Live Payment Gateway</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Powers instant debit card checkout and automated wallet funding for DataAbeg users.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Active
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Live Secret Key (sk_live_...)
+                  </label>
+                  <input
+                    type="password"
+                    value={adminSettings.paystackSecretKey || ''}
+                    onChange={(e) =>
+                      setAdminSettings({ ...adminSettings, paystackSecretKey: e.target.value })
+                    }
+                    placeholder="sk_live_..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#4f46e5] outline-none text-xs font-mono text-slate-900 bg-white"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Used securely server-side for transaction initialization, verification, and webhooks.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Live Public Key (pk_live_...)
+                  </label>
+                  <input
+                    type="text"
+                    value={adminSettings.paystackPublicKey || 'pk_live_49c5d3adb3f90c37a62d3c297eb291a5242abb36'}
+                    onChange={(e) =>
+                      setAdminSettings({ ...adminSettings, paystackPublicKey: e.target.value })
+                    }
+                    placeholder="pk_live_..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#4f46e5] outline-none text-xs font-mono text-slate-900 bg-white"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Used client-side for Paystack inline checkout popup.
+                  </p>
+                </div>
+
+                {/* Paystack Webhook Box */}
+                <div className="pt-2 border-t border-indigo-100">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Paystack Live Webhook URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${typeof window !== 'undefined' ? window.location.origin : 'https://dataabeg.vercel.app'}/api/paystack/webhook`}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-[11px] text-slate-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(
+                          `${typeof window !== 'undefined' ? window.location.origin : 'https://dataabeg.vercel.app'}/api/paystack/webhook`
+                        )
+                      }
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[#4f46e5] text-white text-xs font-bold shrink-0 hover:bg-[#4338ca] transition-colors cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Paste this in your Paystack Dashboard $\rightarrow$ Settings $\rightarrow$ API Keys &amp; Webhooks $\rightarrow$ Live Webhook URL.
+                  </p>
+                </div>
+              </div>
+
               {/* Webhook URL Box */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">

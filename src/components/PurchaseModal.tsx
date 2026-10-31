@@ -5,6 +5,8 @@ import confetti from 'canvas-confetti';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { formatCurrency, generateTxReference } from '@/lib/utils';
 import { saveOrderToFirestore, getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
+import { useAuth } from '@/context/AuthContext';
+import { getPaystackPublicKey } from '@/lib/paystack';
 import {
   X,
   CheckCircle2,
@@ -58,6 +60,22 @@ interface PurchaseModalProps {
   customApiKey?: string;
 }
 
+function loadPaystackScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).PaystackPop) return resolve(true);
+    const existing = document.getElementById('paystack-inline-js');
+    if (existing) return resolve(true);
+    const script = document.createElement('script');
+    script.id = 'paystack-inline-js';
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function PurchaseModal({
   isOpen,
   onClose,
@@ -70,6 +88,7 @@ export function PurchaseModal({
   onOrderCompleted,
   customApiKey
 }: PurchaseModalProps) {
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'wallet'>('wallet');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
@@ -122,6 +141,110 @@ export function PurchaseModal({
     );
 
     try {
+      if (paymentMethod === 'card') {
+        setProcessingStep('Connecting to Paystack Secure Checkout...');
+        const customerEmail =
+          user?.email ||
+          (phoneNumber ? `${phoneNumber.replace(/\D/g, '')}@dataabeg.com` : 'customer@dataabeg.com');
+
+        const publicKey = adminSettings.paystackPublicKey || getPaystackPublicKey();
+
+        const metadata = {
+          type: 'service_purchase',
+          serviceType,
+          amount: checkoutAmount,
+          phone: phoneNumber || electricityDetails?.phone || cableDetails?.phone,
+          networkId: plan?.networkId || network?.id,
+          networkName: network?.displayName || network?.name || electricityDetails?.discoName || cableDetails?.cableName,
+          planId: plan?.planId,
+          planName:
+            serviceType === 'electricity'
+              ? `${electricityDetails?.discoName} (${electricityDetails?.meterType})`
+              : serviceType === 'cable'
+              ? `${cableDetails?.cableName} - ${cableDetails?.cablePlanName}`
+              : plan?.name,
+          planSize:
+            serviceType === 'electricity'
+              ? `Meter: ${electricityDetails?.meterNumber}`
+              : serviceType === 'cable'
+              ? `IUC: ${cableDetails?.smartCardNumber}`
+              : plan?.size,
+          discoId: electricityDetails?.discoId,
+          meterNumber: electricityDetails?.meterNumber,
+          meterType: electricityDetails?.meterType,
+          customerName: electricityDetails?.customerName || cableDetails?.customerName,
+          customerAddress: electricityDetails?.customerAddress,
+          cableId: cableDetails?.cableId,
+          cablePlanId: cableDetails?.cablePlanId,
+          smartCardNumber: cableDetails?.smartCardNumber,
+          cableName: cableDetails?.cableName,
+          cablePlanName: cableDetails?.cablePlanName
+        };
+
+        const hasScript = await loadPaystackScript();
+
+        if (hasScript && (window as any).PaystackPop) {
+          const handler = (window as any).PaystackPop.setup({
+            key: publicKey,
+            email: customerEmail,
+            amount: Math.round(checkoutAmount * 100),
+            ref: txRef,
+            metadata,
+            callback: async (response: { reference: string }) => {
+              setProcessingStep('Payment approved! Dispensing order...');
+              try {
+                const verifyRes = await fetch('/api/paystack/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ reference: response.reference })
+                });
+                const verifyData = await verifyRes.json();
+                if (verifyRes.ok && verifyData.status) {
+                  setIsSuccess(true);
+                  const verifiedTx = (verifyData.data || {}) as Transaction;
+                  setCompletedTx(verifiedTx);
+                  if (onOrderCompleted) onOrderCompleted(verifiedTx);
+                  try {
+                    confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+                  } catch {}
+                } else {
+                  setErrorMessage(verifyData.message || 'Payment received, but service dispatch is pending confirmation.');
+                }
+              } catch (err: any) {
+                setErrorMessage(err.message || 'Network error verifying payment.');
+              } finally {
+                setIsProcessing(false);
+              }
+            },
+            onClose: () => {
+              setIsProcessing(false);
+            }
+          });
+          handler.openIframe();
+          return;
+        } else {
+          // Fallback: Initialize on server and redirect to Paystack authorization_url
+          const initRes = await fetch('/api/paystack/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: checkoutAmount,
+              email: customerEmail,
+              reference: txRef,
+              metadata,
+              callback_url: window.location.href
+            })
+          });
+          const initData = await initRes.json();
+          if (initRes.ok && initData.data?.authorization_url) {
+            window.location.href = initData.data.authorization_url;
+            return;
+          } else {
+            throw new Error(initData.message || 'Could not launch Paystack checkout.');
+          }
+        }
+      }
+
       await new Promise((r) => setTimeout(r, 500));
       setProcessingStep('Authorizing secure transaction verification...');
       await new Promise((r) => setTimeout(r, 500));

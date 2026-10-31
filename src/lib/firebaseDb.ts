@@ -19,6 +19,8 @@ export interface AdminSettings {
   smeplugApiKey: string;
   gladtidingsApiKey?: string;
   activeProvider?: 'gladtidings' | 'smeplug';
+  paystackSecretKey?: string;
+  paystackPublicKey?: string;
   bankName: string;
   accountNumber: string;
   accountName: string;
@@ -37,6 +39,8 @@ export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   smeplugApiKey: '',
   gladtidingsApiKey: '230b1f76866a191134045e619ae5f914b2c7cd3f',
   activeProvider: 'gladtidings',
+  paystackSecretKey: '',
+  paystackPublicKey: 'pk_live_49c5d3adb3f90c37a62d3c297eb291a5242abb36',
   bankName: 'Moniepoint MFB / OPay',
   accountNumber: '1855365255',
   accountName: 'DataAbeg VTU Ventures',
@@ -468,6 +472,55 @@ export async function adminAdjustUserBalance(
     status: 'SUCCESS',
     paymentMethod: 'ADMIN_MANUAL',
     createdAt: new Date().toISOString()
+  });
+
+  return newBalance;
+}
+
+/**
+ * Automatically credit a user's wallet following a successful Paystack payment
+ */
+export async function creditUserWalletFromPayment(
+  uid: string,
+  amount: number,
+  paymentRef: string,
+  customerEmail?: string,
+  channel: string = 'card'
+): Promise<number> {
+  const userRef = doc(db, 'users', uid);
+  const snap = await getDoc(userRef);
+  let current = 0;
+  let userPhone = '';
+
+  if (snap.exists()) {
+    const data = snap.data();
+    current = (data.walletBalance || 0) as number;
+    userPhone = data.phoneNumber || '';
+  }
+
+  const newBalance = current + amount;
+  await setDoc(userRef, {
+    walletBalance: newBalance,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  // Record completed funding transaction in orders collection
+  await saveOrderToFirestore({
+    id: paymentRef,
+    reference: paymentRef,
+    network: 'Paystack',
+    phone: userPhone || customerEmail || 'Wallet Top-up',
+    phoneNumber: userPhone || customerEmail || 'Wallet Top-up',
+    planName: `Instant Wallet Funding (Paystack ${channel.toUpperCase()})`,
+    planSize: `+₦${amount.toLocaleString()}`,
+    amount: amount,
+    amountPaid: amount,
+    status: 'SUCCESS',
+    statusMessage: `Successfully credited ₦${amount.toLocaleString()} to wallet balance.`,
+    paymentMethod: 'PAYSTACK',
+    createdAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    serviceType: 'data'
   });
 
   return newBalance;

@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { useAuth } from '@/context/AuthContext';
 import { getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, generateTxReference } from '@/lib/utils';
+import { getPaystackPublicKey } from '@/lib/paystack';
 import {
   Wallet,
   Copy,
@@ -21,9 +23,27 @@ import {
   Zap,
   ArrowDownLeft,
   Share2,
-  Smartphone
+  Smartphone,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import PhoneVerificationModal from '@/components/PhoneVerificationModal';
+
+function loadPaystackScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).PaystackPop) return resolve(true);
+    const existing = document.getElementById('paystack-inline-js');
+    if (existing) return resolve(true);
+    const script = document.createElement('script');
+    script.id = 'paystack-inline-js';
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function WalletPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -31,6 +51,12 @@ export default function WalletPage() {
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [isEditPhoneOpen, setIsEditPhoneOpen] = useState(false);
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [fundAmount, setFundAmount] = useState<number>(2000);
+  const [customFundInput, setCustomFundInput] = useState<string>('2000');
+  const [isFunding, setIsFunding] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
+  const [fundSuccess, setFundSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     getAdminSettings()
@@ -46,6 +72,94 @@ export default function WalletPage() {
 
   const userFullName = profile?.displayName || user?.displayName || 'Imamshaffy Bello';
   const balance = profile?.walletBalance || 0;
+
+  const handlePaystackFunding = async () => {
+    if (!user) return;
+    const amountToFund = fundAmount;
+    if (amountToFund < 100) {
+      setFundError('Minimum funding amount is ₦100');
+      return;
+    }
+    setIsFunding(true);
+    setFundError(null);
+    setFundSuccess(null);
+
+    const txRef = generateTxReference('FUND');
+    const customerEmail = user.email || `${user.uid.slice(0, 8)}@dataabeg.com`;
+    const publicKey = adminSettings.paystackPublicKey || getPaystackPublicKey();
+
+    const metadata = {
+      type: 'wallet_funding',
+      uid: user.uid,
+      amount: amountToFund
+    };
+
+    try {
+      const hasScript = await loadPaystackScript();
+      if (hasScript && (window as any).PaystackPop) {
+        const handler = (window as any).PaystackPop.setup({
+          key: publicKey,
+          email: customerEmail,
+          amount: Math.round(amountToFund * 100),
+          ref: txRef,
+          metadata,
+          callback: async (response: { reference: string }) => {
+            try {
+              const verifyRes = await fetch('/api/paystack/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reference: response.reference })
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyRes.ok && verifyData.status) {
+                setFundSuccess(`🎉 Successfully added ₦${amountToFund.toLocaleString()} to your wallet!`);
+                await refreshProfile();
+                try {
+                  confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+                } catch {}
+                setTimeout(() => {
+                  setIsAddMoneyOpen(false);
+                  setFundSuccess(null);
+                }, 2000);
+              } else {
+                setFundError(verifyData.message || 'Payment received, updating your balance...');
+                await refreshProfile();
+              }
+            } catch (err: any) {
+              setFundError(err.message || 'Error confirming transaction with gateway.');
+            } finally {
+              setIsFunding(false);
+            }
+          },
+          onClose: () => {
+            setIsFunding(false);
+          }
+        });
+        handler.openIframe();
+      } else {
+        const initRes = await fetch('/api/paystack/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amountToFund,
+            email: customerEmail,
+            reference: txRef,
+            metadata,
+            callback_url: window.location.href
+          })
+        });
+        const initData = await initRes.json();
+        if (initRes.ok && initData.data?.authorization_url) {
+          window.location.href = initData.data.authorization_url;
+        } else {
+          throw new Error(initData.message || 'Failed to initialize Paystack');
+        }
+      }
+    } catch (err: any) {
+      setFundError(err.message || 'Failed to start payment');
+      setIsFunding(false);
+    }
+  };
 
   const virtualAccounts = [
     {
@@ -97,7 +211,7 @@ export default function WalletPage() {
         {/* Action Pills */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleCopy(adminSettings.accountNumber || '1855365255', 'top')}
+            onClick={() => setIsAddMoneyOpen(true)}
             className="px-4 py-2.5 rounded-full bg-[#4f46e5] hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all cursor-pointer"
           >
             <span>+ Add money</span>
@@ -273,6 +387,128 @@ export default function WalletPage() {
         initialPhone={profile?.phoneNumber || ''}
         onSuccess={() => refreshProfile()}
       />
+
+      {/* Add Money / Paystack Funding Modal */}
+      {isAddMoneyOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-7 text-slate-900">
+            <button
+              onClick={() => {
+                setIsAddMoneyOpen(false);
+                setFundError(null);
+                setFundSuccess(null);
+              }}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-[#4f46e5] flex items-center justify-center shrink-0">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold font-heading">Add Money to Wallet</h3>
+                <p className="text-xs text-slate-500">Instant credit via Paystack Live Gateway</p>
+              </div>
+            </div>
+
+            {fundSuccess ? (
+              <div className="py-6 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8 stroke-[3]" />
+                </div>
+                <p className="text-sm font-bold text-slate-900">{fundSuccess}</p>
+                <p className="text-xs text-slate-500">Your DataAbeg wallet balance has been updated.</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {/* Amount presets */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+                    Select Amount
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1000, 2000, 5000, 10000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => {
+                          setFundAmount(amt);
+                          setCustomFundInput(amt.toString());
+                        }}
+                        className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          fundAmount === amt
+                            ? 'bg-[#4f46e5] text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        ₦{amt.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Amount Input */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                    Or Enter Custom Amount (₦)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                      ₦
+                    </span>
+                    <input
+                      type="number"
+                      min={100}
+                      step={100}
+                      value={customFundInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomFundInput(val);
+                        setFundAmount(Number(val) || 0);
+                      }}
+                      placeholder="e.g. 3500"
+                      className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#4f46e5] text-sm font-bold text-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {fundError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                    <span>{fundError}</span>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handlePaystackFunding}
+                    disabled={isFunding || fundAmount < 100}
+                    className="w-full py-3 px-4 rounded-xl bg-[#4f46e5] hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isFunding ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Opening Paystack...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Pay ₦{fundAmount.toLocaleString()} with Paystack</span>
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-center text-slate-400 mt-2">
+                    Supports Mastercard, Visa, Verve, USSD, Bank Transfer &amp; Apple Pay
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
