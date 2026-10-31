@@ -4,7 +4,14 @@ import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { formatCurrency, generateTxReference } from '@/lib/utils';
-import { saveOrderToFirestore, getAdminSettings, AdminSettings, DEFAULT_ADMIN_SETTINGS } from '@/lib/firebaseDb';
+import {
+  saveOrderToFirestore,
+  getAdminSettings,
+  AdminSettings,
+  DEFAULT_ADMIN_SETTINGS,
+  debitUserWallet,
+  refundUserWallet
+} from '@/lib/firebaseDb';
 import { useAuth } from '@/context/AuthContext';
 import { getPaystackPublicKey } from '@/lib/paystack';
 import {
@@ -88,8 +95,8 @@ export function PurchaseModal({
   onOrderCompleted,
   customApiKey
 }: PurchaseModalProps) {
-  const { user } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'wallet'>('wallet');
+  const { user, profile, refreshProfile } = useAuth();
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'wallet'>('card');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
@@ -100,16 +107,6 @@ export function PurchaseModal({
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
 
-  useEffect(() => {
-    if (isOpen) {
-      getAdminSettings()
-        .then((s) => setAdminSettings(s))
-        .catch((err) => console.warn('Admin settings fetch warning:', err));
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
   // Compute checkout amount and titles based on service
   const checkoutAmount =
     serviceType === 'electricity'
@@ -117,6 +114,26 @@ export function PurchaseModal({
       : serviceType === 'cable'
       ? cableDetails?.amount || 0
       : plan?.sellingPrice || 0;
+
+  const userBalance = profile?.walletBalance || 0;
+  const hasSufficientWallet = userBalance >= checkoutAmount && checkoutAmount > 0;
+
+  useEffect(() => {
+    if (isOpen) {
+      getAdminSettings()
+        .then((s) => setAdminSettings(s))
+        .catch((err) => console.warn('Admin settings fetch warning:', err));
+
+      const balance = profile?.walletBalance || 0;
+      if (balance >= checkoutAmount && checkoutAmount > 0) {
+        setPaymentMethod('wallet');
+      } else {
+        setPaymentMethod('card');
+      }
+    }
+  }, [isOpen, checkoutAmount, profile?.walletBalance]);
+
+  if (!isOpen) return null;
 
   const recipientIdentifier =
     serviceType === 'electricity'
@@ -259,8 +276,49 @@ export function PurchaseModal({
         return;
       }
 
-      await new Promise((r) => setTimeout(r, 500));
-      setProcessingStep('Authorizing secure transaction verification...');
+      if (paymentMethod === 'transfer') {
+        setErrorMessage(
+          'Direct Bank Transfer requires manual payment review. For instant 5-second automated delivery, please select "Paystack Instant" above (choose the Bank Transfer option inside Paystack)!'
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // User Wallet Payment Method
+      if (paymentMethod === 'wallet') {
+        if (!user) {
+          setErrorMessage('Please login to pay with your DataAbeg wallet, or select Paystack Instant to pay with Card or Transfer.');
+          setIsProcessing(false);
+          return;
+        }
+
+        if (userBalance < checkoutAmount) {
+          setErrorMessage(
+            `Insufficient wallet balance. You have ₦${userBalance.toLocaleString()} but need ${formatCurrency(checkoutAmount)}. Please switch to Paystack Instant or fund your wallet.`
+          );
+          setIsProcessing(false);
+          return;
+        }
+
+        setProcessingStep('Authorizing secure wallet debit...');
+        const debitResult = await debitUserWallet(
+          user.uid,
+          checkoutAmount,
+          txRef,
+          `${serviceType.toUpperCase()} purchase for ${recipientIdentifier}`
+        );
+
+        if (!debitResult.success) {
+          setErrorMessage(debitResult.error || 'Failed to debit wallet balance.');
+          setIsProcessing(false);
+          return;
+        }
+
+        await refreshProfile();
+      }
+
+      await new Promise((r) => setTimeout(r, 400));
+      setProcessingStep('Connecting to Glad Tidings Automated Cloud Gateway...');
       await new Promise((r) => setTimeout(r, 500));
 
       let endpoint = '/api/smeplug/purchase';
@@ -384,7 +442,21 @@ export function PurchaseModal({
         } catch {
           // ignore
         }
+        // Refresh user profile wallet balance after successful purchase
+        if (paymentMethod === 'wallet') {
+          refreshProfile().catch(() => {});
+        }
       } else {
+        // Automatic refund if wallet was debited but gateway failed
+        if (paymentMethod === 'wallet' && user) {
+          try {
+            await refundUserWallet(user.uid, checkoutAmount, txRef, 'Dispense failure auto-refund');
+            await refreshProfile();
+          } catch (refundErr) {
+            console.error('Wallet auto-refund error:', refundErr);
+          }
+        }
+
         const raw = data.msg ?? data.data?.msg ?? data.error ?? data.message ?? data.detail ?? '';
         const rawMsg = typeof raw === 'string'
           ? raw
@@ -407,6 +479,15 @@ export function PurchaseModal({
         setErrorMessage(friendlyMsg || 'Transaction could not be processed by gateway. Please verify your details and try again.');
       }
     } catch (err: unknown) {
+      // Automatic refund if wallet was debited but an exception was thrown
+      if (paymentMethod === 'wallet' && user) {
+        try {
+          await refundUserWallet(user.uid, checkoutAmount, txRef, 'Dispense failure exception auto-refund');
+          await refreshProfile();
+        } catch (refundErr) {
+          console.error('Wallet auto-refund error:', refundErr);
+        }
+      }
       console.error('Purchase error:', err);
       setErrorMessage(err instanceof Error ? err.message : 'Network error. Please check your connection.');
     } finally {
@@ -644,50 +725,92 @@ export function PurchaseModal({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('wallet')}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  onClick={() => {
+                    if (!hasSufficientWallet) {
+                      setErrorMessage(
+                        `Insufficient wallet balance (₦${userBalance.toLocaleString()}). You need ${formatCurrency(checkoutAmount)}. Please switch to Paystack Instant or top up your wallet.`
+                      );
+                    } else {
+                      setErrorMessage(null);
+                    }
+                    setPaymentMethod('wallet');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
                     paymentMethod === 'wallet'
-                      ? 'border-[#1E40AF] bg-blue-50/60 ring-2 ring-[#1E40AF]/20'
+                      ? 'border-[#1E40AF] bg-blue-50/70 ring-2 ring-[#1E40AF]/20'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <Wallet className="w-5 h-5 text-[#1E40AF] mb-1" />
-                  <p className="font-bold text-xs">User Wallet</p>
-                  <p className="text-[10px] text-slate-500">Instant Debit</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <Wallet className="w-5 h-5 text-[#1E40AF]" />
+                    {hasSufficientWallet ? (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        Ready
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                        Low
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-bold text-xs text-slate-900">User Wallet</p>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Bal: ₦{userBalance.toLocaleString()}
+                  </p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  onClick={() => {
+                    setErrorMessage(null);
+                    setPaymentMethod('card');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
                     paymentMethod === 'card'
-                      ? 'border-[#1E40AF] bg-blue-50/60 ring-2 ring-[#1E40AF]/20'
+                      ? 'border-purple-600 bg-purple-50/70 ring-2 ring-purple-600/20'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <CreditCard className="w-5 h-5 text-purple-600 mb-1" />
-                  <p className="font-bold text-xs">Paystack Instant</p>
-                  <p className="text-[10px] text-slate-500">Card, Transfer, USSD</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <CreditCard className="w-5 h-5 text-purple-600" />
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      Auto
+                    </span>
+                  </div>
+                  <p className="font-bold text-xs text-slate-900">Paystack Instant</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Card, Transfer, USSD</p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('transfer')}
+                  onClick={() => {
+                    setErrorMessage(null);
+                    setPaymentMethod('transfer');
+                  }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     paymentMethod === 'transfer'
-                      ? 'border-[#1E40AF] bg-blue-50/60 ring-2 ring-[#1E40AF]/20'
+                      ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-600/20'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <Building2 className="w-5 h-5 text-emerald-600 mb-1" />
-                  <p className="font-bold text-xs">Direct Transfer</p>
-                  <p className="text-[10px] text-slate-500">Company Bank</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <Building2 className="w-5 h-5 text-emerald-600" />
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                      Manual
+                    </span>
+                  </div>
+                  <p className="font-bold text-xs text-slate-900">Direct Bank</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Requires Review</p>
                 </button>
               </div>
 
               {/* Bank Transfer Instructions */}
               {paymentMethod === 'transfer' && (
                 <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-2 text-amber-950 animate-in fade-in">
+                  <div className="p-2 rounded-xl bg-amber-100/70 text-amber-900 text-[11px] font-medium leading-relaxed">
+                    💡 <strong>Tip:</strong> For automatic order dispatch in 5 seconds without manual receipt review, select <button type="button" onClick={() => setPaymentMethod('card')} className="text-purple-700 underline font-bold">Paystack Instant</button> above (choose "Pay with Transfer" in the popup).
+                  </div>
+
                   {adminSettings.accountNumber && adminSettings.accountNumber.trim().length > 5 ? (
                     <>
                       <div className="flex justify-between items-center">
@@ -727,7 +850,7 @@ export function PurchaseModal({
             {errorMessage && (
               <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                <span>{errorMessage}</span>
+                <span className="flex-1">{errorMessage}</span>
               </div>
             )}
 
@@ -744,18 +867,39 @@ export function PurchaseModal({
               <button
                 type="button"
                 onClick={handlePurchase}
-                disabled={isProcessing}
-                className="flex-2 py-3 px-6 rounded-2xl bg-[#1E40AF] text-white font-bold hover:bg-blue-700 text-sm transition-all shadow-lg shadow-blue-900/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isProcessing || (paymentMethod === 'wallet' && !hasSufficientWallet)}
+                className={`flex-2 py-3 px-6 rounded-2xl font-bold text-sm transition-all shadow-lg cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  paymentMethod === 'card'
+                    ? 'bg-purple-700 hover:bg-purple-800 text-white shadow-purple-900/20'
+                    : paymentMethod === 'wallet' && !hasSufficientWallet
+                    ? 'bg-slate-300 text-slate-600 cursor-not-allowed shadow-none'
+                    : 'bg-[#1E40AF] hover:bg-blue-700 text-white shadow-blue-900/20'
+                }`}
               >
                 {isProcessing ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     <span>{processingStep || 'Processing...'}</span>
                   </>
+                ) : paymentMethod === 'wallet' && !hasSufficientWallet ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span>Insufficient Wallet (Bal: ₦{userBalance.toLocaleString()})</span>
+                  </>
+                ) : paymentMethod === 'card' ? (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay {formatCurrency(checkoutAmount)} with Paystack</span>
+                  </>
+                ) : paymentMethod === 'transfer' ? (
+                  <>
+                    <Building2 className="w-4 h-4" />
+                    <span>Pay {formatCurrency(checkoutAmount)} via Direct Bank</span>
+                  </>
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Pay {formatCurrency(checkoutAmount)} Now</span>
+                    <span>Pay {formatCurrency(checkoutAmount)} from Wallet</span>
                   </>
                 )}
               </button>

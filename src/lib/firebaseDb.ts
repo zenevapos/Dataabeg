@@ -526,5 +526,94 @@ export async function creditUserWalletFromPayment(
   return newBalance;
 }
 
+/**
+ * Safely debit user wallet balance when purchasing data/airtime/cable/electricity
+ */
+export async function debitUserWallet(
+  uid: string,
+  amount: number,
+  txRef: string,
+  serviceDescription: string
+): Promise<{ success: boolean; newBalance: number; error?: string }> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      return { success: false, newBalance: 0, error: 'User profile not found.' };
+    }
+    const current = (snap.data().walletBalance || 0) as number;
+    if (current < amount) {
+      return {
+        success: false,
+        newBalance: current,
+        error: `Insufficient wallet balance. You have ₦${current.toLocaleString()} but need ₦${amount.toLocaleString()}. Please top up your wallet or pay instantly with Paystack.`
+      };
+    }
+
+    const newBalance = current - amount;
+    await updateDoc(userRef, {
+      walletBalance: newBalance,
+      updatedAt: serverTimestamp()
+    });
+
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(PROFILE_LOCAL_KEY + uid);
+      if (cached) {
+        try {
+          const p = JSON.parse(cached);
+          p.walletBalance = newBalance;
+          localStorage.setItem(PROFILE_LOCAL_KEY + uid, JSON.stringify(p));
+        } catch (_) {}
+      }
+    }
+
+    return { success: true, newBalance };
+  } catch (err: any) {
+    console.error('Wallet debit error:', err);
+    return { success: false, newBalance: 0, error: err?.message || 'Could not debit wallet balance.' };
+  }
+}
+
+/**
+ * Refund user wallet if dispensing service fails
+ */
+export async function refundUserWallet(
+  uid: string,
+  amount: number,
+  txRef: string,
+  reason: string
+): Promise<number> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const snap = await getDoc(userRef);
+    let current = 0;
+    if (snap.exists()) {
+      current = (snap.data().walletBalance || 0) as number;
+    }
+    const newBalance = current + amount;
+    await setDoc(userRef, {
+      walletBalance: newBalance,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(PROFILE_LOCAL_KEY + uid);
+      if (cached) {
+        try {
+          const p = JSON.parse(cached);
+          p.walletBalance = newBalance;
+          localStorage.setItem(PROFILE_LOCAL_KEY + uid, JSON.stringify(p));
+        } catch (_) {}
+      }
+    }
+
+    return newBalance;
+  } catch (err) {
+    console.error('Wallet refund error:', err);
+    return 0;
+  }
+}
+
+
 
 
