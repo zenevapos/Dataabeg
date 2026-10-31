@@ -237,8 +237,12 @@ export function subscribeToSupportMessages(
           callback(list);
         }
       },
-      (err) => {
-        console.warn('Firestore support messages snapshot fallback:', err);
+      (err: any) => {
+        if (err?.code === 'permission-denied') {
+          console.info('Firestore: support messages locked by security rules. Publish firestore.rules in Firebase Console.');
+        } else {
+          console.warn('Firestore support messages snapshot fallback:', err?.message || err);
+        }
       }
     );
 
@@ -286,8 +290,12 @@ export function subscribeToAllSupportConversations(
           callback(list);
         }
       },
-      (err) => {
-        console.warn('Firestore conversations snapshot fallback:', err);
+      (err: any) => {
+        if (err?.code === 'permission-denied') {
+          console.info('Firestore: support conversations locked by security rules. Publish firestore.rules in Firebase Console.');
+        } else {
+          console.warn('Firestore conversations snapshot fallback:', err?.message || err);
+        }
       }
     );
 

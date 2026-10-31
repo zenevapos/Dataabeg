@@ -1,9 +1,24 @@
 import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import NextTopLoader from '@/components/NextTopLoader';
 import SupportChatWidget from '@/components/SupportChatWidget';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+
+const spaceGrotesk = localFont({
+  src: '../../public/fonts/space-grotesk.woff2',
+  variable: '--font-space',
+  display: 'swap',
+  weight: '500 700',
+});
+
+const plusJakartaSans = localFont({
+  src: '../../public/fonts/plus-jakarta-sans.woff2',
+  variable: '--font-jakarta',
+  display: 'swap',
+  weight: '400 800',
+});
 
 export const viewport: Viewport = {
   themeColor: '#4f46e5',
@@ -61,13 +76,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      className={`${spaceGrotesk.variable} ${plusJakartaSans.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       style={{ backgroundColor: '#f8fafc', color: '#0f172a', colorScheme: 'light' }}
     >
       <head>
-        <link rel="preload" href="/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -95,7 +109,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased selection:bg-blue-600 selection:text-white font-sans"
+        className={`min-h-screen bg-[#f8fafc] text-slate-900 antialiased selection:bg-blue-600 selection:text-white font-sans ${plusJakartaSans.className}`}
         suppressHydrationWarning
         style={{ backgroundColor: '#f8fafc', color: '#0f172a' }}
       >

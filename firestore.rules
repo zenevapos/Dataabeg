@@ -1,23 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection: Allow users to read/write their own profile, or unauthenticated read
+    // Helper function to check if caller is an authorized DataAbeg admin
+    function isAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email.matches('(?i)^(kokoroowoabdulsalam@gmail\\.com|belloimam431@gmail\\.com)$'));
+    }
+
+    // Users collection: Anyone can read user profile, user can edit their own, admin has full access
     match /users/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
     // Orders collection: Allow creating and reading orders for guests and logged in users
     match /orders/{orderId} {
       allow read, create: if true;
-      allow update, delete: if request.auth != null && 
-        (request.auth.token.email.matches('(?i)^kokoroowoabdulsalam@gmail\\.com$') || resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 
     // Settings collection: Anyone can read settings, only admin can write
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email.matches('(?i)^kokoroowoabdulsalam@gmail\\.com$');
+      allow write: if isAdmin();
     }
 
     // Phone verifications: Allows creating challenges and reading verification status during WhatsApp sign-up

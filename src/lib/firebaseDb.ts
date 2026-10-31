@@ -134,8 +134,12 @@ export async function fetchAllOrdersFromFirestore(max: number = 100): Promise<Tr
       const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
       return timeB - timeA;
     });
-  } catch (err) {
-    console.warn('Error fetching all orders from Firestore:', err);
+  } catch (err: any) {
+    if (err?.code === 'permission-denied') {
+      console.info('Firestore: orders collection locked by security rules. Publish firestore.rules in Firebase Console.');
+    } else {
+      console.warn('Error fetching all orders from Firestore:', err?.message || err);
+    }
     return [];
   }
 }
@@ -570,8 +574,12 @@ export async function fetchAllUsersFromFirestore(max: number = 100): Promise<Use
       const timeB = new Date(b.createdAt || 0).getTime();
       return timeB - timeA;
     });
-  } catch (err) {
-    console.warn('Could not fetch users from Firestore:', err);
+  } catch (err: any) {
+    if (err?.code === 'permission-denied') {
+      console.info('Firestore: users collection locked by security rules. Publish firestore.rules in Firebase Console.');
+    } else {
+      console.warn('Could not fetch users from Firestore:', err?.message || err);
+    }
     return [];
   }
 }

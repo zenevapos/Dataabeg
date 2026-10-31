@@ -171,8 +171,31 @@ export default function AdminSalamPage() {
         fetchAllUsersFromFirestore(100)
       ]);
       setAdminSettings(fetchedSettings);
-      setOrders(fetchedOrders);
-      setUsersList(fetchedUsers);
+
+      let finalOrders = fetchedOrders;
+      if (finalOrders.length === 0 && typeof window !== 'undefined') {
+        try {
+          const local = localStorage.getItem('dataabeg_recent_orders');
+          if (local) finalOrders = JSON.parse(local);
+        } catch (_) {}
+      }
+      setOrders(finalOrders);
+
+      let finalUsers = fetchedUsers;
+      if (finalUsers.length === 0 && typeof window !== 'undefined') {
+        try {
+          const keys = Object.keys(localStorage).filter(k => k.startsWith('dataabeg_profile_'));
+          const localUsers: UserProfile[] = [];
+          for (const k of keys) {
+            try {
+              const u = JSON.parse(localStorage.getItem(k) || '');
+              if (u && u.uid) localUsers.push(u);
+            } catch (_) {}
+          }
+          if (localUsers.length > 0) finalUsers = localUsers;
+        } catch (_) {}
+      }
+      setUsersList(finalUsers);
 
       // Check live balances
       checkGatewaysBalance(fetchedSettings);
