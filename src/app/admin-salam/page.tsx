@@ -1229,7 +1229,8 @@ export default function AdminSalamPage() {
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Bank Name</label>
                     <input
                       type="text"
-                      value={adminSettings.bankName || 'Moniepoint MFB'}
+                      value={adminSettings.bankName || ''}
+                      placeholder="e.g. Moniepoint MFB"
                       onChange={(e) => setAdminSettings({ ...adminSettings, bankName: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs text-slate-900 outline-none"
                     />
@@ -1238,7 +1239,8 @@ export default function AdminSalamPage() {
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Account Number</label>
                     <input
                       type="text"
-                      value={adminSettings.accountNumber || '1855365255'}
+                      value={adminSettings.accountNumber || ''}
+                      placeholder="e.g. 1855365255"
                       onChange={(e) => setAdminSettings({ ...adminSettings, accountNumber: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-mono font-space text-slate-900 outline-none"
                     />
@@ -1247,7 +1249,8 @@ export default function AdminSalamPage() {
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Account Name</label>
                     <input
                       type="text"
-                      value={adminSettings.accountName || 'DataAbeg VTU'}
+                      value={adminSettings.accountName || ''}
+                      placeholder="e.g. DataAbeg VTU Ventures"
                       onChange={(e) => setAdminSettings({ ...adminSettings, accountName: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs text-slate-900 outline-none"
                     />

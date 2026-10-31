@@ -644,20 +644,6 @@ export function PurchaseModal({
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('transfer')}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                    paymentMethod === 'transfer'
-                      ? 'border-[#1E40AF] bg-blue-50/60 ring-2 ring-[#1E40AF]/20'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <Building2 className="w-5 h-5 text-emerald-600 mb-1" />
-                  <p className="font-bold text-xs">Bank Transfer</p>
-                  <p className="text-[10px] text-slate-500">OPay / Moniepoint</p>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setPaymentMethod('card')}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     paymentMethod === 'card'
@@ -666,37 +652,59 @@ export function PurchaseModal({
                   }`}
                 >
                   <CreditCard className="w-5 h-5 text-purple-600 mb-1" />
-                  <p className="font-bold text-xs">Debit Card</p>
-                  <p className="text-[10px] text-slate-500">Paystack / Card</p>
+                  <p className="font-bold text-xs">Paystack Instant</p>
+                  <p className="text-[10px] text-slate-500">Card, Transfer, USSD</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('transfer')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    paymentMethod === 'transfer'
+                      ? 'border-[#1E40AF] bg-blue-50/60 ring-2 ring-[#1E40AF]/20'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5 text-emerald-600 mb-1" />
+                  <p className="font-bold text-xs">Direct Transfer</p>
+                  <p className="text-[10px] text-slate-500">Company Bank</p>
                 </button>
               </div>
 
               {/* Bank Transfer Instructions */}
               {paymentMethod === 'transfer' && (
                 <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-2 text-amber-950 animate-in fade-in">
-                  <div className="flex justify-between items-center">
-                    <span className="text-amber-800">Bank Name:</span>
-                    <span className="font-bold">{adminSettings.bankName}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-amber-800">Account Number:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(adminSettings.accountNumber);
-                        setCopiedAccount(true);
-                        setTimeout(() => setCopiedAccount(false), 2000);
-                      }}
-                      className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-300 flex items-center gap-1 hover:bg-amber-100"
-                    >
-                      {adminSettings.accountNumber}
-                      {copiedAccount ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-amber-800">Account Name:</span>
-                    <span className="font-bold">{adminSettings.accountName}</span>
-                  </div>
+                  {adminSettings.accountNumber && adminSettings.accountNumber.trim().length > 5 ? (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-amber-800">Bank Name:</span>
+                        <span className="font-bold">{adminSettings.bankName || 'Settlement Bank'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-amber-800">Account Number:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(adminSettings.accountNumber || '');
+                            setCopiedAccount(true);
+                            setTimeout(() => setCopiedAccount(false), 2000);
+                          }}
+                          className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-300 flex items-center gap-1 hover:bg-amber-100"
+                        >
+                          {adminSettings.accountNumber}
+                          {copiedAccount ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
+                        </button>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-amber-800">Account Name:</span>
+                        <span className="font-bold">{adminSettings.accountName || 'DataAbeg'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-amber-900 text-[11px] leading-relaxed">
+                      Manual bank transfer is unconfigured. Please switch to <strong className="text-indigo-900">Paystack Instant</strong> above to pay automatically with Card, live Bank Transfer, USSD, or OPay.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -224,18 +224,13 @@ export default function DashboardOverviewPage() {
               <div className="text-base font-extrabold text-slate-900 font-space truncate">
                 {showBalance ? `₦${walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : '••••••'}
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(adminSettings.accountNumber || '1855365255');
-                  setCopiedBank(true);
-                  setTimeout(() => setCopiedBank(false), 2000);
-                }}
-                className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                title="Copy Moniepoint virtual account"
+              <Link
+                href="/dashboard/wallet"
+                className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-[#4f46e5] hover:underline"
               >
-                <span>🏦 {adminSettings.accountNumber || '1855365255'}</span>
-                {copiedBank ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
-              </button>
+                <span>+ Fund Wallet (Paystack)</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
           </div>
 

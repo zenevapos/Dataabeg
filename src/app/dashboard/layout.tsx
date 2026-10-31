@@ -382,9 +382,9 @@ export default function DashboardLayout({
                     </div>
                   </div>
                   <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                    <div className="font-bold text-slate-900">Virtual Bank Accounts</div>
+                    <div className="font-bold text-slate-900">Instant Wallet Funding</div>
                     <div className="text-slate-600 text-[11px]">
-                      Automated 30-sec wallet funding via dedicated Moniepoint &amp; OPay accounts.
+                      Automated instant wallet crediting via Paystack (Debit Card, Transfer, USSD, OPay).
                     </div>
                   </div>
                 </div>
