@@ -78,4 +78,8 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
 }
 
+tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+    enabled = false
+}
+
 apply(from = file("tauri.build.gradle.kts"))

@@ -14,9 +14,11 @@ allprojects {
         google()
         mavenCentral()
     }
+    tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+        enabled = false
+    }
 }
 
 tasks.register("clean").configure {
     delete("build")
 }
-
