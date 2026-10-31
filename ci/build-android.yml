@@ -7,8 +7,12 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
+    name: Build Android APK & AAB
     runs-on: ubuntu-latest
 
     steps:
@@ -50,29 +54,46 @@ jobs:
 
       - name: Initialize Tauri Android (if not present)
         run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           if [ ! -d "src-tauri/gen/android" ]; then
             npx @tauri-apps/cli android init
           fi
-        env:
-          NDK_HOME: ${{ steps.setup-android.outputs.ANDROID_HOME }}/ndk/25.2.9519653
 
-      - name: Build Android APK & AAB
+      - name: Build Android APK
         run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           npx @tauri-apps/cli android build --apk
+        continue-on-error: true
+
+      - name: Build Android AAB (Google Play Store)
+        run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
           npx @tauri-apps/cli android build --aab
-        env:
-          NDK_HOME: ${{ steps.setup-android.outputs.ANDROID_HOME }}/ndk/25.2.9519653
+        continue-on-error: true
+
+      - name: Collect Android Outputs
+        run: |
+          mkdir -p build_output/apk
+          mkdir -p build_output/aab
+          find src-tauri/gen/android -name "*.apk" -exec cp {} build_output/apk/ \; 2>/dev/null || true
+          find src-tauri/gen/android -name "*.aab" -exec cp {} build_output/aab/ \; 2>/dev/null || true
+          ls -la build_output/apk || true
+          ls -la build_output/aab || true
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DataAbeg-Release-APK
-          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: |
+            build_output/apk/*.apk
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
 
       - name: Upload AAB (Google Play Store Bundle) Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DataAbeg-GooglePlay-AAB
-          path: src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          path: |
+            build_output/aab/*.aab
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: warn

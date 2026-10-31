@@ -176,10 +176,6 @@ export default function WalletPage() {
     }
   };
 
-  const hasManualSettlementBank = Boolean(
-    adminSettings.accountNumber && adminSettings.accountNumber.trim().length > 5
-  );
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-[1200px] mx-auto">
       {/* Top Total Balance Header */}
@@ -455,55 +451,6 @@ export default function WalletPage() {
               )}
             </div>
           </div>
-
-          {/* Manual Company Bank Settlement (Rendered ONLY if admin configured it) */}
-          {hasManualSettlementBank && (
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="w-5 h-5 text-emerald-600" />
-                  <div>
-                    <div className="text-xs font-bold text-slate-900">{adminSettings.bankName}</div>
-                    <div className="text-[10px] text-slate-400">{adminSettings.accountName}</div>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                  Manual Bank Transfer
-                </span>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center justify-between">
-                <div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase">Settlement Account Number</div>
-                  <div className="text-base font-black font-mono tracking-wider text-slate-900">
-                    {adminSettings.accountNumber}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleCopy(adminSettings.accountNumber || '', 'settlement')}
-                  className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 text-xs font-semibold"
-                  title="Copy Account Number"
-                >
-                  {copiedAccount === 'settlement' ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="text-emerald-600">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <p className="text-[11px] text-slate-500">
-                Note: Transfers to this manual bank account require payment receipt confirmation. For instant 5-second automatic wallet crediting, use the Paystack Online Top-Up above.
-              </p>
-            </div>
-          )}
 
           {/* Security & Verification Callout */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs flex items-start gap-3.5">

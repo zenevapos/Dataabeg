@@ -179,16 +179,6 @@ export default function DashboardLayout({
               </Link>
             );
           })}
-
-          {isAdmin && (
-            <Link
-              href="/admin-salam"
-              className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-amber-700 bg-amber-50/70 hover:bg-amber-100 transition-colors cursor-pointer text-left font-semibold mt-3"
-            >
-              <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 stroke-[1.6]" />
-              <span className="truncate">Admin Console</span>
-            </Link>
-          )}
         </nav>
       </div>
 

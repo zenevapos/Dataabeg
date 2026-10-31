@@ -43,8 +43,25 @@ import {
   Flame,
   Award,
   Zap,
-  Filter
+  Filter,
+  MessageSquare,
+  Headphones,
+  Volume2,
+  Bell,
+  CheckCheck
 } from 'lucide-react';
+import {
+  SupportConversation,
+  SupportMessage,
+  subscribeToAllSupportConversations,
+  subscribeToSupportMessages,
+  sendSupportMessage,
+  markSupportConversationReadByAdmin,
+  setSupportConversationStatus,
+  playSupportNotificationSound,
+  triggerNativeNotification,
+  requestNotificationPermission
+} from '@/lib/supportChat';
 import { Transaction, DataPlan } from '@/lib/types';
 import { CURATED_DATA_PLANS, NETWORKS } from '@/lib/constants';
 import { useAuth } from '@/context/AuthContext';
@@ -76,7 +93,17 @@ export default function AdminSalamPage() {
   const [loginMethod, setLoginMethod] = useState<'pin' | 'email'>('pin');
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'analytics' | 'pricing' | 'orders' | 'users' | 'gateway' | 'broadcast' | 'psb'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'pricing' | 'orders' | 'users' | 'gateway' | 'broadcast' | 'psb' | 'support'>('analytics');
+
+  // Live Customer Support Chat Desk State
+  const [supportConversations, setSupportConversations] = useState<SupportConversation[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<SupportMessage[]>([]);
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [supportSearch, setSupportSearch] = useState('');
+  const [supportStatusFilter, setSupportStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
+  const [notificationsGranted, setNotificationsGranted] = useState(false);
 
   // Pricing Matrix State
   const [pricingSearch, setPricingSearch] = useState('');
@@ -154,6 +181,82 @@ export default function AdminSalamPage() {
     } finally {
       setIsLoadingOrders(false);
       setIsLoadingUsers(false);
+    }
+  };
+
+  // Support Chat Live Listener with Audio Chime & Native Push Alert
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationsGranted(Notification.permission === 'granted');
+    }
+
+    let previousUnread = -1;
+    const unsub = subscribeToAllSupportConversations((convos) => {
+      setSupportConversations(convos);
+
+      const unreadTotal = convos.reduce((acc, c) => acc + (c.unreadAdmin || 0), 0);
+      if (previousUnread !== -1 && unreadTotal > previousUnread) {
+        playSupportNotificationSound();
+        triggerNativeNotification(
+          'New Customer Support Message',
+          'A customer has sent an inquiry on DataAbeg.'
+        );
+      }
+      previousUnread = unreadTotal;
+    });
+
+    return () => unsub();
+  }, [isAuthenticated]);
+
+  // Subscribe to selected conversation's messages
+  useEffect(() => {
+    if (!selectedChatId) return;
+
+    markSupportConversationReadByAdmin(selectedChatId);
+
+    const unsub = subscribeToSupportMessages(selectedChatId, (msgs) => {
+      setChatMessages(msgs);
+    });
+
+    return () => unsub();
+  }, [selectedChatId]);
+
+  const handleSendAdminReply = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!replyText.trim() || !selectedChatId || isSendingReply) return;
+
+    const text = replyText.trim();
+    setReplyText('');
+    setIsSendingReply(true);
+
+    try {
+      await sendSupportMessage(
+        selectedChatId,
+        text,
+        'admin',
+        'DataAbeg Support',
+        user?.email || ADMIN_EMAIL
+      );
+      playSupportNotificationSound();
+    } catch (err) {
+      console.error('Failed to send admin reply:', err);
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
+
+  const handleQuickReply = (text: string) => {
+    setReplyText(text);
+  };
+
+  const handleRequestNotifications = async () => {
+    const granted = await requestNotificationPermission();
+    setNotificationsGranted(granted);
+    if (granted) {
+      playSupportNotificationSound();
+      triggerNativeNotification('Notifications Active', 'You will now receive sound and desktop alerts when customers message support.');
     }
   };
 
@@ -536,6 +639,33 @@ export default function AdminSalamPage() {
       (u.uid && u.uid.toLowerCase().includes(query))
     );
   });
+
+  // Support Chat Derived State
+  const totalUnreadAdminCount = supportConversations.reduce((acc, c) => acc + (c.unreadAdmin || 0), 0);
+
+  const filteredSupportConversations = supportConversations.filter((c) => {
+    if (supportStatusFilter !== 'all' && c.status !== supportStatusFilter) return false;
+    if (!supportSearch.trim()) return true;
+    const q = supportSearch.toLowerCase();
+    return (
+      (c.userName && c.userName.toLowerCase().includes(q)) ||
+      (c.userEmail && c.userEmail.toLowerCase().includes(q)) ||
+      (c.lastMessage && c.lastMessage.toLowerCase().includes(q)) ||
+      (c.id && c.id.toLowerCase().includes(q))
+    );
+  });
+
+  const selectedConversation = supportConversations.find((c) => c.id === selectedChatId);
+  const selectedUserRecord = selectedConversation
+    ? usersList.find((u) => u.uid === selectedConversation.userId || (u.email && u.email === selectedConversation.userEmail))
+    : null;
+  const selectedUserOrders = selectedConversation
+    ? orders.filter(
+        (o) =>
+          (o.userId && o.userId === selectedConversation.userId) ||
+          (o.userEmail && o.userEmail === selectedConversation.userEmail)
+      )
+    : [];
 
   const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://dataabeg.com';
   const webhookUrl = `${currentHost}/api/smeplug/webhook`;
@@ -934,6 +1064,27 @@ export default function AdminSalamPage() {
           >
             <Building2 className="w-4 h-4" />
             <span>Bank Settlement</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`pb-3 border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === 'support'
+                ? 'border-[#4f46e5] text-[#4f46e5]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Live Support Desk</span>
+            {totalUnreadAdminCount > 0 ? (
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-600 text-white animate-pulse">
+                {totalUnreadAdminCount} new
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600">
+                {supportConversations.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -2068,6 +2219,343 @@ export default function AdminSalamPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TAB 7: LIVE CUSTOMER SUPPORT DESK ================= */}
+        {activeTab === 'support' && (
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+            {/* Support Header Bar */}
+            <div className="p-4 sm:p-6 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-[#4f46e5] flex items-center justify-center">
+                    <Headphones className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-lg font-black text-slate-900 font-space">Live Customer Support Desk</h2>
+                  <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Live Sync
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Respond to customer inquiries in real-time. Sound and desktop push notifications alert you to new messages.
+                </p>
+              </div>
+
+              {/* Notification & Sound Controls */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => playSupportNotificationSound()}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Test notification sound chime"
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Test Chime</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRequestNotifications}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                    notificationsGranted
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-[#4f46e5] text-white hover:bg-indigo-700'
+                  }`}
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  <span>{notificationsGranted ? 'Push Alerts Active' : 'Enable Desktop Alerts'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Split Screen Support View */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+              {/* Left Column: Conversations List */}
+              <div className="lg:col-span-4 border-r border-slate-200/80 flex flex-col bg-slate-50/30">
+                {/* Search & Filter */}
+                <div className="p-3.5 border-b border-slate-200/80 space-y-2.5 bg-white">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={supportSearch}
+                      onChange={(e) => setSupportSearch(e.target.value)}
+                      placeholder="Search customer email, name, phone..."
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4f46e5]"
+                    />
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold">
+                    <button
+                      onClick={() => setSupportStatusFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                        supportStatusFilter === 'all'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      All ({supportConversations.length})
+                    </button>
+                    <button
+                      onClick={() => setSupportStatusFilter('open')}
+                      className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                        supportStatusFilter === 'open'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Open ({supportConversations.filter((c) => c.status !== 'resolved').length})
+                    </button>
+                    <button
+                      onClick={() => setSupportStatusFilter('resolved')}
+                      className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                        supportStatusFilter === 'resolved'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Resolved ({supportConversations.filter((c) => c.status === 'resolved').length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Conversation Cards */}
+                <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-h-[580px]">
+                  {filteredSupportConversations.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <MessageSquare className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-semibold text-slate-600">No conversations yet</p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        When customers ask questions in the support chat, their threads appear here instantly.
+                      </p>
+                    </div>
+                  ) : (
+                    filteredSupportConversations.map((c) => {
+                      const isSelected = c.id === selectedChatId;
+                      const hasUnread = (c.unreadAdmin || 0) > 0;
+
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setSelectedChatId(c.id)}
+                          className={`w-full p-4 text-left transition-colors cursor-pointer flex items-start gap-3 ${
+                            isSelected
+                              ? 'bg-indigo-50/80 border-l-4 border-[#4f46e5]'
+                              : 'hover:bg-white border-l-4 border-transparent'
+                          }`}
+                        >
+                          <div className="w-9 h-9 rounded-full bg-[#4f46e5]/10 text-[#4f46e5] flex items-center justify-center font-bold text-xs shrink-0 font-space">
+                            {(c.userName || 'U').slice(0, 2).toUpperCase()}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-xs text-slate-900 truncate">
+                                {c.userName || 'Customer'}
+                              </span>
+                              <span className="text-[10px] text-slate-400 shrink-0 font-mono">
+                                {c.lastMessageTime ? new Date(c.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5 font-mono">
+                              {c.userEmail || c.id}
+                            </p>
+
+                            <p className="text-xs text-slate-600 line-clamp-1 mt-1 font-sans">
+                              {c.lastMessage || 'Started conversation'}
+                            </p>
+
+                            <div className="flex items-center justify-between mt-2">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                  c.status === 'resolved'
+                                    ? 'bg-slate-100 text-slate-600'
+                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                }`}
+                              >
+                                {c.status || 'open'}
+                              </span>
+
+                              {hasUnread && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white animate-pulse">
+                                  {c.unreadAdmin} new
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Chat Room & Reply Desk */}
+              <div className="lg:col-span-8 flex flex-col bg-white">
+                {selectedChatId && selectedConversation ? (
+                  <>
+                    {/* Customer Header */}
+                    <div className="p-4 sm:p-5 border-b border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/50">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-sm text-slate-900">
+                            {selectedConversation.userName || 'Customer'}
+                          </h3>
+                          <span className="text-xs text-slate-400 font-mono">
+                            ({selectedConversation.userEmail || selectedConversation.id})
+                          </span>
+                        </div>
+
+                        {/* Customer Live Context */}
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
+                          <span>
+                            Wallet Balance:{' '}
+                            <strong className="text-slate-800 font-space">
+                              ₦{(selectedUserRecord?.walletBalance || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                            </strong>
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Total Purchases:{' '}
+                            <strong className="text-slate-800 font-space">{selectedUserOrders.length} orders</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Status Toggle Button */}
+                      <div className="flex items-center gap-2">
+                        {selectedConversation.status === 'resolved' ? (
+                          <button
+                            type="button"
+                            onClick={() => setSupportConversationStatus(selectedChatId, 'open')}
+                            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
+                          >
+                            Reopen Ticket
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setSupportConversationStatus(selectedChatId, 'resolved')}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-2xs transition-colors flex items-center gap-1"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Mark Resolved</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Messages Scroll Area */}
+                    <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3.5 max-h-[460px] min-h-[380px] bg-slate-50/20">
+                      {chatMessages.length === 0 ? (
+                        <div className="text-center py-12 text-slate-400">
+                          <p className="text-xs">No messages in this conversation thread yet.</p>
+                        </div>
+                      ) : (
+                        chatMessages.map((msg) => {
+                          const isAdmin = msg.sender === 'admin';
+
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1 px-1">
+                                <span className="text-[11px] font-bold text-slate-700">
+                                  {isAdmin ? 'DataAbeg Support' : selectedConversation.userName || 'Customer'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </span>
+                              </div>
+
+                              <div
+                                className={`max-w-[85%] sm:max-w-[70%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                                  isAdmin
+                                    ? 'bg-[#4f46e5] text-white rounded-tr-xs shadow-xs'
+                                    : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-2xs'
+                                }`}
+                              >
+                                <p className="whitespace-pre-wrap">{msg.text}</p>
+                              </div>
+
+                              {isAdmin && (
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-1 px-1">
+                                  <CheckCheck className="w-3 h-3 text-[#4f46e5]" />
+                                  <span>Delivered</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Quick Reply Presets */}
+                    <div className="px-4 py-2 bg-slate-50/70 border-t border-slate-200/80 flex items-center gap-2 overflow-x-auto scrollbar-none text-[11px]">
+                      <span className="text-slate-400 font-bold shrink-0">Quick:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('Hello! Your payment was verified and your data bundle was delivered.')}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 transition-colors shrink-0 cursor-pointer"
+                      >
+                        Payment confirmed &amp; delivered
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('Please dial *323# or *312# to check your data balance on your device.')}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 transition-colors shrink-0 cursor-pointer"
+                      >
+                        Check balance USSD
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickReply('Kindly provide the phone number and carrier you recharged.')}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 transition-colors shrink-0 cursor-pointer"
+                      >
+                        Request phone &amp; carrier
+                      </button>
+                    </div>
+
+                    {/* Input Composer */}
+                    <form onSubmit={handleSendAdminReply} className="p-4 border-t border-slate-200/80 bg-white">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your support reply... (Press Enter to send)"
+                          className="flex-1 px-4 py-2.5 text-xs rounded-xl border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4f46e5]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!replyText.trim() || isSendingReply}
+                          className="px-4 py-2.5 rounded-xl bg-[#4f46e5] hover:bg-indigo-700 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>{isSendingReply ? 'Sending...' : 'Send'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                    <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-[#4f46e5] flex items-center justify-center mb-4">
+                      <MessageSquare className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800">Support Chat Desk</h3>
+                    <p className="text-xs text-slate-500 max-w-sm mt-1.5 leading-relaxed">
+                      Select a customer thread from the left panel to review chat history, answer questions, and solve customer issues in real time.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

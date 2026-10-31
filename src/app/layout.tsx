@@ -3,6 +3,7 @@ import { Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import NextTopLoader from '@/components/NextTopLoader';
+import SupportChatWidget from '@/components/SupportChatWidget';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -89,6 +90,7 @@ export default function RootLayout({
         <NextTopLoader color="#4F46E5" height={3} showSpinner={false} />
         <AuthProvider>
           {children}
+          <SupportChatWidget />
         </AuthProvider>
       </body>
     </html>

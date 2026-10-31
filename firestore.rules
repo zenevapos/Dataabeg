@@ -24,5 +24,14 @@ service cloud.firestore {
     match /phone_verifications/{phone} {
       allow read, write: if true;
     }
+
+    // Support Conversations & Real-time Messages
+    match /support_conversations/{conversationId} {
+      allow read, write: if true;
+
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
+    }
   }
 }

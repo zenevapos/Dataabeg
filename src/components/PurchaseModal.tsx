@@ -96,7 +96,7 @@ export function PurchaseModal({
   customApiKey
 }: PurchaseModalProps) {
   const { user, profile, refreshProfile } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'wallet'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
@@ -280,14 +280,6 @@ export function PurchaseModal({
             throw new Error(initData.message || 'Could not launch Paystack checkout.');
           }
         }
-        return;
-      }
-
-      if (paymentMethod === 'transfer') {
-        setErrorMessage(
-          'Direct Bank Transfer requires manual payment review. For instant 5-second automated delivery, please select "Paystack Instant" above (choose the Bank Transfer option inside Paystack)!'
-        );
-        setIsProcessing(false);
         return;
       }
 
@@ -731,7 +723,7 @@ export function PurchaseModal({
                 Select Payment Method
               </label>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -744,26 +736,26 @@ export function PurchaseModal({
                     }
                     setPaymentMethod('wallet');
                   }}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                     paymentMethod === 'wallet'
                       ? 'border-[#1E40AF] bg-blue-50/70 ring-2 ring-[#1E40AF]/20'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <Wallet className="w-5 h-5 text-[#1E40AF]" />
                     {hasSufficientWallet ? (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                         Ready
                       </span>
                     ) : (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">
                         Low
                       </span>
                     )}
                   </div>
                   <p className="font-bold text-xs text-slate-900">User Wallet</p>
-                  <p className="text-[10px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 font-medium font-space">
                     Bal: ₦{userBalance.toLocaleString()}
                   </p>
                 </button>
@@ -774,85 +766,22 @@ export function PurchaseModal({
                     setErrorMessage(null);
                     setPaymentMethod('card');
                   }}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                     paymentMethod === 'card'
                       ? 'border-purple-600 bg-purple-50/70 ring-2 ring-purple-600/20'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <CreditCard className="w-5 h-5 text-purple-600" />
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                       Auto
                     </span>
                   </div>
                   <p className="font-bold text-xs text-slate-900">Paystack Instant</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Card, Transfer, USSD</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setErrorMessage(null);
-                    setPaymentMethod('transfer');
-                  }}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                    paymentMethod === 'transfer'
-                      ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-600/20'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <Building2 className="w-5 h-5 text-emerald-600" />
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                      Manual
-                    </span>
-                  </div>
-                  <p className="font-bold text-xs text-slate-900">Direct Bank</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Requires Review</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Card, Transfer, USSD, OPay</p>
                 </button>
               </div>
-
-              {/* Bank Transfer Instructions */}
-              {paymentMethod === 'transfer' && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs space-y-2 text-amber-950 animate-in fade-in">
-                  <div className="p-2 rounded-xl bg-amber-100/70 text-amber-900 text-[11px] font-medium leading-relaxed">
-                    💡 <strong>Tip:</strong> For automatic order dispatch in 5 seconds without manual receipt review, select <button type="button" onClick={() => setPaymentMethod('card')} className="text-purple-700 underline font-bold">Paystack Instant</button> above (choose "Pay with Transfer" in the popup).
-                  </div>
-
-                  {adminSettings.accountNumber && adminSettings.accountNumber.trim().length > 5 ? (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-amber-800">Bank Name:</span>
-                        <span className="font-bold">{adminSettings.bankName || 'Settlement Bank'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-amber-800">Account Number:</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(adminSettings.accountNumber || '');
-                            setCopiedAccount(true);
-                            setTimeout(() => setCopiedAccount(false), 2000);
-                          }}
-                          className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-300 flex items-center gap-1 hover:bg-amber-100"
-                        >
-                          {adminSettings.accountNumber}
-                          {copiedAccount ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-500" />}
-                        </button>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-amber-800">Account Name:</span>
-                        <span className="font-bold">{adminSettings.accountName || 'DataAbeg'}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-amber-900 text-[11px] leading-relaxed">
-                      Manual bank transfer is unconfigured. Please switch to <strong className="text-indigo-900">Paystack Instant</strong> above to pay automatically with Card, live Bank Transfer, USSD, or OPay.
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Error Message */}
@@ -899,11 +828,6 @@ export function PurchaseModal({
                   <>
                     <CreditCard className="w-4 h-4" />
                     <span>Pay {formatCurrency(checkoutAmount)} with Paystack</span>
-                  </>
-                ) : paymentMethod === 'transfer' ? (
-                  <>
-                    <Building2 className="w-4 h-4" />
-                    <span>Pay {formatCurrency(checkoutAmount)} via Direct Bank</span>
                   </>
                 ) : (
                   <>
