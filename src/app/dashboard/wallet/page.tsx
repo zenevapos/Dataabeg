@@ -94,49 +94,64 @@ export default function WalletPage() {
       amount: amountToFund
     };
 
+    const handleVerification = async (ref: string) => {
+      try {
+        const verifyRes = await fetch('/api/paystack/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: ref })
+        });
+        const verifyData = await verifyRes.json();
+        if (verifyRes.ok && verifyData.status) {
+          setFundSuccess(`🎉 Successfully credited ₦${amountToFund.toLocaleString()} to your wallet!`);
+          await refreshProfile();
+          try {
+            confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+          } catch {}
+          setTimeout(() => {
+            setIsAddMoneyOpen(false);
+            setFundSuccess(null);
+          }, 2000);
+        } else {
+          setFundError(verifyData.message || 'Payment received, updating your balance...');
+          await refreshProfile();
+        }
+      } catch (err: any) {
+        setFundError(err.message || 'Error confirming transaction with gateway.');
+      } finally {
+        setIsFunding(false);
+      }
+    };
+
+    let popupOpened = false;
+
     try {
       const hasScript = await loadPaystackScript();
-      if (hasScript && (window as any).PaystackPop) {
+      if (hasScript && (window as any).PaystackPop && typeof (window as any).PaystackPop.setup === 'function') {
         const handler = (window as any).PaystackPop.setup({
           key: publicKey,
           email: customerEmail,
           amount: Math.round(amountToFund * 100),
           ref: txRef,
           metadata,
-          callback: async (response: { reference: string }) => {
-            try {
-              const verifyRes = await fetch('/api/paystack/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: response.reference })
-              });
-              const verifyData = await verifyRes.json();
-              if (verifyRes.ok && verifyData.status) {
-                setFundSuccess(`🎉 Successfully credited ₦${amountToFund.toLocaleString()} to your wallet!`);
-                await refreshProfile();
-                try {
-                  confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
-                } catch {}
-                setTimeout(() => {
-                  setIsAddMoneyOpen(false);
-                  setFundSuccess(null);
-                }, 2000);
-              } else {
-                setFundError(verifyData.message || 'Payment received, updating your balance...');
-                await refreshProfile();
-              }
-            } catch (err: any) {
-              setFundError(err.message || 'Error confirming transaction with gateway.');
-            } finally {
-              setIsFunding(false);
-            }
+          callback: function (response: { reference: string }) {
+            handleVerification(response.reference);
           },
-          onClose: () => {
+          onClose: function () {
             setIsFunding(false);
           }
         });
-        handler.openIframe();
-      } else {
+        if (handler && typeof handler.openIframe === 'function') {
+          handler.openIframe();
+          popupOpened = true;
+        }
+      }
+    } catch (popupErr: any) {
+      console.warn('Paystack inline popup setup failed, falling back to redirect:', popupErr);
+    }
+
+    if (!popupOpened) {
+      try {
         const initRes = await fetch('/api/paystack/initialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -152,12 +167,12 @@ export default function WalletPage() {
         if (initRes.ok && initData.data?.authorization_url) {
           window.location.href = initData.data.authorization_url;
         } else {
-          throw new Error(initData.message || 'Failed to initialize Paystack');
+          throw new Error(initData.message || 'Failed to initialize Paystack checkout');
         }
+      } catch (redirectErr: any) {
+        setFundError(redirectErr.message || 'Failed to start payment');
+        setIsFunding(false);
       }
-    } catch (err: any) {
-      setFundError(err.message || 'Failed to start payment');
-      setIsFunding(false);
     }
   };
 

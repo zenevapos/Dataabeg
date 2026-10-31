@@ -181,48 +181,61 @@ export function PurchaseModal({
           cablePlanName: cableDetails?.cablePlanName
         };
 
-        const hasScript = await loadPaystackScript();
-
-        if (hasScript && (window as any).PaystackPop) {
-          const handler = (window as any).PaystackPop.setup({
-            key: publicKey,
-            email: customerEmail,
-            amount: Math.round(checkoutAmount * 100),
-            ref: txRef,
-            metadata,
-            callback: async (response: { reference: string }) => {
-              setProcessingStep('Payment approved! Dispensing order...');
+        const handlePaystackSuccess = async (ref: string) => {
+          setProcessingStep('Payment approved! Dispensing order...');
+          try {
+            const verifyRes = await fetch('/api/paystack/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reference: ref })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.status) {
+              setIsSuccess(true);
+              const verifiedTx = (verifyData.data || {}) as Transaction;
+              setCompletedTx(verifiedTx);
+              if (onOrderCompleted) onOrderCompleted(verifiedTx);
               try {
-                const verifyRes = await fetch('/api/paystack/verify', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ reference: response.reference })
-                });
-                const verifyData = await verifyRes.json();
-                if (verifyRes.ok && verifyData.status) {
-                  setIsSuccess(true);
-                  const verifiedTx = (verifyData.data || {}) as Transaction;
-                  setCompletedTx(verifiedTx);
-                  if (onOrderCompleted) onOrderCompleted(verifiedTx);
-                  try {
-                    confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
-                  } catch {}
-                } else {
-                  setErrorMessage(verifyData.message || 'Payment received, but service dispatch is pending confirmation.');
-                }
-              } catch (err: any) {
-                setErrorMessage(err.message || 'Network error verifying payment.');
-              } finally {
+                confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+              } catch {}
+            } else {
+              setErrorMessage(verifyData.message || 'Payment received, but service dispatch is pending confirmation.');
+            }
+          } catch (err: any) {
+            setErrorMessage(err.message || 'Network error verifying payment.');
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
+        let popupOpened = false;
+
+        try {
+          const hasScript = await loadPaystackScript();
+          if (hasScript && (window as any).PaystackPop && typeof (window as any).PaystackPop.setup === 'function') {
+            const handler = (window as any).PaystackPop.setup({
+              key: publicKey,
+              email: customerEmail,
+              amount: Math.round(checkoutAmount * 100),
+              ref: txRef,
+              metadata,
+              callback: function (response: { reference: string }) {
+                handlePaystackSuccess(response.reference);
+              },
+              onClose: function () {
                 setIsProcessing(false);
               }
-            },
-            onClose: () => {
-              setIsProcessing(false);
+            });
+            if (handler && typeof handler.openIframe === 'function') {
+              handler.openIframe();
+              popupOpened = true;
             }
-          });
-          handler.openIframe();
-          return;
-        } else {
+          }
+        } catch (popupErr: any) {
+          console.warn('Paystack inline popup setup failed, falling back to redirect:', popupErr);
+        }
+
+        if (!popupOpened) {
           // Fallback: Initialize on server and redirect to Paystack authorization_url
           const initRes = await fetch('/api/paystack/initialize', {
             method: 'POST',
@@ -243,6 +256,7 @@ export function PurchaseModal({
             throw new Error(initData.message || 'Could not launch Paystack checkout.');
           }
         }
+        return;
       }
 
       await new Promise((r) => setTimeout(r, 500));
