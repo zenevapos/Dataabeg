@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java (JDK 17)
         uses: actions/setup-java@v4
@@ -29,18 +31,26 @@ jobs:
         run: |
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.9519653" >> $GITHUB_ENV
-          # Accept all SDK licenses automatically
+          
+          # Accept SDK licenses
           yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          # Install NDK and required SDK components if not already cached
-          if [ ! -d "/usr/local/lib/android/sdk/ndk/25.2.9519653" ]; then
-            /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653" "build-tools;34.0.0" "platforms;android-34" || true
+          
+          # Detect runner pre-installed NDK
+          if [ -d "/usr/local/lib/android/sdk/ndk" ]; then
+            NDK_PATH=$(find /usr/local/lib/android/sdk/ndk -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)
+            if [ -n "$NDK_PATH" ]; then
+              echo "NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+              echo "ANDROID_NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+              echo "Using installed NDK: $NDK_PATH"
+            fi
           fi
+          
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" || true
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+          targets: aarch64-linux-android,armv7-linux-androideabi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,45 +67,67 @@ jobs:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyD_8yhjcZg_kJHi6-v6xZFPh77o2pM46qo' }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dataabeg-41f9b' }}
 
-      - name: Initialize Tauri Android (if not present)
+      - name: Make Gradle Wrapper Executable
         run: |
-          if [ ! -d "src-tauri/gen/android" ]; then
-            npx @tauri-apps/cli android init --ci
-          fi
+          chmod +x src-tauri/gen/android/gradlew || true
 
       - name: Build Android APK
         run: |
-          npx @tauri-apps/cli android build --apk --ci
-        continue-on-error: true
+          npx @tauri-apps/cli android build --apk --ci --target aarch64 --target armv7
+        env:
+          CI: true
 
       - name: Build Android AAB (Google Play Store)
         run: |
-          npx @tauri-apps/cli android build --aab --ci
-        continue-on-error: true
+          npx @tauri-apps/cli android build --aab --ci --target aarch64 --target armv7
+        env:
+          CI: true
 
       - name: Collect Android Outputs
         run: |
           mkdir -p build_output/apk
           mkdir -p build_output/aab
-          find src-tauri/gen/android -name "*.apk" -exec cp {} build_output/apk/ \; 2>/dev/null || true
-          find src-tauri/gen/android -name "*.aab" -exec cp {} build_output/aab/ \; 2>/dev/null || true
-          ls -la build_output/apk || true
-          ls -la build_output/aab || true
+          find src-tauri/gen/android/app/build/outputs -type f -name "*.apk" -exec cp {} build_output/apk/ \; 2>/dev/null || true
+          find src-tauri/gen/android/app/build/outputs -type f -name "*.aab" -exec cp {} build_output/aab/ \; 2>/dev/null || true
+          echo "=== Collected APKs ==="
+          ls -la build_output/apk
+          echo "=== Collected AABs ==="
+          ls -la build_output/aab
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DataAbeg-Release-APK
-          path: |
-            build_output/apk/*.apk
-            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: build_output/apk/*.apk
           if-no-files-found: warn
 
       - name: Upload AAB (Google Play Store Bundle) Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DataAbeg-GooglePlay-AAB
-          path: |
-            build_output/aab/*.aab
-            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          path: build_output/aab/*.aab
           if-no-files-found: warn
+
+      - name: Publish GitHub Release with APK & AAB
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "DataAbeg Mobile Android v1.0.${{ github.run_number }}"
+          body: |
+            ### 📱 DataAbeg Mobile Android Release (v1.0.${{ github.run_number }})
+
+            Automated production build for Android devices and Google Play Store distribution.
+
+            #### 📦 Downloads:
+            - **Direct APK:** Download `.apk` to install immediately on Android phones.
+            - **Google Play AAB:** `.aab` Android App Bundle for Google Play Console distribution.
+
+            *Built automatically from commit `${{ github.sha }}` on branch `${{ github.ref_name }}`.*
+          files: |
+            build_output/apk/*.apk
+            build_output/aab/*.aab
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
