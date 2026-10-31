@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
       const orderTx: Transaction = {
         id: txData.reference,
         reference: txData.reference,
+        userId: metadata.uid || '',
+        userEmail: metadata.userEmail || txData.customer?.email || '',
         smeplugReference: dispatchResult.data?.reference || dispatchResult.data?.ident || `GT_${Date.now()}`,
         network: metadata.networkName || 'Paystack',
         networkName: metadata.networkName || 'Paystack',

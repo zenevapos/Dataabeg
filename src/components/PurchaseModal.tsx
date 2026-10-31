@@ -169,6 +169,8 @@ export function PurchaseModal({
         const metadata = {
           type: 'service_purchase',
           serviceType,
+          uid: user?.uid || '',
+          userEmail: user?.email || customerEmail,
           amount: checkoutAmount,
           phone: phoneNumber || electricityDetails?.phone || cableDetails?.phone,
           networkId: plan?.networkId || network?.id,
@@ -210,8 +212,13 @@ export function PurchaseModal({
             if (verifyRes.ok && verifyData.status) {
               setIsSuccess(true);
               const verifiedTx = (verifyData.data || {}) as Transaction;
+              if (user) {
+                verifiedTx.userId = user.uid;
+                verifiedTx.userEmail = user.email || customerEmail;
+              }
               setCompletedTx(verifiedTx);
               if (onOrderCompleted) onOrderCompleted(verifiedTx);
+              saveOrderToFirestore(verifiedTx);
               try {
                 confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
               } catch {}
@@ -391,6 +398,8 @@ export function PurchaseModal({
         const newTx: Transaction = {
           id: txRef,
           reference: txRef,
+          userId: user?.uid || '',
+          userEmail: user?.email || '',
           smeplugReference: data.data?.reference || data.data?.ident || `GT_${Date.now()}`,
           network: network?.name || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',
           networkName: network?.displayName || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',

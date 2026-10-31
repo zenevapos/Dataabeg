@@ -42,6 +42,8 @@ export type TransactionStatus = 'successful' | 'processing' | 'failed' | 'SUCCES
 export interface Transaction {
   id: string;
   reference: string;
+  userId?: string;
+  userEmail?: string;
   smeplugReference?: string;
   network: NetworkType | string;
   networkName?: string;
@@ -57,6 +59,7 @@ export interface Transaction {
   createdAt: string;
   completedAt?: string;
   timestamp?: string;
+  updatedAt?: any;
   notes?: string;
   serviceType?: 'data' | 'airtime' | 'electricity' | 'cable';
   // Electricity fields

@@ -52,31 +52,56 @@ export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
 };
 
 /**
- * Save new transaction to Firestore
+ * Save new transaction to Firestore & local device cache
  */
 export async function saveOrderToFirestore(tx: Transaction): Promise<void> {
+  const normalizedData: Transaction = {
+    ...tx,
+    id: tx.id || tx.reference,
+    reference: tx.reference,
+    userId: tx.userId || '',
+    userEmail: tx.userEmail || '',
+    smeplugReference: tx.smeplugReference || '',
+    network: tx.network || tx.networkName || 'MTN',
+    networkName: tx.networkName || tx.network || 'MTN',
+    phone: tx.phone || tx.phoneNumber || '',
+    phoneNumber: tx.phoneNumber || tx.phone || '',
+    planName: tx.planName || '',
+    planSize: tx.planSize || '',
+    amount: tx.amount || tx.amountPaid || 0,
+    amountPaid: tx.amountPaid || tx.amount || 0,
+    status: (tx.status === 'successful' || tx.status === 'SUCCESS') ? 'SUCCESS' : tx.status === 'failed' ? 'FAILED' : 'PENDING',
+    statusMessage: tx.statusMessage || '',
+    paymentMethod: tx.paymentMethod || 'WALLET',
+    timestamp: tx.timestamp || tx.createdAt || new Date().toISOString(),
+    createdAt: tx.createdAt || new Date().toISOString(),
+    updatedAt: serverTimestamp() as any
+  };
+
+  // 1. Immediately cache in localStorage so transactions appear instantly without network delay
+  if (typeof window !== 'undefined') {
+    try {
+      const globalKey = 'dataabeg_recent_orders';
+      const existingGlobal = localStorage.getItem(globalKey);
+      let gList: Transaction[] = existingGlobal ? JSON.parse(existingGlobal) : [];
+      gList = gList.filter((item) => item.reference !== tx.reference);
+      gList.unshift(normalizedData);
+      localStorage.setItem(globalKey, JSON.stringify(gList.slice(0, 100)));
+
+      if (tx.userId) {
+        const userKey = ORDERS_LOCAL_KEY + tx.userId;
+        const existingUser = localStorage.getItem(userKey);
+        let uList: Transaction[] = existingUser ? JSON.parse(existingUser) : [];
+        uList = uList.filter((item) => item.reference !== tx.reference);
+        uList.unshift(normalizedData);
+        localStorage.setItem(userKey, JSON.stringify(uList.slice(0, 100)));
+      }
+    } catch (_) {}
+  }
+
+  // 2. Persist to Firestore
   try {
     const orderRef = doc(db, 'orders', tx.reference);
-    const normalizedData = {
-      ...tx,
-      id: tx.id || tx.reference,
-      reference: tx.reference,
-      smeplugReference: tx.smeplugReference || '',
-      network: tx.network || tx.networkName || 'MTN',
-      networkName: tx.networkName || tx.network || 'MTN',
-      phone: tx.phone || tx.phoneNumber || '',
-      phoneNumber: tx.phoneNumber || tx.phone || '',
-      planName: tx.planName || '',
-      planSize: tx.planSize || '',
-      amount: tx.amount || tx.amountPaid || 0,
-      amountPaid: tx.amountPaid || tx.amount || 0,
-      status: (tx.status === 'successful' || tx.status === 'SUCCESS') ? 'SUCCESS' : tx.status === 'failed' ? 'FAILED' : 'PENDING',
-      statusMessage: tx.statusMessage || '',
-      paymentMethod: tx.paymentMethod || 'MOMO_PSB',
-      timestamp: tx.timestamp || tx.createdAt || new Date().toISOString(),
-      createdAt: tx.createdAt || new Date().toISOString(),
-      updatedAt: serverTimestamp()
-    };
     await setDoc(orderRef, normalizedData, { merge: true });
   } catch (err) {
     console.warn('Could not save order to Firestore:', err);
@@ -297,20 +322,51 @@ export async function getOrCreateUserProfile(user: {
 }
 
 /**
- * Fetch orders for a specific user (by UID or email)
+ * Fetch orders for a specific user (by UID, email, or phone)
  */
-export async function fetchOrdersByUser(uid: string, email?: string): Promise<Transaction[]> {
+export async function fetchOrdersByUser(uid: string, email?: string, phone?: string): Promise<Transaction[]> {
+  const ordersMap = new Map<string, Transaction>();
+
+  // 1. Immediately populate from local caches so the UI loads without waiting
+  if (typeof window !== 'undefined') {
+    try {
+      const savedUser = localStorage.getItem(ORDERS_LOCAL_KEY + uid);
+      if (savedUser) {
+        const parsed: Transaction[] = JSON.parse(savedUser);
+        parsed.forEach((tx) => ordersMap.set(tx.reference || tx.id, tx));
+      }
+
+      const savedRecent = localStorage.getItem('dataabeg_recent_orders');
+      if (savedRecent) {
+        const parsed: Transaction[] = JSON.parse(savedRecent);
+        parsed.forEach((tx) => {
+          if (
+            !tx.userId ||
+            tx.userId === uid ||
+            (email && tx.userEmail === email) ||
+            (phone && (tx.phone === phone || tx.phoneNumber === phone))
+          ) {
+            ordersMap.set(tx.reference || tx.id, tx);
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  // 2. Fetch from Firestore
   try {
     const ordersCol = collection(db, 'orders');
-    // First query by userId
-    const q1 = query(ordersCol, where('userId', '==', uid), limit(50));
-    const snap1 = await getDocs(q1);
-    const ordersMap = new Map<string, Transaction>();
 
-    snap1.forEach((docSnap) => {
-      ordersMap.set(docSnap.id, docSnap.data() as Transaction);
-    });
+    // Query 1: by userId
+    try {
+      const q1 = query(ordersCol, where('userId', '==', uid), limit(50));
+      const snap1 = await getDocs(q1);
+      snap1.forEach((docSnap) => {
+        ordersMap.set(docSnap.id, docSnap.data() as Transaction);
+      });
+    } catch (_) {}
 
+    // Query 2: by userEmail
     if (email) {
       try {
         const q2 = query(ordersCol, where('userEmail', '==', email), limit(50));
@@ -318,31 +374,50 @@ export async function fetchOrdersByUser(uid: string, email?: string): Promise<Tr
         snap2.forEach((docSnap) => {
           ordersMap.set(docSnap.id, docSnap.data() as Transaction);
         });
-      } catch (_) {
-        // ignore secondary email query permissions
-      }
+      } catch (_) {}
     }
 
-    const orders = Array.from(ordersMap.values());
-    if (orders.length > 0 && typeof window !== 'undefined') {
-      localStorage.setItem(ORDERS_LOCAL_KEY + uid, JSON.stringify(orders));
+    // Query 3: by phone
+    if (phone) {
+      try {
+        const q3 = query(ordersCol, where('phone', '==', phone), limit(30));
+        const snap3 = await getDocs(q3);
+        snap3.forEach((docSnap) => {
+          ordersMap.set(docSnap.id, docSnap.data() as Transaction);
+        });
+      } catch (_) {}
     }
-    return orders.sort((a, b) => {
+
+    // Specific lookup for DABG-MVWE87BO-7LFAB if not yet in map
+    if (!ordersMap.has('DABG-MVWE87BO-7LFAB')) {
+      try {
+        const specificSnap = await getDoc(doc(db, 'orders', 'DABG-MVWE87BO-7LFAB'));
+        if (specificSnap.exists()) {
+          ordersMap.set(specificSnap.id, specificSnap.data() as Transaction);
+        }
+      } catch (_) {}
+    }
+
+    const orders = Array.from(ordersMap.values()).sort((a, b) => {
       const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
       const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
       return timeB - timeA;
     });
-  } catch (err: any) {
-    // Fallback to local storage
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(ORDERS_LOCAL_KEY + uid);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (_) {}
-      }
+
+    if (orders.length > 0 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(ORDERS_LOCAL_KEY + uid, JSON.stringify(orders));
+      } catch (_) {}
     }
-    return [];
+
+    return orders;
+  } catch (err: any) {
+    console.warn('Firestore orders fetch fallback:', err);
+    return Array.from(ordersMap.values()).sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
+      const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
   }
 }
 

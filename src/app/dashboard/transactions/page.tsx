@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function TransactionsPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [orders, setOrders] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
@@ -36,13 +36,17 @@ export default function TransactionsPage() {
     if (user) {
       loadOrders();
     }
-  }, [user]);
+  }, [user, profile?.phoneNumber]);
 
   const loadOrders = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const userOrders = await fetchOrdersByUser(user.uid, user.email || undefined);
+      const userOrders = await fetchOrdersByUser(
+        user.uid,
+        user.email || undefined,
+        profile?.phoneNumber || undefined
+      );
       setOrders(userOrders);
     } catch {
       // Graceful fallback

@@ -61,12 +61,16 @@ export default function DashboardOverviewPage() {
         .then((s) => setAdminSettings(s))
         .catch(() => {});
     }
-  }, [user]);
+  }, [user, profile?.phoneNumber]);
 
   const loadUserOrders = async () => {
     if (!user) return;
     try {
-      const userOrders = await fetchOrdersByUser(user.uid, user.email || undefined);
+      const userOrders = await fetchOrdersByUser(
+        user.uid,
+        user.email || undefined,
+        profile?.phoneNumber || undefined
+      );
       setOrders(userOrders);
     } catch {
       // Graceful fallback
