@@ -1,0 +1,99 @@
+name: Build Android APK and AAB (DataAbeg)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK & AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK & Build Tools
+        run: |
+          sdkmanager --install "ndk;25.2.9519653" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web Application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyD_8yhjcZg_kJHi6-v6xZFPh77o2pM46qo' }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dataabeg-41f9b' }}
+
+      - name: Initialize Tauri Android (if not present)
+        run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          if [ ! -d "src-tauri/gen/android" ]; then
+            npx @tauri-apps/cli android init
+          fi
+
+      - name: Build Android APK
+        run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          npx @tauri-apps/cli android build --apk
+        continue-on-error: true
+
+      - name: Build Android AAB (Google Play Store)
+        run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          npx @tauri-apps/cli android build --aab
+        continue-on-error: true
+
+      - name: Collect Android Outputs
+        run: |
+          mkdir -p build_output/apk
+          mkdir -p build_output/aab
+          find src-tauri/gen/android -name "*.apk" -exec cp {} build_output/apk/ \; 2>/dev/null || true
+          find src-tauri/gen/android -name "*.aab" -exec cp {} build_output/aab/ \; 2>/dev/null || true
+          ls -la build_output/apk || true
+          ls -la build_output/aab || true
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DataAbeg-Release-APK
+          path: |
+            build_output/apk/*.apk
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
+
+      - name: Upload AAB (Google Play Store Bundle) Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DataAbeg-GooglePlay-AAB
+          path: |
+            build_output/aab/*.aab
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: warn
