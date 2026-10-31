@@ -117,7 +117,6 @@ export default function DashboardLayout({
     { label: 'Cable TV', href: '/dashboard/cable', icon: Tv },
     { label: 'Accounts & Wallet', href: '/dashboard/wallet', icon: Wallet },
     { label: 'Sell Bulk Data', href: '/dashboard/bulk-data', icon: Grid },
-    { label: 'API Docs', href: '/dashboard/api-docs', icon: Code },
   ];
 
   // Only show Admin Portal to designated admin emails (kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com)
