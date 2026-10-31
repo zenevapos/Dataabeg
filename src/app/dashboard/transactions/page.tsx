@@ -33,18 +33,15 @@ export default function TransactionsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadOrders();
-    }
+    loadOrders();
   }, [user, profile?.phoneNumber]);
 
   const loadOrders = async () => {
-    if (!user) return;
     setLoading(true);
     try {
       const userOrders = await fetchOrdersByUser(
-        user.uid,
-        user.email || undefined,
+        user?.uid,
+        user?.email || undefined,
         profile?.phoneNumber || undefined
       );
       setOrders(userOrders);

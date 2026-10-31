@@ -55,20 +55,17 @@ export default function DashboardOverviewPage() {
   const [copiedInvite, setCopiedInvite] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      loadUserOrders();
-      getAdminSettings()
-        .then((s) => setAdminSettings(s))
-        .catch(() => {});
-    }
+    loadUserOrders();
+    getAdminSettings()
+      .then((s) => setAdminSettings(s))
+      .catch(() => {});
   }, [user, profile?.phoneNumber]);
 
   const loadUserOrders = async () => {
-    if (!user) return;
     try {
       const userOrders = await fetchOrdersByUser(
-        user.uid,
-        user.email || undefined,
+        user?.uid,
+        user?.email || undefined,
         profile?.phoneNumber || undefined
       );
       setOrders(userOrders);
