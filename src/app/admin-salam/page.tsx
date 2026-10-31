@@ -976,7 +976,7 @@ export default function AdminSalamPage() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased font-sans">
       {/* Top Admin Executive Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-[#4f46e5] text-white flex items-center justify-center font-black shadow-xs font-space">
@@ -1025,11 +1025,11 @@ export default function AdminSalamPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* KPI Summary Cards - Sleek, unboxed & easy to understand */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
           {/* Card 1: Profit */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               <span>Total Profit Made</span>
               <span className="text-emerald-700 font-extrabold text-xs">{avgPlanMargin}% margin</span>
@@ -1045,7 +1045,7 @@ export default function AdminSalamPage() {
           </div>
 
           {/* Card 2: Active People */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               <span>Active People Today</span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -1061,7 +1061,7 @@ export default function AdminSalamPage() {
           </div>
 
           {/* Card 3: Live Dispenser Pool */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               <span>Data Dispensing Float</span>
               <button
@@ -1085,7 +1085,7 @@ export default function AdminSalamPage() {
           </div>
 
           {/* Card 4: Total Sales */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               Total Sales Made
             </div>
@@ -1100,7 +1100,7 @@ export default function AdminSalamPage() {
           </div>
 
           {/* Card 5: Orders Delivery Success */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               <span>Delivery Success</span>
               <span className="text-emerald-700 font-extrabold text-xs">{deliverySuccessRate}%</span>
@@ -1116,7 +1116,7 @@ export default function AdminSalamPage() {
           </div>
 
           {/* Card 6: Repeat Buyers */}
-          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4.5 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
               Repeat Buyers
             </div>
@@ -1245,7 +1245,7 @@ export default function AdminSalamPage() {
             {/* Row 1: Core Performance Pillars (Clean, open & unboxed) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Card 1: Customer Activity & Return Loyalty */}
-              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-2">
@@ -1310,7 +1310,7 @@ export default function AdminSalamPage() {
               </div>
 
               {/* Card 2: Cash & Dispenser Float */}
-              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-2">
@@ -1360,7 +1360,7 @@ export default function AdminSalamPage() {
               </div>
 
               {/* Card 3: Top Earning Data Bundles */}
-              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-all">
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-2">
@@ -1414,7 +1414,7 @@ export default function AdminSalamPage() {
             </div>
 
             {/* Row 2: Customer Retention & Acquisition Cohorts (NEW requested section) */}
-            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-6">
+            <div className="bg-white rounded-xl border border-slate-200/60 p-6 sm:p-7 shadow-2xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1576,7 +1576,7 @@ export default function AdminSalamPage() {
             {/* Row 3: Top VIP Customers Leaderboard & 7-Day Trend */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top 5 High-Value Customers */}
-              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 sm:p-7 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-amber-500" />
@@ -1622,7 +1622,7 @@ export default function AdminSalamPage() {
               </div>
 
               {/* 7-Day Sales Trend Mini Bar Chart */}
-              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 sm:p-7 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#4f46e5]" />
@@ -1656,7 +1656,7 @@ export default function AdminSalamPage() {
             </div>
 
             {/* Row 4: Carrier Telco Breakdown (Clean unboxed 4 columns) */}
-            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="bg-white rounded-xl border border-slate-200/60 p-6 sm:p-7 shadow-2xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <PieChart className="w-4 h-4 text-emerald-600" />
@@ -1667,7 +1667,7 @@ export default function AdminSalamPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
                 {networkMetrics.map((net) => (
-                  <div key={net.name} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2.5 hover:border-indigo-200 transition-all">
+                  <div key={net.name} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 space-y-2.5 hover:border-slate-300 transition-all">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
                         <NetworkLogo network={net.name} size={20} roundedClassName="rounded-xs" />
@@ -1701,7 +1701,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 1: ORDERS & TRANSACTIONS ================= */}
         {activeTab === 'orders' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative w-full sm:w-80">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1843,7 +1843,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 2: USERS DIRECTORY & WALLET ADJUSTER ================= */}
         {activeTab === 'users' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Registered Customers &amp; Wallets</h2>
@@ -1932,7 +1932,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 3: TELECOM GATEWAYS & PROVIDERS ================= */}
         {activeTab === 'gateway' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 sm:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900 font-space">
                 Telecom Carrier Gateways &amp; Dispatcher
@@ -2149,7 +2149,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 4: SITE BROADCAST & ANNOUNCEMENTS ================= */}
         {activeTab === 'broadcast' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 sm:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900 font-space">
                 Site Broadcast &amp; Alert Banner
@@ -2231,7 +2231,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 5: BANK SETTLEMENTS & MOMO ================= */}
         {activeTab === 'psb' && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 sm:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900 font-space">
                 Bank Transfer &amp; Virtual Funding Settings
@@ -2316,7 +2316,7 @@ export default function AdminSalamPage() {
         {activeTab === 'pricing' && (
           <div className="space-y-6">
             {/* 1. Header & Summary Stats */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-5">
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 space-y-5">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 font-space flex items-center gap-2">
@@ -2449,7 +2449,7 @@ export default function AdminSalamPage() {
             </div>
 
             {/* 3. Search & Filter Bar */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-4 flex flex-col md:flex-row items-center justify-between gap-3">
               <div className="relative w-full md:w-80">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -2496,7 +2496,7 @@ export default function AdminSalamPage() {
             </div>
 
             {/* 4. Full Pricing & Profit Matrix Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
@@ -2630,7 +2630,7 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 7: LIVE CUSTOMER SUPPORT DESK ================= */}
         {activeTab === 'support' && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs overflow-hidden">
             {/* Support Header Bar */}
             <div className="p-4 sm:p-6 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
