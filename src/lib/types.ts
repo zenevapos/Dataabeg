@@ -49,6 +49,7 @@ export interface Transaction {
   networkName?: string;
   phone: string;
   phoneNumber?: string;
+  planId?: string | number;
   planName: string;
   planSize: string;
   amount: number;

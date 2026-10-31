@@ -231,6 +231,7 @@ export interface UserProfile {
   momoVirtualAccount?: string;
   smartcashVirtualAccount?: string;
   createdAt: string;
+  updatedAt?: any;
 }
 
 /**
