@@ -1,0 +1,62 @@
+{
+  "name": "DataAbeg - Cheap Mobile Data",
+  "short_name": "DataAbeg",
+  "description": "Buy cheap Nigerian mobile data bundles instantly starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery.",
+  "start_url": "/dashboard",
+  "id": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/playstore-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/playstore-icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": [
+    "utilities",
+    "finance",
+    "shopping"
+  ],
+  "shortcuts": [
+    {
+      "name": "Buy Data",
+      "url": "/dashboard",
+      "description": "Instant 5-second mobile data recharge"
+    },
+    {
+      "name": "Fund Wallet",
+      "url": "/dashboard/wallet",
+      "description": "Fund your DataAbeg wallet instantly"
+    },
+    {
+      "name": "Buy Airtime",
+      "url": "/dashboard/airtime",
+      "description": "Instant airtime top-up"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/playstore-screenshot-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Instant cheap data top-up in Nigeria"
+    }
+  ]
+}

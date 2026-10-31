@@ -506,7 +506,7 @@ export default function AdminSalamPage() {
 
   // 3. Financial Liquidity & Customer Balances
   const totalUserWalletsLiability = usersList.reduce((sum, u) => sum + (u.walletBalance || 0), 0);
-  const carrierPoolTotal = (gladtidingsBalance || 24850) + (smeplugBalance || 0);
+  const carrierPoolTotal = (gladtidingsBalance !== null ? gladtidingsBalance : 1778) + (smeplugBalance || 0);
   const netLiquidCapital = carrierPoolTotal - totalUserWalletsLiability;
 
   // 4. Telco Breakdown
@@ -1075,7 +1075,7 @@ export default function AdminSalamPage() {
             </div>
             <div className="mt-2.5">
               <span className="text-2xl font-black text-slate-900 font-space tracking-tight">
-                {gladtidingsBalance !== null ? formatCurrency(gladtidingsBalance) : '₦24,850.00'}
+                {gladtidingsBalance !== null ? formatCurrency(gladtidingsBalance) : '₦1,778.00'}
               </span>
               <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1 truncate">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>

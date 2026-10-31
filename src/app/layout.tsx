@@ -1,35 +1,32 @@
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import NextTopLoader from '@/components/NextTopLoader';
 import SupportChatWidget from '@/components/SupportChatWidget';
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-space',
-  weight: ['500', '600', '700'],
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-jakarta',
-  weight: ['400', '500', '600', '700', '800'],
-});
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 export const viewport: Viewport = {
-  themeColor: '#1E40AF',
+  themeColor: '#4f46e5',
   colorScheme: 'light',
   width: 'device-width',
-  initialScale: 1
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export const metadata: Metadata = {
   title: 'DataAbeg | Buy Cheap Nigerian Mobile Data Instantly',
   description:
     'Buy cheap mobile data bundles in Nigeria starting from ₦290/GB with 30-day validity. Instant 5-second automated delivery with automated bank transfer & instant wallet funding.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/playstore-icon-512.png',
+    apple: '/playstore-icon-512.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'DataAbeg',
+  },
   keywords: [
     'cheap data nigeria',
     'buy mtn sme data',
@@ -65,11 +62,24 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${spaceGrotesk.variable} ${plusJakartaSans.variable}`}
       suppressHydrationWarning
       style={{ backgroundColor: '#f8fafc', color: '#0f172a', colorScheme: 'light' }}
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/playstore-icon-512.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="DataAbeg" />
+        <meta name="application-name" content="DataAbeg" />
+        <meta name="theme-color" content="#4f46e5" />
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -91,9 +101,9 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <SupportChatWidget />
+          <PwaInstallPrompt />
         </AuthProvider>
       </body>
     </html>
   );
 }
-
