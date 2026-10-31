@@ -530,6 +530,157 @@ export default function AdminSalamPage() {
     };
   });
 
+  // --- RETENTION COHORTS & CUSTOMER LIFETIME ANALYSIS ---
+  const nowTime = now.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Track each individual customer's metrics
+  const customerStatsMap = new Map<string, {
+    identifier: string;
+    totalOrders: number;
+    successfulOrders: number;
+    totalSpent: number;
+    firstOrderDate: number;
+    lastOrderDate: number;
+  }>();
+
+  orders.forEach((o) => {
+    const id = o.userId || o.userEmail || o.phoneNumber || o.phone || 'guest';
+    const t = new Date(o.timestamp || o.createdAt || 0).getTime() || nowTime;
+    const isSuccess = o.status === 'SUCCESS' || o.status === 'successful';
+    const amount = isSuccess ? (o.amountPaid || o.amount || 0) : 0;
+
+    const existing = customerStatsMap.get(id) || {
+      identifier: id,
+      totalOrders: 0,
+      successfulOrders: 0,
+      totalSpent: 0,
+      firstOrderDate: t,
+      lastOrderDate: t
+    };
+
+    existing.totalOrders += 1;
+    if (isSuccess) {
+      existing.successfulOrders += 1;
+      existing.totalSpent += amount;
+    }
+    if (t < existing.firstOrderDate) existing.firstOrderDate = t;
+    if (t > existing.lastOrderDate) existing.lastOrderDate = t;
+
+    customerStatsMap.set(id, existing);
+  });
+
+  const allCustomerStats = Array.from(customerStatsMap.values());
+  const buyersWithOrders = allCustomerStats.filter((c) => c.successfulOrders > 0);
+
+  // Buyer loyalty breakdown
+  const oneTimeBuyers = buyersWithOrders.filter((c) => c.successfulOrders === 1).length;
+  const repeatBuyers2to4 = buyersWithOrders.filter((c) => c.successfulOrders >= 2 && c.successfulOrders <= 4).length;
+  const loyalPowerBuyers = buyersWithOrders.filter((c) => c.successfulOrders >= 5).length;
+  const totalBuyersCount = buyersWithOrders.length;
+
+  // Cohort buckets
+  const cohortDefinitions = [
+    { label: 'New This Week (0–7 Days)', minDays: 0, maxDays: 7 },
+    { label: 'Last 2–4 Weeks (8–30 Days)', minDays: 8, maxDays: 30 },
+    { label: 'Last 1–2 Months (31–60 Days)', minDays: 31, maxDays: 60 },
+    { label: 'Loyal Base (60+ Days)', minDays: 61, maxDays: 9999 }
+  ];
+
+  const cohorts = cohortDefinitions.map((def) => {
+    const matchedUsers = usersList.filter((u) => {
+      const created = u.createdAt ? new Date(u.createdAt).getTime() : nowTime;
+      const ageDays = Math.floor((nowTime - created) / dayMs);
+      return ageDays >= def.minDays && ageDays <= def.maxDays;
+    });
+
+    const cohortUserIds = new Set(
+      matchedUsers.map((u) => u.uid).concat(matchedUsers.map((u) => u.email || ''))
+    );
+    const cohortOrders = successfulOrders.filter(
+      (o) =>
+        (o.userId && cohortUserIds.has(o.userId)) ||
+        (o.userEmail && cohortUserIds.has(o.userEmail))
+    );
+
+    const cohortBuyers = new Set(cohortOrders.map((o) => o.userId || o.userEmail || o.phoneNumber));
+    const cohortRevenue = cohortOrders.reduce((sum, o) => sum + (o.amountPaid || o.amount || 0), 0);
+    const repeatCohortBuyers = Array.from(cohortBuyers).filter((id) => {
+      const count = cohortOrders.filter(
+        (o) => o.userId === id || o.userEmail === id || o.phoneNumber === id
+      ).length;
+      return count > 1;
+    }).length;
+
+    const returnRate = cohortBuyers.size > 0 ? Math.round((repeatCohortBuyers / cohortBuyers.size) * 100) : 0;
+    const avgLtv =
+      matchedUsers.length > 0
+        ? Math.round(cohortRevenue / matchedUsers.length)
+        : cohortBuyers.size > 0
+        ? Math.round(cohortRevenue / cohortBuyers.size)
+        : 0;
+
+    return {
+      label: def.label,
+      userCount: Math.max(matchedUsers.length, cohortBuyers.size),
+      buyerCount: cohortBuyers.size,
+      repeatBuyers: repeatCohortBuyers,
+      returnRate,
+      revenue: cohortRevenue,
+      avgLtv
+    };
+  });
+
+  // Peak Purchase Hours (When do customers buy data most?)
+  const timeSlots = [
+    { label: 'Morning (6am – 12pm)', startHour: 6, endHour: 12, count: 0, revenue: 0 },
+    { label: 'Afternoon (12pm – 6pm)', startHour: 12, endHour: 18, count: 0, revenue: 0 },
+    { label: 'Evening (6pm – 11pm)', startHour: 18, endHour: 23, count: 0, revenue: 0 },
+    { label: 'Late Night (11pm – 6am)', startHour: 23, endHour: 6, count: 0, revenue: 0 }
+  ];
+
+  successfulOrders.forEach((o) => {
+    const d = new Date(o.timestamp || o.createdAt || now);
+    const hour = d.getHours();
+    const rev = o.amountPaid || o.amount || 0;
+
+    if (hour >= 6 && hour < 12) {
+      timeSlots[0].count += 1;
+      timeSlots[0].revenue += rev;
+    } else if (hour >= 12 && hour < 18) {
+      timeSlots[1].count += 1;
+      timeSlots[1].revenue += rev;
+    } else if (hour >= 18 && hour < 23) {
+      timeSlots[2].count += 1;
+      timeSlots[2].revenue += rev;
+    } else {
+      timeSlots[3].count += 1;
+      timeSlots[3].revenue += rev;
+    }
+  });
+
+  // Top 5 High-Value Customers
+  const topCustomers = [...buyersWithOrders]
+    .sort((a, b) => b.totalSpent - a.totalSpent)
+    .slice(0, 5)
+    .map((c) => {
+      const userProfile = usersList.find(
+        (u) => u.uid === c.identifier || u.email === c.identifier || u.phoneNumber === c.identifier
+      );
+      return {
+        name: userProfile?.displayName || userProfile?.email || c.identifier,
+        email: userProfile?.email || '',
+        phone:
+          userProfile?.phoneNumber ||
+          (c.identifier.startsWith('0') || c.identifier.startsWith('+') ? c.identifier : ''),
+        orders: c.successfulOrders,
+        spent: c.totalSpent,
+        lastSeen: c.lastOrderDate
+          ? new Date(c.lastOrderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          : 'Recent'
+      };
+    });
+
   // 5. Last 7 Days Activity Breakdown
   const last7DaysData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -875,16 +1026,16 @@ export default function AdminSalamPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* KPI Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-          {/* Card 1: Net Profit Realized */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        {/* KPI Summary Cards - Sleek, unboxed & easy to understand */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+          {/* Card 1: Profit */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Net Profit Realized</span>
-              <span className="text-emerald-700 font-extrabold text-xs">{avgPlanMargin}%</span>
+              <span>Total Profit Made</span>
+              <span className="text-emerald-700 font-extrabold text-xs">{avgPlanMargin}% margin</span>
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-emerald-600 font-space">
+              <span className="text-2xl font-black text-emerald-600 font-space tracking-tight">
                 {formatCurrency(totalProfit)}
               </span>
               <p className="text-[11px] text-slate-500 mt-1 truncate">
@@ -893,26 +1044,26 @@ export default function AdminSalamPage() {
             </div>
           </div>
 
-          {/* Card 2: Daily Active Users (DAU) */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+          {/* Card 2: Active People */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Active Users (DAU)</span>
-              <Activity className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+              <span>Active People Today</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-slate-900 font-space">
+              <span className="text-2xl font-black text-slate-900 font-space tracking-tight">
                 {dailyActiveUsers} Active
               </span>
               <p className="text-[11px] text-slate-500 mt-1 truncate">
-                <span className="font-semibold text-slate-800">{weeklyActiveUsers}</span> WAU • <span className="font-semibold text-slate-800">{monthlyActiveUsers}</span> MAU
+                <span className="font-semibold text-slate-700">{weeklyActiveUsers}</span> this week • <span className="font-semibold text-slate-700">{monthlyActiveUsers}</span> this month
               </p>
             </div>
           </div>
 
-          {/* Card 3: GladTidings Live Balance */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+          {/* Card 3: Live Dispenser Pool */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Carrier Pool</span>
+              <span>Data Dispensing Float</span>
               <button
                 onClick={() => checkGatewaysBalance()}
                 disabled={isCheckingBalance}
@@ -923,39 +1074,39 @@ export default function AdminSalamPage() {
               </button>
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-slate-900 font-space">
+              <span className="text-2xl font-black text-slate-900 font-space tracking-tight">
                 {gladtidingsBalance !== null ? formatCurrency(gladtidingsBalance) : '₦24,850.00'}
               </span>
               <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1 truncate">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>Active 5-Sec Dispenser</span>
+                <span>GladTidings 5-Sec Dispenser</span>
               </p>
             </div>
           </div>
 
-          {/* Card 4: Gross Vended Volume */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+          {/* Card 4: Total Sales */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              Total Vended Volume
+              Total Sales Made
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-slate-900 font-space">
+              <span className="text-2xl font-black text-slate-900 font-space tracking-tight">
                 {formatCurrency(totalRevenue)}
               </span>
               <p className="text-[11px] text-slate-500 mt-1 truncate">
-                {successfulOrdersCount} passed • AOV: {formatCurrency(averageOrderValue)}
+                {successfulOrdersCount} orders • Avg: {formatCurrency(averageOrderValue)}
               </p>
             </div>
           </div>
 
-          {/* Card 5: Delivery Rate */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+          {/* Card 5: Orders Delivery Success */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Delivery Rate</span>
+              <span>Delivery Success</span>
               <span className="text-emerald-700 font-extrabold text-xs">{deliverySuccessRate}%</span>
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-slate-900 font-space">
+              <span className="text-2xl font-black text-slate-900 font-space tracking-tight">
                 {orders.length} Orders
               </span>
               <p className="text-[11px] text-slate-500 font-medium mt-1 truncate">
@@ -964,17 +1115,17 @@ export default function AdminSalamPage() {
             </div>
           </div>
 
-          {/* Card 6: Registered Customers & Retention */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+          {/* Card 6: Repeat Buyers */}
+          <div className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-xs flex flex-col justify-between hover:border-indigo-200 transition-all">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              Customer Retention
+              Repeat Buyers
             </div>
             <div className="mt-2.5">
-              <span className="text-2xl font-black text-[#4f46e5] font-space">
-                {usersList.length} Users
+              <span className="text-2xl font-black text-[#4f46e5] font-space tracking-tight">
+                {usersList.length} Customers
               </span>
               <p className="text-[11px] text-slate-500 mt-1 truncate">
-                <span className="font-semibold text-emerald-600">{repeatBuyerRate}%</span> repeat buyers ({repeatBuyersCount})
+                <span className="font-semibold text-emerald-600">{repeatBuyerRate}%</span> buy again ({repeatBuyersCount} people)
               </p>
             </div>
           </div>
@@ -991,7 +1142,7 @@ export default function AdminSalamPage() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Executive Analytics</span>
+            <span>Business &amp; Customer Insights</span>
           </button>
 
           <button
@@ -1088,147 +1239,399 @@ export default function AdminSalamPage() {
           </button>
         </div>
 
-        {/* ================= TAB 0: EXECUTIVE ANALYTICS ================= */}
+        {/* ================= TAB 0: BUSINESS & CUSTOMER INSIGHTS ================= */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            {/* Row 1: User Activity & Engagement deep dive */}
+            {/* Row 1: Core Performance Pillars (Clean, open & unboxed) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Card 1: Active Users & Retention */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-[#4f46e5]" />
-                    <h3 className="font-bold text-slate-900 text-sm">Customer Activity &amp; Retention</h3>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-[#4f46e5]">
-                    Real-Time
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">DAU (Today)</div>
-                    <div className="text-xl font-black text-slate-900 font-space mt-1">{dailyActiveUsers}</div>
-                    <div className="text-[9px] text-emerald-600 font-semibold mt-0.5">Active now</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">WAU (7 Days)</div>
-                    <div className="text-xl font-black text-slate-900 font-space mt-1">{weeklyActiveUsers}</div>
-                    <div className="text-[9px] text-slate-500 font-semibold mt-0.5">Weekly base</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">MAU (30 Days)</div>
-                    <div className="text-xl font-black text-slate-900 font-space mt-1">{monthlyActiveUsers}</div>
-                    <div className="text-[9px] text-slate-500 font-semibold mt-0.5">Monthly base</div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Repeat Buyer Rate</span>
-                    <span className="font-bold text-slate-900">{repeatBuyerRate}% ({repeatBuyersCount} repeat customers)</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Average Order Value (AOV)</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(averageOrderValue)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">DAU / MAU Stickiness</span>
-                    <span className="font-bold text-emerald-600">
-                      {monthlyActiveUsers > 0 ? Math.round((dailyActiveUsers / monthlyActiveUsers) * 100) : 100}%
+              {/* Card 1: Customer Activity & Return Loyalty */}
+              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-[#4f46e5]" />
+                      <h3 className="font-extrabold text-slate-900 text-sm">Customer Activity &amp; Loyalty</h3>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                      Live
                     </span>
                   </div>
+
+                  {/* Clean 3-part stat strip (no nested dark grey boxes) */}
+                  <div className="grid grid-cols-3 divide-x divide-slate-100 py-4 my-2 border-b border-slate-100 text-center">
+                    <div className="px-2">
+                      <div className="text-[11px] font-medium text-slate-400">Today</div>
+                      <div className="text-xl font-black text-slate-900 font-space mt-0.5">{dailyActiveUsers}</div>
+                      <div className="text-[10px] text-emerald-600 font-medium">Active now</div>
+                    </div>
+                    <div className="px-2">
+                      <div className="text-[11px] font-medium text-slate-400">7 Days</div>
+                      <div className="text-xl font-black text-slate-900 font-space mt-0.5">{weeklyActiveUsers}</div>
+                      <div className="text-[10px] text-slate-500 font-medium">This week</div>
+                    </div>
+                    <div className="px-2">
+                      <div className="text-[11px] font-medium text-slate-400">30 Days</div>
+                      <div className="text-xl font-black text-slate-900 font-space mt-0.5">{monthlyActiveUsers}</div>
+                      <div className="text-[10px] text-slate-500 font-medium">This month</div>
+                    </div>
+                  </div>
+
+                  {/* Clear Key Metrics */}
+                  <div className="space-y-3 pt-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Repeat Customer Rate</span>
+                      <span className="font-bold text-slate-900">
+                        {repeatBuyerRate}% <span className="text-slate-400 font-normal">({repeatBuyersCount} repeat buyers)</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Average Purchase Amount</span>
+                      <span className="font-bold text-slate-900 font-space">{formatCurrency(averageOrderValue)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Customer Loyalty Return Score</span>
+                      <span className="font-bold text-emerald-600">
+                        {monthlyActiveUsers > 0 ? Math.round((dailyActiveUsers / monthlyActiveUsers) * 100) : 100}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 text-[11px] text-slate-400">
+                  {repeatBuyerRate >= 20 ? (
+                    <span className="text-emerald-600 font-medium flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                      Strong retention: Over 20% of your buyers come back for repeat bundles.
+                    </span>
+                  ) : (
+                    <span>Promote your cheap SME bundles to encourage more first-time users to buy again.</span>
+                  )}
                 </div>
               </div>
 
-              {/* Card 2: Financial Working Capital & Solvency */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-emerald-600" />
-                    <h3 className="font-bold text-slate-900 text-sm">Working Capital &amp; Solvency</h3>
+              {/* Card 2: Cash & Dispenser Float */}
+              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-emerald-600" />
+                      <h3 className="font-extrabold text-slate-900 text-sm">Available Cash &amp; Reserves</h3>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                      Healthy
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                    Liquid
-                  </span>
+
+                  <div className="space-y-4 py-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs text-slate-500">Carrier Dispensing Balance</div>
+                        <div className="text-2xl font-black text-emerald-600 font-space mt-0.5">
+                          {formatCurrency(carrierPoolTotal)}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          Available on GladTidings to dispense data in 5 seconds
+                        </div>
+                      </div>
+                      <Radio className="w-5 h-5 text-emerald-500 animate-pulse mt-1" />
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-start justify-between">
+                      <div>
+                        <div className="text-xs text-slate-500">Customers' Total Wallet Balances</div>
+                        <div className="text-xl font-bold text-slate-900 font-space mt-0.5">
+                          {formatCurrency(totalUserWalletsLiability)}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          Total money customers deposited into their accounts
+                        </div>
+                      </div>
+                      <CreditCard className="w-5 h-5 text-slate-300 mt-1" />
+                    </div>
+                  </div>
                 </div>
 
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-medium">Safe Net Reserve:</span>
+                  <span className={`font-black font-space text-sm ${netLiquidCapital >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {formatCurrency(netLiquidCapital)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Top Earning Data Bundles */}
+              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-amber-500" />
+                      <h3 className="font-extrabold text-slate-900 text-sm">Top Earning Data Plans</h3>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                      Avg Margin: {avgPlanMargin}%
+                    </span>
+                  </div>
+
+                  <div className="space-y-3.5 py-3 text-xs">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="text-[11px] text-slate-400 uppercase font-bold">Highest Profit Per Sale</div>
+                        <div className="font-bold text-slate-900 mt-0.5">{topProfitPlan?.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-emerald-600 font-space text-sm">
+                          +₦{topProfitPlan?.profitPerUnit.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-slate-400">per bundle sold</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="text-[11px] text-slate-400 uppercase font-bold">Highest Percentage Margin</div>
+                        <div className="font-bold text-slate-900 mt-0.5">{topMarginPlan?.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-indigo-600 font-space text-sm">
+                          {topMarginPlan?.marginPercent}%
+                        </div>
+                        <div className="text-[10px] text-slate-400">profit margin</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-slate-500">Average Profit Across Catalog:</span>
+                      <span className="font-bold text-emerald-600 font-space text-sm">₦{avgPlanProfit} / bundle</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Catalog Status:</span>
+                  <span className="font-semibold text-slate-800">{CURATED_DATA_PLANS.length} active plans ready</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Customer Retention & Acquisition Cohorts (NEW requested section) */}
+            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-[#4f46e5]" />
+                    <h3 className="font-extrabold text-slate-900 text-base">Customer Retention &amp; Cohort Tracking</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Shows groups of customers by when they joined and how many continue buying data bundles over time.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">
+                    Total Customer Base: <strong className="text-slate-900">{usersList.length}</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Cohort Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                      <th className="pb-3 font-semibold">Cohort Period</th>
+                      <th className="pb-3 font-semibold text-center">Registered Users</th>
+                      <th className="pb-3 font-semibold text-center">Active Buyers</th>
+                      <th className="pb-3 font-semibold text-center">Repeat Return Rate</th>
+                      <th className="pb-3 font-semibold text-right">Total Revenue</th>
+                      <th className="pb-3 font-semibold text-right">Avg Customer Value (LTV)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {cohorts.map((cohort, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3.5 font-bold text-slate-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                          <span>{cohort.label}</span>
+                        </td>
+                        <td className="py-3.5 text-center font-space text-slate-700">
+                          {cohort.userCount} users
+                        </td>
+                        <td className="py-3.5 text-center font-space font-semibold text-slate-900">
+                          {cohort.buyerCount} buyers
+                        </td>
+                        <td className="py-3.5 text-center">
+                          <div className="inline-flex items-center gap-2">
+                            <div className="w-16 h-2 rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                className="h-full bg-emerald-500 rounded-full transition-all"
+                                style={{ width: `${Math.min(cohort.returnRate, 100)}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-emerald-600 font-space text-xs">
+                              {cohort.returnRate}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 text-right font-black text-slate-900 font-space">
+                          {formatCurrency(cohort.revenue)}
+                        </td>
+                        <td className="py-3.5 text-right font-bold text-[#4f46e5] font-space">
+                          {formatCurrency(cohort.avgLtv)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Sub-metrics: Loyalty Distribution & Best Purchase Times */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                {/* Left: Buyer Loyalty Tiers */}
                 <div className="space-y-3">
-                  <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Carrier API Float (GladTidings)</div>
-                      <div className="text-lg font-black text-emerald-700 font-space mt-0.5">{formatCurrency(carrierPoolTotal)}</div>
-                    </div>
-                    <Radio className="w-5 h-5 text-emerald-600 animate-pulse" />
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Customer Wallet Liabilities</div>
-                      <div className="text-lg font-black text-slate-800 font-space mt-0.5">{formatCurrency(totalUserWalletsLiability)}</div>
-                    </div>
-                    <CreditCard className="w-5 h-5 text-slate-400" />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                    <span className="text-slate-600 font-medium">Net Working Capital Cushion:</span>
-                    <span className={`font-bold font-space ${netLiquidCapital >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {formatCurrency(netLiquidCapital)}
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                      Customer Loyalty Breakdown
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {totalBuyersCount} total active purchasers
                     </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Card 3: Top Revenue & Margin Summary */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-amber-500" />
-                    <h3 className="font-bold text-slate-900 text-sm">Profitability Overview</h3>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-                    Avg Margin: {avgPlanMargin}%
-                  </span>
-                </div>
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span className="text-slate-600">1-Time Buyers</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{oneTimeBuyers} users</span>
+                        <span className="text-slate-400 text-[11px]">
+                          ({totalBuyersCount > 0 ? Math.round((oneTimeBuyers / totalBuyersCount) * 100) : 0}%)
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="space-y-2.5 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <span className="text-slate-500">Highest Profit Bundle</span>
-                    <div className="text-right">
-                      <div className="font-bold text-slate-900">{topProfitPlan?.name}</div>
-                      <div className="text-[11px] font-bold text-emerald-600 font-space">+₦{topProfitPlan?.profitPerUnit.toLocaleString()} / sale</div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#4f46e5]"></span>
+                        <span className="text-slate-600">Regular Buyers (2–4 orders)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{repeatBuyers2to4} users</span>
+                        <span className="text-emerald-600 font-bold text-[11px]">
+                          ({totalBuyersCount > 0 ? Math.round((repeatBuyers2to4 / totalBuyersCount) * 100) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span className="text-slate-600">Loyal Power Customers (5+ orders)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{loyalPowerBuyers} users</span>
+                        <span className="text-emerald-600 font-bold text-[11px]">
+                          ({totalBuyersCount > 0 ? Math.round((loyalPowerBuyers / totalBuyersCount) * 100) : 0}%)
+                        </span>
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <span className="text-slate-500">Highest Margin Bundle</span>
-                    <div className="text-right">
-                      <div className="font-bold text-slate-900">{topMarginPlan?.name}</div>
-                      <div className="text-[11px] font-bold text-indigo-600 font-space">{topMarginPlan?.marginPercent}% margin</div>
-                    </div>
+                {/* Right: Best Time of Day for Sales */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                      Best Time of Day (When Customers Buy Most)
+                    </span>
+                    <span className="text-[11px] text-slate-400">Peak ordering hours</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <span className="text-slate-500">Average Profit Across Catalog</span>
-                    <span className="font-bold text-emerald-600 font-space">₦{avgPlanProfit} / sale</span>
+                  <div className="space-y-2.5 text-xs">
+                    {timeSlots.map((slot, i) => {
+                      const totalSlotOrders = successfulOrdersCount || 1;
+                      const orderPct = Math.round((slot.count / totalSlotOrders) * 100);
+                      return (
+                        <div key={i} className="space-y-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-700 font-medium">{slot.label}</span>
+                            <span className="font-bold text-slate-900 font-space">
+                              {slot.count} sales ({orderPct}%) • {formatCurrency(slot.revenue)}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all"
+                              style={{ width: `${Math.max(orderPct, slot.count > 0 ? 12 : 4)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Row 2: 7-Day Activity Trends & Carrier Breakdown */}
+            {/* Row 3: Top VIP Customers Leaderboard & 7-Day Trend */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top 5 High-Value Customers */}
+              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-500" />
+                    <h3 className="font-extrabold text-slate-900 text-sm">Top 5 Highest-Value Customers</h3>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">Ranked by Lifetime Spend</span>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {topCustomers.length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      No customer purchase records recorded yet.
+                    </div>
+                  ) : (
+                    topCustomers.map((cust, idx) => (
+                      <div key={idx} className="py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 text-[#4f46e5] font-black text-xs flex items-center justify-center shrink-0 font-space">
+                            #{idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-slate-900 truncate">
+                              {cust.name}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate font-mono">
+                              {cust.phone || cust.email || 'Online Customer'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="font-black text-slate-900 font-space text-xs">
+                            {formatCurrency(cust.spent)}
+                          </div>
+                          <div className="text-[10px] text-emerald-600 font-semibold">
+                            {cust.orders} completed {cust.orders === 1 ? 'order' : 'orders'}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
               {/* 7-Day Sales Trend Mini Bar Chart */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
+              <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#4f46e5]" />
-                    <h3 className="font-bold text-slate-900 text-sm">7-Day Sales &amp; Activity Trend</h3>
+                    <h3 className="font-extrabold text-slate-900 text-sm">7-Day Sales &amp; Profit Trend</h3>
                   </div>
                   <span className="text-xs text-slate-400 font-mono">Last 7 Days</span>
                 </div>
 
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3 pt-1">
                   {last7DaysData.map((d, idx) => {
                     const pct = Math.max(Math.round((d.revenue / maxDayRevenue) * 100), d.ordersCount > 0 ? 15 : 6);
                     return (
@@ -1250,46 +1653,47 @@ export default function AdminSalamPage() {
                   })}
                 </div>
               </div>
+            </div>
 
-              {/* Carrier Telco Breakdown */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <PieChart className="w-4 h-4 text-emerald-600" />
-                    <h3 className="font-bold text-slate-900 text-sm">Carrier Performance &amp; Telco Share</h3>
-                  </div>
-                  <span className="text-xs text-slate-400 font-mono">4 Telco Networks</span>
+            {/* Row 4: Carrier Telco Breakdown (Clean unboxed 4 columns) */}
+            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-emerald-600" />
+                  <h3 className="font-extrabold text-slate-900 text-sm">Sales by Network (MTN, Airtel, Glo, 9mobile)</h3>
                 </div>
+                <span className="text-xs text-slate-400 font-mono">4 Telco Networks</span>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  {networkMetrics.map((net) => (
-                    <div key={net.name} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
-                          <NetworkLogo network={net.name} size={16} roundedClassName="rounded-xs" />
-                          <span>{net.name}</span>
-                        </div>
-                        <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
-                          {net.share}% share
-                        </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+                {networkMetrics.map((net) => (
+                  <div key={net.name} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2.5 hover:border-indigo-200 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
+                        <NetworkLogo network={net.name} size={20} roundedClassName="rounded-xs" />
+                        <span>{net.name}</span>
                       </div>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                          <span>Orders:</span>
-                          <span className="font-semibold text-slate-800">{net.totalOrders} ({net.rate}% success)</span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                          <span>Revenue:</span>
-                          <span className="font-bold text-slate-900 font-space">{formatCurrency(net.revenue)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                          <span>Net Profit:</span>
-                          <span className="font-bold text-emerald-600 font-space">+{formatCurrency(net.profit)}</span>
-                        </div>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                        {net.share}% share
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs pt-1 border-t border-slate-200/60">
+                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                        <span>Orders Delivered:</span>
+                        <span className="font-bold text-slate-800">{net.totalOrders} ({net.rate}% success)</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                        <span>Total Sales:</span>
+                        <span className="font-black text-slate-900 font-space">{formatCurrency(net.revenue)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                        <span>Profit Made:</span>
+                        <span className="font-bold text-emerald-600 font-space">+{formatCurrency(net.profit)}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
