@@ -21,9 +21,11 @@ android {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "com.dataabeg.app"
         minSdk = 24
-        targetSdk = 35
-        versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
-        versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+        targetSdk = 36
+        versionCode = (tauriProperties.getProperty("tauri.android.versionCode", "1000001").toIntOrNull() ?: 1000001).let {
+            if (it <= 1000000) 1000001 else it
+        }
+        versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0.1")
     }
     signingConfigs {
         create("release") {
