@@ -328,12 +328,11 @@ export default function AdminSalamPage() {
     setIsSubmittingAuth(true);
     try {
       const signedInUser = await signInWithGoogle();
-      if (!isAuthorizedAdmin(signedInUser.email)) {
+      if (signedInUser && !isAuthorizedAdmin(signedInUser.email)) {
         setAuthError(`Access Denied: ${signedInUser.email} is not authorized. Only kokoroowoabdulsalam@gmail.com and belloimam431@gmail.com can access this portal.`);
       }
     } catch (err: any) {
       setAuthError(err.message || 'Google sign-in failed.');
-    } finally {
       setIsSubmittingAuth(false);
     }
   };

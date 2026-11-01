@@ -5,6 +5,8 @@ import {
   User,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -18,7 +20,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   isAdmin: boolean;
   loading: boolean;
-  signInWithGoogle: () => Promise<User>;
+  signInWithGoogle: () => Promise<User | null>;
   signInWithEmail: (email: string, pass: string) => Promise<User>;
   signUpWithEmail: (email: string, pass: string, displayName?: string, phoneNumber?: string) => Promise<User>;
   logout: () => Promise<void>;
@@ -48,7 +50,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const isMobileOrWebView = () => {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    const isTauri = !!(window as any).__TAURI_INTERNALS__ || /tauri/i.test(ua);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile|wv/i.test(ua);
+    return isTauri || isMobile;
+  };
+
   useEffect(() => {
+    // Check for redirect result from Google OAuth (essential on mobile WebView)
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          setUser(result.user);
+          await fetchProfile(result.user);
+        }
+      })
+      .catch((err) => {
+        console.warn('Redirect auth result notice:', err);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -62,7 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async (): Promise<User> => {
+  const signInWithGoogle = async (): Promise<User | null> => {
+    if (isMobileOrWebView()) {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
     const cred = await signInWithPopup(auth, googleProvider);
     await fetchProfile(cred.user);
     return cred.user;

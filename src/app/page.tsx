@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ChevronDown,
   Menu,
@@ -36,6 +37,18 @@ import { detectNetworkFromPhone } from '@/lib/utils';
 import { NETWORKS } from '@/lib/constants';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  // If running inside the mobile Tauri app, immediately take users to signup/dashboard
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent || '';
+      const isNativeApp = !!(window as any).__TAURI_INTERNALS__ || /tauri|wv/i.test(ua);
+      if (isNativeApp) {
+        router.replace('/register');
+      }
+    }
+  }, [router]);
   // Navigation Mega-menu active dropdown
   const [activeDropdown, setActiveDropdown] = useState<'services' | 'pricing' | 'ussd' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

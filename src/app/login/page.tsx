@@ -31,14 +31,15 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const loggedIn = await signInWithGoogle();
-      if (isAuthorizedAdmin(loggedIn.email)) {
-        router.push('/admin-salam');
-      } else {
-        router.push('/dashboard');
+      if (loggedIn) {
+        if (isAuthorizedAdmin(loggedIn.email)) {
+          router.push('/admin-salam');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Google sign-in failed. Please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
