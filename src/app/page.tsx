@@ -29,6 +29,7 @@ import {
   DollarSign,
   TrendingDown,
   Smartphone,
+  Send,
   Wallet,
   MessageCircle,
   HelpCircle
@@ -38,17 +39,6 @@ import { NETWORKS } from '@/lib/constants';
 
 export default function HomePage() {
   const router = useRouter();
-
-  // If running inside the mobile Tauri app, immediately take users to signup/dashboard
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const ua = navigator.userAgent || '';
-      const isNativeApp = !!(window as any).__TAURI_INTERNALS__ || /tauri|wv/i.test(ua);
-      if (isNativeApp) {
-        router.replace('/register');
-      }
-    }
-  }, [router]);
   // Navigation Mega-menu active dropdown
   const [activeDropdown, setActiveDropdown] = useState<'services' | 'pricing' | 'ussd' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -595,6 +585,118 @@ export default function HomePage() {
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      
+      {/* =========================================================================
+          2B. QUICK SERVICES HUB (FRONT & CENTER FOR ALL USERS)
+      ========================================================================= */}
+      <section id="services-hub" className="relative z-20 -mt-8 sm:-mt-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight font-space">
+                  Choose a Service
+                </h2>
+                <span className="text-[10px] font-bold text-[#1E40AF] bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase">
+                  Instant Dispense
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Tap any telecom or utility service to proceed directly
+              </p>
+            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E40AF] hover:underline"
+            >
+              <span>Go to Full Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {/* 1. Buy Data */}
+            <Link
+              href="/dashboard/data"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-blue-50/50 to-white hover:from-blue-50 hover:to-blue-100/40 border border-blue-200/80 hover:border-[#1E40AF] hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#1E40AF] text-white flex items-center justify-center mb-2.5 shadow-sm shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#1E40AF]">Buy Data</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">MTN, Airtel, Glo, 9mobile</span>
+              <span className="mt-2 text-[10px] font-bold text-[#1E40AF] bg-blue-100/60 px-2 py-0.5 rounded-md">From ₦260</span>
+            </Link>
+
+            {/* 2. Buy Airtime */}
+            <Link
+              href="/dashboard/airtime"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white hover:from-emerald-50 hover:to-emerald-100/40 border border-emerald-200/80 hover:border-emerald-600 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                <Send className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-700">Buy Airtime</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">Instant Top-up</span>
+              <span className="mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md">2% Bonus</span>
+            </Link>
+
+            {/* 3. Cable TV */}
+            <Link
+              href="/dashboard/cable"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-indigo-50/50 to-white hover:from-indigo-50 hover:to-indigo-100/40 border border-indigo-200/80 hover:border-indigo-600 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                <Tv className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-700">Cable TV</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">DStv, GOtv, StarTimes</span>
+              <span className="mt-2 text-[10px] font-bold text-indigo-700 bg-indigo-100/60 px-2 py-0.5 rounded-md">Instant Bouquet</span>
+            </Link>
+
+            {/* 4. Electricity */}
+            <Link
+              href="/dashboard/electricity"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-amber-50/50 to-white hover:from-amber-50 hover:to-amber-100/40 border border-amber-200/80 hover:border-amber-500 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-amber-700">Electricity</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">Prepaid Meter Tokens</span>
+              <span className="mt-2 text-[10px] font-bold text-amber-700 bg-amber-100/60 px-2 py-0.5 rounded-md">Token SMS/Copy</span>
+            </Link>
+
+            {/* 5. Fund Wallet */}
+            <Link
+              href="/dashboard/wallet"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-purple-50/50 to-white hover:from-purple-50 hover:to-purple-100/40 border border-purple-200/80 hover:border-purple-600 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-purple-500/20 group-hover:scale-110 transition-transform">
+                <Wallet className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-700">Fund Wallet</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">Automated Accounts</span>
+              <span className="mt-2 text-[10px] font-bold text-purple-700 bg-purple-100/60 px-2 py-0.5 rounded-md">Paystack & Bank</span>
+            </Link>
+
+            {/* 6. Bulk Data */}
+            <Link
+              href="/dashboard/bulk-data"
+              className="group p-4 rounded-2xl bg-gradient-to-b from-sky-50/50 to-white hover:from-sky-50 hover:to-sky-100/40 border border-sky-200/80 hover:border-sky-600 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-sky-500/20 group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-700">Bulk Data</span>
+              <span className="text-[11px] text-slate-500 mt-0.5">Reseller Vending</span>
+              <span className="mt-2 text-[10px] font-bold text-sky-700 bg-sky-100/60 px-2 py-0.5 rounded-md">Batch Dispatch</span>
+            </Link>
           </div>
         </div>
       </section>

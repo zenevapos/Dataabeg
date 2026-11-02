@@ -195,6 +195,84 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
+      
+      {/* ================= QUICK SERVICES HUB ================= */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>Quick Services</span>
+            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">All Services</span>
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <Link
+            href="/dashboard/data"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1E40AF] flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Smartphone className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#1E40AF]">Buy Data</span>
+            <span className="text-[11px] text-slate-400 mt-0.5">From ₦260/GB</span>
+          </Link>
+
+          <Link
+            href="/dashboard/airtime"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-emerald-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Send className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-600">Airtime</span>
+            <span className="text-[11px] text-emerald-600 font-semibold mt-0.5">2% Discount</span>
+          </Link>
+
+          <Link
+            href="/dashboard/cable"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Tv className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600">Cable TV</span>
+            <span className="text-[11px] text-slate-400 mt-0.5">DStv &amp; GOtv</span>
+          </Link>
+
+          <Link
+            href="/dashboard/electricity"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-amber-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-amber-600">Electricity</span>
+            <span className="text-[11px] text-slate-400 mt-0.5">Meter Tokens</span>
+          </Link>
+
+          <Link
+            href="/dashboard/wallet"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-violet-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-violet-600">Fund Wallet</span>
+            <span className="text-[11px] text-slate-400 mt-0.5">Card &amp; Bank Transfer</span>
+          </Link>
+
+          <Link
+            href="/dashboard/bulk-data"
+            className="group p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-sky-400 hover:shadow-md transition-all flex flex-col items-center text-center cursor-pointer"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+              <Layers className="w-6 h-6" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600">Bulk Data</span>
+            <span className="text-[11px] text-slate-400 mt-0.5">Resellers</span>
+          </Link>
+        </div>
+      </div>
+
       {/* ================= 2. ALL ACCOUNTS / WALLETS ROW ================= */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
