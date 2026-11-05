@@ -64,6 +64,43 @@ export default function WalletPage() {
       .catch(() => {});
   }, []);
 
+  // Auto-verify transaction if returning from Paystack redirect checkout
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('reference') || params.get('trxref');
+    if (ref) {
+      setIsFunding(true);
+      fetch('/api/paystack/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status) {
+            const credited = data.data?.amount || fundAmount;
+            setFundSuccess(`🎉 Successfully credited ₦${Number(credited).toLocaleString()} to your wallet!`);
+            refreshProfile();
+            try {
+              confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+            } catch {}
+          } else {
+            setFundError(data.message || 'Payment received, updating your balance...');
+            refreshProfile();
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .catch((err) => {
+          setFundError(err?.message || 'Error confirming transaction with gateway.');
+          refreshProfile();
+        })
+        .finally(() => {
+          setIsFunding(false);
+        });
+    }
+  }, [user]);
+
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedAccount(key);
@@ -123,6 +160,36 @@ export default function WalletPage() {
       }
     };
 
+    const isMobile =
+      typeof window !== 'undefined' &&
+      (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__));
+
+    // On mobile devices / Tauri app, redirect to Paystack's full checkout page
+    // This allows native deep-linking to OPay/banking apps and fixes "Copy failed" on bank transfer account numbers
+    if (isMobile) {
+      try {
+        const initRes = await fetch('/api/paystack/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amountToFund,
+            email: customerEmail,
+            reference: txRef,
+            metadata,
+            callback_url: window.location.href.split('?')[0]
+          })
+        });
+        const initData = await initRes.json();
+        if (initRes.ok && initData.data?.authorization_url) {
+          window.location.href = initData.data.authorization_url;
+          return;
+        }
+      } catch (err) {
+        console.warn('Mobile redirect initialization failed, trying popup:', err);
+      }
+    }
+
     let popupOpened = false;
 
     try {
@@ -160,7 +227,7 @@ export default function WalletPage() {
             email: customerEmail,
             reference: txRef,
             metadata,
-            callback_url: window.location.href
+            callback_url: window.location.href.split('?')[0]
           })
         });
         const initData = await initRes.json();

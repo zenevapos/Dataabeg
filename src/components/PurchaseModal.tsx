@@ -232,6 +232,36 @@ export function PurchaseModal({
           }
         };
 
+        const isMobile =
+          typeof window !== 'undefined' &&
+          (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+            Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__));
+
+        // On mobile devices / Tauri app, redirect to Paystack's full checkout page
+        // This allows native deep-linking to OPay/banking apps and fixes "Copy failed" on bank transfer account numbers
+        if (isMobile) {
+          try {
+            const initRes = await fetch('/api/paystack/initialize', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                amount: checkoutAmount,
+                email: customerEmail,
+                reference: txRef,
+                metadata,
+                callback_url: window.location.href.split('?')[0]
+              })
+            });
+            const initData = await initRes.json();
+            if (initRes.ok && initData.data?.authorization_url) {
+              window.location.href = initData.data.authorization_url;
+              return;
+            }
+          } catch (initErr) {
+            console.warn('Mobile direct initialization failed, trying popup:', initErr);
+          }
+        }
+
         let popupOpened = false;
 
         try {
@@ -269,7 +299,7 @@ export function PurchaseModal({
               email: customerEmail,
               reference: txRef,
               metadata,
-              callback_url: window.location.href
+              callback_url: window.location.href.split('?')[0]
             })
           });
           const initData = await initRes.json();
