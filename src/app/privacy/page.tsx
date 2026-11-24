@@ -106,18 +106,31 @@ export default function PrivacyPolicyPage() {
 
           <section className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-3">
             <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-amber-400" /> 5. User Rights & Account Deletion
+              <ShieldCheck className="w-5 h-5 text-amber-400" /> 5. User Rights &amp; Account Deletion
             </h2>
             <p>
-              You have the right to inspect, update, or request the permanent deletion of your DataAbeg account and associated transaction history. To request complete data erasure, contact us at{' '}
+              In compliance with Google Play User Data policies, users of <strong>DataAbeg - Cheap Data &amp; Bills</strong> (developed by <strong>Bimex Group</strong>) have the right to request the permanent deletion of their account and associated personal data.
+            </p>
+            <p>
+              You can submit an immediate account and user data deletion request via our dedicated online portal at:{' '}
+              <Link href="/delete-account" className="text-amber-400 font-semibold hover:underline">
+                https://dataabeg.vercel.app/delete-account
+              </Link>
+            </p>
+            <p>
+              Alternatively, you can email our support team directly at{' '}
+              <a href="mailto:belloimam431@gmail.com" className="text-amber-400 hover:underline">
+                belloimam431@gmail.com
+              </a>{' '}
+              or{' '}
               <a href="mailto:kokoroowoabdulsalam@gmail.com" className="text-amber-400 hover:underline">
                 kokoroowoabdulsalam@gmail.com
-              </a>{' '}
-              or via WhatsApp at{' '}
+              </a>
+              , or via WhatsApp at{' '}
               <a href="https://wa.me/2348154276838" className="text-amber-400 hover:underline">
                 +234 815 427 6838
               </a>
-              .
+              . Requests are processed within 48 to 72 hours.
             </p>
           </section>
 
