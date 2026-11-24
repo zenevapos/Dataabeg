@@ -46,25 +46,30 @@ class MainActivity : TauriActivity() {
           }
 
           if (intent != null) {
-            intent.addCategory(Intent.CATEGORY_BROWSABLE)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
 
-            val pm = packageManager
-            if (intent.resolveActivity(pm) != null) {
+            try {
               startActivity(intent)
               return true
-            } else {
+            } catch (e: Exception) {
               val fallbackUrl = intent.getStringExtra("browser_fallback_url")
               if (fallbackUrl != null && fallbackUrl.startsWith("http")) {
                 view?.loadUrl(fallbackUrl)
                 return true
               }
               if (url.startsWith("btravel://") || url.startsWith("opay://")) {
-                val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=team.opay.pay"))
-                marketIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                if (marketIntent.resolveActivity(pm) != null) {
+                try {
+                  val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=team.opay.pay"))
+                  marketIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                   startActivity(marketIntent)
                   return true
+                } catch (e2: Exception) {
+                  try {
+                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=team.opay.pay"))
+                    webIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(webIntent)
+                    return true
+                  } catch (e3: Exception) {}
                 }
               }
             }

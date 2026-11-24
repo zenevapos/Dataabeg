@@ -22,10 +22,10 @@ android {
         applicationId = "com.dataabeg.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = (tauriProperties.getProperty("tauri.android.versionCode", "1000002").toIntOrNull() ?: 1000002).let {
-            if (it <= 1000001) 1000002 else it
+        versionCode = (tauriProperties.getProperty("tauri.android.versionCode", "1000003").toIntOrNull() ?: 1000003).let {
+            if (it <= 1000002) 1000003 else it
         }
-        versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0.2")
+        versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0.3")
     }
     signingConfigs {
         create("release") {
