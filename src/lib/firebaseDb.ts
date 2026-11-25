@@ -37,7 +37,7 @@ export interface AdminSettings {
 
 export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   smeplugApiKey: '',
-  gladtidingsApiKey: '230b1f76866a191134045e619ae5f914b2c7cd3f',
+  gladtidingsApiKey: '',
   activeProvider: 'gladtidings',
   paystackSecretKey: '',
   paystackPublicKey: 'pk_live_49c5d3adb3f90c37a62d3c297eb291a5242abb36',
