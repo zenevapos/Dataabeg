@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import NextTopLoader from '@/components/NextTopLoader';
 import SupportChatWidget from '@/components/SupportChatWidget';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import PaystackReturnVerifier from '@/components/PaystackReturnVerifier';
 
 const spaceGrotesk = localFont({
   src: '../../public/fonts/space-grotesk.woff2',
@@ -115,6 +116,7 @@ export default function RootLayout({
       >
         <NextTopLoader color="#4F46E5" height={3} showSpinner={false} />
         <AuthProvider>
+          <PaystackReturnVerifier />
           {children}
           <SupportChatWidget />
           <PwaInstallPrompt />

@@ -607,16 +607,24 @@ export async function adminAdjustUserBalance(
 
   // Record audit transaction
   const ref = `ADJUST-${Date.now()}`;
+  const userData = snap.data();
   await saveOrderToFirestore({
     id: ref,
     reference: ref,
-    network: 'MTN',
-    phone: snap.data().phoneNumber || 'Admin Manual',
+    userId: uid,
+    userEmail: userData.email || '',
+    network: 'Wallet',
+    networkName: 'Wallet',
+    phone: userData.phoneNumber || userData.email || 'Admin Manual',
+    phoneNumber: userData.phoneNumber || userData.email || 'Admin Manual',
     planName: `Wallet ${type}: ₦${amount.toLocaleString()} (${reason})`,
-    planSize: `${type}`,
+    planSize: `${type === 'CREDIT' ? '+' : '-'}₦${amount.toLocaleString()}`,
     amount: amount,
+    amountPaid: amount,
     status: 'SUCCESS',
+    statusMessage: reason,
     paymentMethod: 'ADMIN_MANUAL',
+    serviceType: 'wallet_funding' as any,
     createdAt: new Date().toISOString()
   });
 

@@ -11,10 +11,21 @@ export async function GET(req: NextRequest) {
     const client = new GladTidingsClient(customKey);
     const result = await client.getBalance();
 
+    if (!result.status) {
+      return NextResponse.json(
+        {
+          ...result,
+          balance: null
+        },
+        { status: 502 }
+      );
+    }
+
+    const rawBalance = result.data?.balance;
     const balanceNum =
-      typeof result.data?.balance === 'number'
-        ? result.data.balance
-        : Number(result.data?.balance) || 0;
+      typeof rawBalance === 'number'
+        ? rawBalance
+        : Number(String(rawBalance ?? '0').replace(/[^\d.-]/g, '')) || 0;
 
     return NextResponse.json({
       ...result,

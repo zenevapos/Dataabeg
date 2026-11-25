@@ -124,6 +124,12 @@ export default function AdminSalamPage() {
   const [isCheckingBalance, setIsCheckingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
+  // Live Paystack Transactions Feed
+  const [paystackTransactions, setPaystackTransactions] = useState<any[]>([]);
+  const [isLoadingPaystack, setIsLoadingPaystack] = useState(false);
+  const [paystackError, setPaystackError] = useState<string | null>(null);
+  const [syncingRef, setSyncingRef] = useState<string | null>(null);
+
   // Filters & Searches
   const [searchQuery, setSearchQuery] = useState('');
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -197,8 +203,9 @@ export default function AdminSalamPage() {
       }
       setUsersList(finalUsers);
 
-      // Check live balances
+      // Check live balances & Paystack feed
       checkGatewaysBalance(fetchedSettings);
+      fetchPaystackTransactions();
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {
@@ -283,6 +290,49 @@ export default function AdminSalamPage() {
     }
   };
 
+  const fetchPaystackTransactions = async () => {
+    setIsLoadingPaystack(true);
+    setPaystackError(null);
+    try {
+      const res = await fetch('/api/paystack/transactions?perPage=50', { cache: 'no-store' });
+      const data = await res.json();
+      if (res.ok && data.status) {
+        setPaystackTransactions(data.data || []);
+      } else {
+        setPaystackError(data.message || 'Could not load live Paystack transactions.');
+      }
+    } catch {
+      setPaystackError('Network error fetching Paystack transactions.');
+    } finally {
+      setIsLoadingPaystack(false);
+    }
+  };
+
+  const handleSyncPaystackRef = async (reference: string) => {
+    setSyncingRef(reference);
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          headers.Authorization = `Bearer ${idToken}`;
+        } catch {}
+      }
+      const res = await fetch('/api/paystack/verify', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ reference })
+      });
+      const data = await res.json();
+      alert(data.message || (data.status ? 'Verified and synced!' : 'Verification failed.'));
+      loadInitialData();
+    } catch (err: any) {
+      alert(err?.message || 'Error syncing Paystack reference.');
+    } finally {
+      setSyncingRef(null);
+    }
+  };
+
   const checkGatewaysBalance = async (settings?: AdminSettings) => {
     setIsCheckingBalance(true);
     setBalanceError(null);
@@ -290,11 +340,19 @@ export default function AdminSalamPage() {
 
     try {
       // 1. Check GladTidings Balance
-      const gtKey = activeSettings.gladtidingsApiKey || '230b1f76866a191134045e619ae5f914b2c7cd3f';
-      const gtRes = await fetch(`/api/gladtidings/balance?customKey=${encodeURIComponent(gtKey)}`);
+      const gtKey = activeSettings.gladtidingsApiKey || '';
+      const gtUrl = gtKey
+        ? `/api/gladtidings/balance?customKey=${encodeURIComponent(gtKey)}`
+        : '/api/gladtidings/balance';
+      const gtRes = await fetch(gtUrl, { cache: 'no-store' });
       const gtData = await gtRes.json();
-      if (gtRes.ok && gtData.balance !== undefined) {
+      if (gtRes.ok && gtData.status && gtData.balance !== null && gtData.balance !== undefined) {
         setGladtidingsBalance(Number(gtData.balance));
+      } else {
+        setGladtidingsBalance(null);
+        setBalanceError(
+          `GladTidings API error: ${gtData.msg || 'Token expired or invalid — update GLADTIDINGS_API_TOKEN in Telecom Gateways / Vercel.'}`
+        );
       }
 
       // 2. Check SMEPlug Balance if key exists
@@ -1723,6 +1781,121 @@ export default function AdminSalamPage() {
 
         {/* ================= TAB 1: ORDERS & TRANSACTIONS ================= */}
         {activeTab === 'orders' && (
+          <div className="space-y-6">
+            {balanceError && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                <div>{balanceError}</div>
+              </div>
+            )}
+
+            {/* Live Paystack Payments Feed */}
+            <div className="bg-white rounded-xl border border-indigo-200/80 shadow-2xs p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-[#4f46e5]" />
+                    <span>Live Paystack Payments ({paystackTransactions.length})</span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Direct from Paystack API
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Shows every real Paystack transaction even if it has not synced to Firestore yet.
+                  </p>
+                </div>
+                <button
+                  onClick={fetchPaystackTransactions}
+                  disabled={isLoadingPaystack}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-[#4f46e5] text-xs font-bold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingPaystack ? 'animate-spin' : ''}`} />
+                  <span>Refresh Paystack</span>
+                </button>
+              </div>
+
+              {paystackError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                  {paystackError}
+                </div>
+              )}
+
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2.5">Reference</th>
+                      <th className="px-3 py-2.5">Customer</th>
+                      <th className="px-3 py-2.5">Type</th>
+                      <th className="px-3 py-2.5">Amount</th>
+                      <th className="px-3 py-2.5">Channel</th>
+                      <th className="px-3 py-2.5">Status</th>
+                      <th className="px-3 py-2.5">Date</th>
+                      <th className="px-3 py-2.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paystackTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+                          {isLoadingPaystack ? 'Loading live Paystack transactions...' : 'No Paystack transactions found.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      paystackTransactions.map((tx) => {
+                        const syncedInFirestore = orders.some((o) => o.reference === tx.reference);
+                        return (
+                          <tr key={tx.reference} className="hover:bg-slate-50/70">
+                            <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-slate-800">{tx.reference}</td>
+                            <td className="px-3 py-2.5">
+                              <div className="font-semibold text-slate-900">{tx.email || '—'}</div>
+                              {tx.phone && <div className="text-[10px] text-slate-400">{tx.phone}</div>}
+                            </td>
+                            <td className="px-3 py-2.5 text-[11px] text-slate-600">{tx.type}</td>
+                            <td className="px-3 py-2.5 font-bold text-slate-900">₦{Number(tx.amount || 0).toLocaleString()}</td>
+                            <td className="px-3 py-2.5 uppercase text-[10px] font-semibold text-slate-500">{tx.channel || '—'}</td>
+                            <td className="px-3 py-2.5">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                  tx.status === 'success'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : tx.status === 'failed'
+                                      ? 'bg-red-50 text-red-700 border border-red-200'
+                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}
+                              >
+                                {tx.status}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2.5 text-[11px] text-slate-500 whitespace-nowrap">
+                              {tx.paid_at || tx.created_at ? new Date(tx.paid_at || tx.created_at).toLocaleString() : '—'}
+                            </td>
+                            <td className="px-3 py-2.5 text-right">
+                              {tx.status === 'success' ? (
+                                syncedInFirestore ? (
+                                  <span className="text-[10px] font-bold text-emerald-600">Synced</span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleSyncPaystackRef(tx.reference)}
+                                    disabled={syncingRef === tx.reference}
+                                    className="px-2.5 py-1 rounded-lg bg-[#4f46e5] hover:bg-indigo-700 text-white text-[10px] font-bold cursor-pointer disabled:opacity-50"
+                                  >
+                                    {syncingRef === tx.reference ? 'Syncing...' : 'Verify & Sync'}
+                                  </button>
+                                )
+                              ) : (
+                                <span className="text-[10px] text-slate-400">{tx.gateway_response || 'Not paid'}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           <div className="bg-white rounded-xl border border-slate-200/60 shadow-2xs p-6 space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative w-full sm:w-80">
@@ -1860,6 +2033,7 @@ export default function AdminSalamPage() {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         )}
 
