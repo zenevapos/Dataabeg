@@ -64,40 +64,61 @@ export default function WalletPage() {
       .catch(() => {});
   }, []);
 
-  // Auto-verify transaction if returning from Paystack redirect checkout
+  const verifyPaystackFundingRef = async (ref: string, fallbackAmount?: number, silentIfPending = false) => {
+    if (!user) return;
+    setIsFunding(true);
+    try {
+      const idToken = await user.getIdToken();
+      const verifyRes = await fetch('/api/paystack/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ reference: ref })
+      });
+      const data = await verifyRes.json();
+      if (verifyRes.ok && data.status) {
+        try {
+          localStorage.removeItem('dataabeg_pending_fund_ref');
+        } catch {}
+        const credited = data.data?.amount || fallbackAmount || fundAmount;
+        if (!data.data?.alreadyCredited) {
+          setFundSuccess(`🎉 Successfully credited ₦${Number(credited).toLocaleString()} to your wallet!`);
+          try {
+            confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+          } catch {}
+        }
+        await refreshProfile();
+      } else {
+        if (!silentIfPending) {
+          setFundError(data.message || 'Payment verification pending. Refresh in a moment if you were debited.');
+        }
+        await refreshProfile();
+      }
+    } catch (err: any) {
+      if (!silentIfPending) {
+        setFundError(err?.message || 'Error confirming transaction with gateway.');
+      }
+      await refreshProfile();
+    } finally {
+      setIsFunding(false);
+    }
+  };
+
+  // Auto-verify transaction if returning from Paystack redirect checkout OR returning from mobile bank/OPay app
   useEffect(() => {
     if (typeof window === 'undefined' || !user) return;
     const params = new URLSearchParams(window.location.search);
-    const ref = params.get('reference') || params.get('trxref');
-    if (ref) {
-      setIsFunding(true);
-      fetch('/api/paystack/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: ref })
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status) {
-            const credited = data.data?.amount || fundAmount;
-            setFundSuccess(`🎉 Successfully credited ₦${Number(credited).toLocaleString()} to your wallet!`);
-            refreshProfile();
-            try {
-              confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
-            } catch {}
-          } else {
-            setFundError(data.message || 'Payment received, updating your balance...');
-            refreshProfile();
-          }
-          window.history.replaceState({}, document.title, window.location.pathname);
-        })
-        .catch((err) => {
-          setFundError(err?.message || 'Error confirming transaction with gateway.');
-          refreshProfile();
-        })
-        .finally(() => {
-          setIsFunding(false);
-        });
+    const urlRef = params.get('reference') || params.get('trxref');
+    const pendingRef = localStorage.getItem('dataabeg_pending_fund_ref');
+
+    if (urlRef) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      verifyPaystackFundingRef(urlRef, fundAmount, false);
+    } else if (pendingRef) {
+      // Silently check if the user completed a bank transfer / OPay payment in another app and came back
+      verifyPaystackFundingRef(pendingRef, fundAmount, true);
     }
   }, [user]);
 
@@ -122,6 +143,9 @@ export default function WalletPage() {
     setFundSuccess(null);
 
     const txRef = generateTxReference('FUND');
+    try {
+      localStorage.setItem('dataabeg_pending_fund_ref', txRef);
+    } catch {}
     const customerEmail = user.email || `${user.uid.slice(0, 8)}@dataabeg.com`;
     const publicKey = adminSettings.paystackPublicKey || getPaystackPublicKey();
 
@@ -133,13 +157,20 @@ export default function WalletPage() {
 
     const handleVerification = async (ref: string) => {
       try {
+        const idToken = await user.getIdToken();
         const verifyRes = await fetch('/api/paystack/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`
+          },
           body: JSON.stringify({ reference: ref })
         });
         const verifyData = await verifyRes.json();
         if (verifyRes.ok && verifyData.status) {
+          try {
+            localStorage.removeItem('dataabeg_pending_fund_ref');
+          } catch {}
           setFundSuccess(`🎉 Successfully credited ₦${amountToFund.toLocaleString()} to your wallet!`);
           await refreshProfile();
           try {

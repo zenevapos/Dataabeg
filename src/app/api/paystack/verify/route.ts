@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaystackClient } from '@/lib/paystack';
-import { creditUserWalletFromPayment, saveOrderToFirestore } from '@/lib/firebaseDb';
+import { saveOrderToFirestore } from '@/lib/firebaseDb';
+import { creditWalletIdempotently } from '@/lib/walletCredit';
 import { GladTidingsClient } from '@/lib/gladtidings';
 import { Transaction } from '@/lib/types';
 
@@ -8,6 +9,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { reference } = body;
+    const authHeader = req.headers.get('authorization') || '';
+    const firebaseIdToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
 
     if (!reference) {
       return NextResponse.json(
@@ -45,22 +48,28 @@ export async function POST(req: NextRequest) {
 
     // 1. Wallet Funding Flow
     if (metadata.type === 'wallet_funding' && metadata.uid) {
-      const newBalance = await creditUserWalletFromPayment(
-        metadata.uid,
-        amountInNaira,
-        txData.reference,
-        txData.customer?.email,
-        channel
-      );
+      const creditResult = await creditWalletIdempotently({
+        uid: metadata.uid,
+        amount: amountInNaira,
+        paymentRef: txData.reference,
+        customerEmail: txData.customer?.email,
+        channel,
+        firebaseIdToken
+      });
 
       return NextResponse.json({
         status: true,
-        message: `Wallet funded successfully with ₦${amountInNaira.toLocaleString()}`,
+        message: creditResult.alreadyCredited
+          ? `Payment of ₦${amountInNaira.toLocaleString()} was already credited to your wallet.`
+          : `Wallet funded successfully with ₦${amountInNaira.toLocaleString()}`,
         data: {
           reference: txData.reference,
           amount: amountInNaira,
-          newBalance,
-          channel
+          newBalance: creditResult.newBalance,
+          channel,
+          credited: creditResult.credited,
+          alreadyCredited: creditResult.alreadyCredited,
+          requiresClientSync: creditResult.requiresClientSync
         }
       });
     }

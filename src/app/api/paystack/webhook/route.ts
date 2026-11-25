@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getPaystackSecretKey } from '@/lib/paystack';
-import { creditUserWalletFromPayment, saveOrderToFirestore } from '@/lib/firebaseDb';
+import { saveOrderToFirestore } from '@/lib/firebaseDb';
+import { creditWalletIdempotently } from '@/lib/walletCredit';
 import { GladTidingsClient } from '@/lib/gladtidings';
 import { Transaction } from '@/lib/types';
 
@@ -35,14 +36,16 @@ export async function POST(req: NextRequest) {
 
       // 1. Wallet funding
       if (metadata.type === 'wallet_funding' && metadata.uid) {
-        await creditUserWalletFromPayment(
-          metadata.uid,
-          amountInNaira,
-          data.reference,
-          data.customer?.email,
+        const result = await creditWalletIdempotently({
+          uid: metadata.uid,
+          amount: amountInNaira,
+          paymentRef: data.reference,
+          customerEmail: data.customer?.email,
           channel
+        });
+        console.log(
+          `✅ Webhook: Processed ₦${amountInNaira} for user ${metadata.uid} (credited=${result.credited}, already=${result.alreadyCredited})`
         );
-        console.log(`✅ Webhook: Credited ₦${amountInNaira} to user ${metadata.uid}`);
       }
 
       // 2. Direct service purchase fulfillment (if not already completed by client-side verify)
