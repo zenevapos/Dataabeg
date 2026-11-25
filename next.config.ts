@@ -44,6 +44,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['firebase-admin'],
   // Disable X-Powered-By header to prevent technology fingerprinting
   poweredByHeader: false,
   async headers() {

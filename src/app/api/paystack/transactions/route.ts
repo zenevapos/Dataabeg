@@ -3,6 +3,8 @@ import { getPaystackSecretKey } from '@/lib/paystack';
 import { verifyAdminRequest } from '@/lib/adminAuth';
 import { isFirebaseAdminConfigured } from '@/lib/firebaseAdmin';
 
+export const runtime = 'nodejs';
+
 export async function GET(req: NextRequest) {
   try {
     // Strictly require authorized DataAbeg admin Firebase Auth token

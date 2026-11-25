@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { getPaystackSecretKey } from '@/lib/paystack';
 import { creditWalletIdempotently, fulfillServicePurchaseIdempotently } from '@/lib/walletCredit';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
