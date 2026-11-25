@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaystackClient } from '@/lib/paystack';
-import { saveOrderToFirestore } from '@/lib/firebaseDb';
-import { creditWalletIdempotently } from '@/lib/walletCredit';
-import { GladTidingsClient } from '@/lib/gladtidings';
-import { Transaction } from '@/lib/types';
+import { creditWalletIdempotently, fulfillServicePurchaseIdempotently } from '@/lib/walletCredit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,7 +43,7 @@ export async function POST(req: NextRequest) {
     const metadata = txData.metadata || {};
     const channel = txData.channel || 'card';
 
-    // 1. Wallet Funding Flow
+    // 1. Wallet Funding Flow (Atomic & Idempotent)
     if (metadata.type === 'wallet_funding' && metadata.uid) {
       const creditResult = await creditWalletIdempotently({
         uid: metadata.uid,
@@ -74,81 +71,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Direct Service Purchase Flow (Data, Airtime, Electricity, Cable)
+    // 2. Direct Service Purchase Flow (Idempotent + Auto-Refund to Wallet on Gateway Failure)
     if (metadata.type === 'service_purchase') {
-      const gladtidings = new GladTidingsClient();
-      let dispatchResult: any = { status: true, msg: 'Dispensed' };
-      let token = '';
-
-      if (metadata.serviceType === 'electricity') {
-        dispatchResult = await gladtidings.rechargeMeter({
-          disco_name: Number(metadata.discoId),
-          meter_number: String(metadata.meterNumber).trim(),
-          amount: Number(metadata.amount),
-          MeterType: metadata.meterType?.toLowerCase() === 'postpaid' ? 'Postpaid' : 'Prepaid',
-          Customer_Phone: metadata.phone || '',
-          customer_name: metadata.customerName,
-          customer_address: metadata.customerAddress
-        });
-        token = dispatchResult.token || dispatchResult.data?.token || '';
-      } else if (metadata.serviceType === 'cable') {
-        dispatchResult = await gladtidings.subscribeCable({
-          cablename: Number(metadata.cableId),
-          cableplan: Number(metadata.cablePlanId),
-          smart_card_number: String(metadata.smartCardNumber).trim()
-        });
-      } else if (metadata.serviceType === 'airtime') {
-        dispatchResult = await gladtidings.purchaseAirtime({
-          network: Number(metadata.networkId),
-          mobile_number: metadata.phone,
-          amount: Number(metadata.amount),
-          Ported_number: true,
-          airtime_type: 'VTU'
-        });
-      } else {
-        // Data Bundle
-        dispatchResult = await gladtidings.purchaseData({
-          network: Number(metadata.networkId),
-          plan: metadata.planId,
-          mobile_number: metadata.phone,
-          Ported_number: true
-        });
-      }
-
-      const orderTx: Transaction = {
-        id: txData.reference,
+      const result = await fulfillServicePurchaseIdempotently({
         reference: txData.reference,
-        userId: metadata.uid || '',
-        userEmail: metadata.userEmail || txData.customer?.email || '',
-        smeplugReference: dispatchResult.data?.reference || dispatchResult.data?.ident || `GT_${Date.now()}`,
-        network: metadata.networkName || 'Paystack',
-        networkName: metadata.networkName || 'Paystack',
-        phone: metadata.phone || txData.customer?.phone || '',
-        phoneNumber: metadata.phone || txData.customer?.phone || '',
-        planName: metadata.planName || 'Mobile Service Top-Up',
-        planSize: metadata.planSize || '',
-        amount: amountInNaira,
-        amountPaid: amountInNaira,
-        status: dispatchResult.status ? 'successful' : 'failed',
-        statusMessage: dispatchResult.msg || 'Transaction processed via Paystack live checkout.',
-        paymentMethod: 'PAYSTACK',
-        createdAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
-        serviceType: metadata.serviceType || 'data',
-        meterToken: token,
-        meterNumber: metadata.meterNumber,
-        customerName: metadata.customerName,
-        smartCardNumber: metadata.smartCardNumber,
-        cableName: metadata.cableName,
-        cablePlanName: metadata.cablePlanName
-      };
-
-      await saveOrderToFirestore(orderTx);
+        amountInNaira,
+        metadata,
+        customerEmail: txData.customer?.email,
+        customerPhone: txData.customer?.phone,
+        channel,
+        firebaseIdToken
+      });
 
       return NextResponse.json({
-        status: dispatchResult.status,
-        message: dispatchResult.msg || 'Service purchased and verified successfully.',
-        data: orderTx
+        status: result.status,
+        alreadyProcessed: result.alreadyProcessed,
+        autoRefundedToWallet: result.autoRefundedToWallet,
+        message: result.message,
+        data: result.order
       });
     }
 

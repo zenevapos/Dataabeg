@@ -3,20 +3,42 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper function to check if caller is an authorized DataAbeg admin
     function isAdmin() {
-      return request.auth != null && 
+      return request.auth != null &&
         (request.auth.token.email.matches('(?i)^(kokoroowoabdulsalam@gmail\\.com|belloimam431@gmail\\.com)$'));
     }
 
-    // Users collection: Anyone can read user profile, user can edit their own, admin has full access
+    // Users collection:
+    // - Users can create their own profile ONLY with 0 starting balance
+    // - Users can update their own profile fields, and can debit (decrease) balance when spending,
+    //   but can NEVER increase their own walletBalance (only Admins or Firebase Admin SDK server can credit!)
     match /users/{userId} {
       allow read: if true;
-      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow create: if isAdmin() || (
+        request.auth != null &&
+        request.auth.uid == userId &&
+        (!('walletBalance' in request.resource.data) || request.resource.data.walletBalance == 0)
+      );
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        request.auth.uid == userId &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance']) ||
+          request.resource.data.walletBalance <= resource.data.walletBalance
+        )
+      );
+      allow delete: if isAdmin();
     }
 
     // Orders collection: Allow creating and reading orders for guests and logged in users
     match /orders/{orderId} {
       allow read, create: if true;
       allow update, delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+    }
+
+    // Account deletion requests (Google Play compliance)
+    match /account_deletion_requests/{reqId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     // Settings collection: Anyone can read settings, only admin can write

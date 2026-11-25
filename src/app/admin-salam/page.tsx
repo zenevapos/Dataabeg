@@ -90,7 +90,7 @@ export default function AdminSalamPage() {
   const [inputPassword, setInputPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<'pin' | 'email'>('pin');
+  const [loginMethod, setLoginMethod] = useState<'pin' | 'email'>('email');
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'analytics' | 'pricing' | 'orders' | 'users' | 'gateway' | 'broadcast' | 'psb' | 'support'>('analytics');
@@ -294,7 +294,15 @@ export default function AdminSalamPage() {
     setIsLoadingPaystack(true);
     setPaystackError(null);
     try {
-      const res = await fetch('/api/paystack/transactions?perPage=50', { cache: 'no-store' });
+      if (!user) {
+        setPaystackError('Sign in with your Google/Email admin account to view live Paystack transactions.');
+        return;
+      }
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/paystack/transactions?perPage=50', {
+        headers: { Authorization: `Bearer ${idToken}` },
+        cache: 'no-store'
+      });
       const data = await res.json();
       if (res.ok && data.status) {
         setPaystackTransactions(data.data || []);
@@ -373,11 +381,11 @@ export default function AdminSalamPage() {
   const handlePinLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
-    if (inputPin === 'salam2026' || inputPin === adminSettings.adminPin) {
+    if (adminSettings.adminPin && inputPin === adminSettings.adminPin) {
       setPinAuthenticated(true);
       sessionStorage.setItem('admin_salam_auth', 'true');
     } else {
-      setAuthError('Incorrect Master PIN. Default is: salam2026');
+      setAuthError('Incorrect Master PIN. Please use Google or Email Admin Sign-In for full access.');
     }
   };
 

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPaystackSecretKey } from '@/lib/paystack';
+import { verifyAdminRequest } from '@/lib/adminAuth';
+import { isFirebaseAdminConfigured } from '@/lib/firebaseAdmin';
 
 export async function GET(req: NextRequest) {
   try {
+    // Strictly require authorized DataAbeg admin Firebase Auth token
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { status: false, message: auth.error || 'Unauthorized admin access.' },
+        { status: 401 }
+      );
+    }
+
     const secretKey = getPaystackSecretKey();
     if (!secretKey) {
       return NextResponse.json(
@@ -57,6 +68,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       status: true,
+      firebaseAdminActive: isFirebaseAdminConfigured(),
       data: transactions,
       meta: json.meta || {}
     });
