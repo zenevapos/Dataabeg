@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { getAdminAuth } from './firebaseAdmin';
 import { firebaseConfig, isAuthorizedAdmin } from './firebase';
 
 export interface VerifiedAdminResult {
@@ -10,9 +9,9 @@ export interface VerifiedAdminResult {
 }
 
 /**
- * Verifies a Firebase ID token from the Authorization header and confirms
- * the caller is one of the authorized DataAbeg admin emails.
- * Works both with Firebase Admin SDK and via Firebase Identity Toolkit fallback.
+ * Verifies a Firebase ID token from the Authorization header via Google Identity Toolkit
+ * and confirms the caller is one of the authorized DataAbeg admin emails.
+ * Zero external SDK dependencies — 100% reliable on Vercel serverless functions.
  */
 export async function verifyAdminRequest(req: NextRequest): Promise<VerifiedAdminResult> {
   const authHeader = req.headers.get('authorization') || '';
@@ -22,21 +21,6 @@ export async function verifyAdminRequest(req: NextRequest): Promise<VerifiedAdmi
     return { authorized: false, error: 'Missing Authorization Bearer token.' };
   }
 
-  // 1. Prefer Firebase Admin SDK if configured
-  const adminAuth = getAdminAuth();
-  if (adminAuth) {
-    try {
-      const decoded = await adminAuth.verifyIdToken(idToken);
-      if (!isAuthorizedAdmin(decoded.email)) {
-        return { authorized: false, error: 'Forbidden: Not an authorized admin account.' };
-      }
-      return { authorized: true, email: decoded.email, uid: decoded.uid };
-    } catch {
-      return { authorized: false, error: 'Invalid or expired Firebase ID token.' };
-    }
-  }
-
-  // 2. Fallback: verify ID token directly with Google Identity Toolkit
   try {
     const res = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseConfig.apiKey)}`,

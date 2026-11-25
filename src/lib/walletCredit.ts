@@ -1,7 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { FieldValue } from 'firebase-admin/firestore';
 import { db, firebaseConfig } from './firebase';
-import { getAdminFirestore } from './firebaseAdmin';
+import { adminGetDoc, adminPatchDoc, isFirebaseAdminConfigured } from './firebaseAdmin';
 import { saveOrderToFirestore } from './firebaseDb';
 import { GladTidingsClient } from './gladtidings';
 import { Transaction } from './types';
@@ -9,7 +8,7 @@ import { Transaction } from './types';
 const FIRESTORE_REST_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
 
 /**
- * Fallback helper when Firebase Admin SDK is not yet configured:
+ * Fallback helper when FIREBASE_SERVICE_ACCOUNT_KEY is not configured:
  * Updates walletBalance via Firestore REST API using the user's Firebase ID Token.
  */
 async function updateWalletWithIdToken(
@@ -46,10 +45,11 @@ async function updateWalletWithIdToken(
 }
 
 /**
- * Atomically and idempotently credit a user's wallet after a verified Paystack payment.
- * - Uses Firebase Admin SDK Firestore Transaction when FIREBASE_SERVICE_ACCOUNT_KEY is set
- *   (works 100% in background webhooks even if the user closes the app).
- * - Falls back to authenticated REST API when running before service account is configured.
+ * Idempotently credit a user's wallet after a verified Paystack payment.
+ * - Uses zero-dependency Firebase Service Account OAuth2 Admin REST API when
+ *   FIREBASE_SERVICE_ACCOUNT_KEY is configured (works 100% in background webhooks
+ *   even if the user closes the app).
+ * - Falls back to authenticated user ID token REST API if service account is absent.
  */
 export async function creditWalletIdempotently(params: {
   uid: string;
@@ -77,126 +77,58 @@ export async function creditWalletIdempotently(params: {
     customStatusMessage
   } = params;
 
-  // =========================================================================
-  // PATH A: FIREBASE ADMIN SDK (Atomic Transaction — 100% Race-Condition Safe)
-  // =========================================================================
-  const adminDb = getAdminFirestore();
-  if (adminDb) {
-    const orderRef = adminDb.collection('orders').doc(paymentRef);
-    const userRef = adminDb.collection('users').doc(uid);
+  const useAdmin = isFirebaseAdminConfigured();
 
-    const txResult = await adminDb.runTransaction(async (tx) => {
-      const [orderSnap, userSnap] = await Promise.all([tx.get(orderRef), tx.get(userRef)]);
-
-      const existingOrder = orderSnap.exists ? orderSnap.data() : null;
-      const userData = userSnap.exists ? userSnap.data() : null;
-      const currentBalance = Number(userData?.walletBalance || 0);
-
-      if (existingOrder?.walletCredited === true) {
-        return {
-          credited: true,
-          alreadyCredited: true,
-          newBalance: currentBalance,
-          requiresClientSync: false
-        };
-      }
-
-      const newBalance = Math.round((currentBalance + amount) * 100) / 100;
-      const userPhone = userData?.phoneNumber || '';
-
-      tx.set(
-        userRef,
-        {
-          walletBalance: newBalance,
-          updatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-
-      tx.set(
-        orderRef,
-        {
-          id: paymentRef,
-          reference: paymentRef,
-          userId: uid,
-          userEmail: customerEmail || userData?.email || '',
-          network: 'Paystack',
-          networkName: 'Paystack',
-          phone: userPhone || customerEmail || 'Wallet Top-up',
-          phoneNumber: userPhone || customerEmail || 'Wallet Top-up',
-          planName: customPlanName || `Instant Wallet Funding (Paystack ${channel.toUpperCase()})`,
-          planSize: `+₦${amount.toLocaleString()}`,
-          amount,
-          amountPaid: amount,
-          status: 'SUCCESS',
-          statusMessage:
-            customStatusMessage ||
-            `Successfully credited ₦${amount.toLocaleString()} to wallet balance.`,
-          paymentMethod: 'PAYSTACK',
-          timestamp: existingOrder?.timestamp || existingOrder?.createdAt || new Date().toISOString(),
-          createdAt: existingOrder?.createdAt || new Date().toISOString(),
-          completedAt: new Date().toISOString(),
-          updatedAt: FieldValue.serverTimestamp(),
-          serviceType: 'wallet_funding',
-          walletCredited: true
-        },
-        { merge: true }
-      );
-
-      return {
-        credited: true,
-        alreadyCredited: false,
-        newBalance,
-        requiresClientSync: false
-      };
-    });
-
-    return txResult;
-  }
-
-  // =========================================================================
-  // PATH B: FALLBACK (Before FIREBASE_SERVICE_ACCOUNT_KEY is added to Vercel)
-  // =========================================================================
+  // 1. Check idempotency: has this paymentRef already been credited?
   let existingOrder: Record<string, any> | null = null;
-  try {
-    const orderSnap = await getDoc(doc(db, 'orders', paymentRef));
-    if (orderSnap.exists()) {
-      existingOrder = orderSnap.data();
-      if (existingOrder?.walletCredited === true) {
-        const userSnap = await getDoc(doc(db, 'users', uid));
-        const existingBalance = userSnap.exists() ? Number(userSnap.data().walletBalance || 0) : 0;
-        return {
-          credited: true,
-          alreadyCredited: true,
-          newBalance: existingBalance,
-          requiresClientSync: false
-        };
-      }
-    }
-  } catch (err) {
-    console.warn('Could not check existing order for idempotency:', err);
+  if (useAdmin) {
+    existingOrder = await adminGetDoc('orders', paymentRef);
+  } else {
+    try {
+      const orderSnap = await getDoc(doc(db, 'orders', paymentRef));
+      if (orderSnap.exists()) existingOrder = orderSnap.data();
+    } catch {}
   }
 
-  let currentBalance = 0;
-  let userPhone = '';
-  try {
-    const userSnap = await getDoc(doc(db, 'users', uid));
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      currentBalance = Number(data.walletBalance || 0);
-      userPhone = data.phoneNumber || '';
-    }
-  } catch (err) {
-    console.warn('Could not read user profile before crediting:', err);
+  // 2. Read current user wallet balance
+  let userData: Record<string, any> | null = null;
+  if (useAdmin) {
+    userData = await adminGetDoc('users', uid);
+  } else {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      if (userSnap.exists()) userData = userSnap.data();
+    } catch {}
+  }
+
+  const currentBalance = Number(userData?.walletBalance || 0);
+  const userPhone = userData?.phoneNumber || '';
+
+  if (existingOrder?.walletCredited === true) {
+    return {
+      credited: true,
+      alreadyCredited: true,
+      newBalance: currentBalance,
+      requiresClientSync: false
+    };
   }
 
   const newBalance = Math.round((currentBalance + amount) * 100) / 100;
   let walletUpdated = false;
 
-  if (firebaseIdToken) {
+  // 3. Update user's walletBalance — prefer Admin Service Account OAuth2 (bypasses rules, works in webhooks!)
+  if (useAdmin) {
+    walletUpdated = await adminPatchDoc('users', uid, {
+      walletBalance: newBalance
+    });
+  }
+
+  // 4. Fallback: use logged-in user's Firebase ID token
+  if (!walletUpdated && firebaseIdToken) {
     walletUpdated = await updateWalletWithIdToken(uid, newBalance, firebaseIdToken);
   }
 
+  // 5. Final fallback: standard Firestore SDK write
   if (!walletUpdated) {
     try {
       const userRef = doc(db, 'users', uid);
@@ -214,52 +146,41 @@ export async function creditWalletIdempotently(params: {
     }
   }
 
-  try {
-    const orderPayload: any = {
-      id: paymentRef,
-      reference: paymentRef,
-      userId: uid,
-      userEmail: customerEmail || '',
-      network: 'Paystack',
-      networkName: 'Paystack',
-      phone: userPhone || customerEmail || 'Wallet Top-up',
-      phoneNumber: userPhone || customerEmail || 'Wallet Top-up',
-      planName: customPlanName || `Instant Wallet Funding (Paystack ${channel.toUpperCase()})`,
-      planSize: `+₦${amount.toLocaleString()}`,
-      amount,
-      amountPaid: amount,
-      status: 'SUCCESS',
-      statusMessage: walletUpdated
-        ? customStatusMessage || `Successfully credited ₦${amount.toLocaleString()} to wallet balance.`
-        : `Payment verified (₦${amount.toLocaleString()}); awaiting wallet sync.`,
-      paymentMethod: 'PAYSTACK',
-      createdAt: existingOrder?.createdAt || new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      serviceType: 'wallet_funding',
-      walletCredited: walletUpdated
-    };
+  // 6. Record the completed funding transaction in `orders/{paymentRef}`
+  const nowIso = new Date().toISOString();
+  const orderRecord: Record<string, any> = {
+    id: paymentRef,
+    reference: paymentRef,
+    userId: uid,
+    userEmail: customerEmail || userData?.email || '',
+    network: 'Paystack',
+    networkName: 'Paystack',
+    phone: userPhone || customerEmail || 'Wallet Top-up',
+    phoneNumber: userPhone || customerEmail || 'Wallet Top-up',
+    planName: customPlanName || `Instant Wallet Funding (Paystack ${channel.toUpperCase()})`,
+    planSize: `+₦${amount.toLocaleString()}`,
+    amount,
+    amountPaid: amount,
+    status: 'SUCCESS',
+    statusMessage: walletUpdated
+      ? customStatusMessage || `Successfully credited ₦${amount.toLocaleString()} to wallet balance.`
+      : `Payment verified (₦${amount.toLocaleString()}); awaiting wallet sync.`,
+    paymentMethod: 'PAYSTACK',
+    timestamp: existingOrder?.timestamp || existingOrder?.createdAt || nowIso,
+    createdAt: existingOrder?.createdAt || nowIso,
+    completedAt: nowIso,
+    serviceType: 'wallet_funding',
+    walletCredited: walletUpdated
+  };
 
-    if (firebaseIdToken && existingOrder) {
-      const orderUrl = `${FIRESTORE_REST_BASE}/orders/${encodeURIComponent(paymentRef)}?updateMask.fieldPaths=walletCredited&updateMask.fieldPaths=statusMessage`;
-      await fetch(orderUrl, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${firebaseIdToken}`
-        },
-        body: JSON.stringify({
-          fields: {
-            walletCredited: { booleanValue: walletUpdated },
-            statusMessage: { stringValue: orderPayload.statusMessage }
-          }
-        }),
-        cache: 'no-store'
-      });
-    } else {
-      await saveOrderToFirestore(orderPayload);
+  if (useAdmin) {
+    await adminPatchDoc('orders', paymentRef, orderRecord);
+  } else {
+    try {
+      await saveOrderToFirestore(orderRecord as Transaction);
+    } catch (err) {
+      console.warn('Could not record wallet funding order:', err);
     }
-  } catch (err) {
-    console.warn('Could not record wallet funding order:', err);
   }
 
   return {
@@ -272,10 +193,10 @@ export async function creditWalletIdempotently(params: {
 
 /**
  * Idempotently fulfills a direct Paystack service purchase (Data, Airtime, Cable, Electricity).
- * - Acquires a lock on `orders/{reference}` BEFORE calling GladTidings so a payment can NEVER
- *   be dispensed twice (even if webhook and browser redirect arrive simultaneously).
- * - If GladTidings fails to dispense and the user has a UID, automatically refunds the paid
- *   amount into their DataAbeg wallet so they never lose money.
+ * - Checks & locks `orders/{reference}` BEFORE calling GladTidings so a payment can NEVER
+ *   be dispensed twice.
+ * - If GladTidings fails and the user has a UID, automatically refunds the paid amount into
+ *   their DataAbeg wallet so they never lose money.
  */
 export async function fulfillServicePurchaseIdempotently(params: {
   reference: string;
@@ -302,84 +223,67 @@ export async function fulfillServicePurchaseIdempotently(params: {
     firebaseIdToken
   } = params;
 
-  const adminDb = getAdminFirestore();
+  const useAdmin = isFirebaseAdminConfigured();
 
-  // 1. Acquire atomic lock so webhook + client verify can NEVER double-dispense
-  if (adminDb) {
-    const orderRef = adminDb.collection('orders').doc(reference);
-    const lockResult = await adminDb.runTransaction(async (tx) => {
-      const snap = await tx.get(orderRef);
-      if (snap.exists) {
-        const data = snap.data() as any;
-        if (
-          data?.status === 'SUCCESS' ||
-          data?.status === 'PROCESSING' ||
-          data?.autoRefundedToWallet === true
-        ) {
-          return { acquired: false, existing: data as Transaction };
-        }
-      }
-      tx.set(
-        orderRef,
-        {
-          id: reference,
-          reference,
-          userId: metadata.uid || '',
-          userEmail: metadata.userEmail || customerEmail || '',
-          network: metadata.networkName || 'Paystack',
-          networkName: metadata.networkName || 'Paystack',
-          phone: metadata.phone || customerPhone || '',
-          phoneNumber: metadata.phone || customerPhone || '',
-          planName: metadata.planName || 'Mobile Service Top-Up',
-          planSize: metadata.planSize || '',
-          amount: amountInNaira,
-          amountPaid: amountInNaira,
-          status: 'PROCESSING',
-          statusMessage: 'Payment verified. Dispensing service...',
-          paymentMethod: 'PAYSTACK',
-          serviceType: metadata.serviceType || 'data',
-          timestamp: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-      return { acquired: true, existing: null };
-    });
-
-    if (!lockResult.acquired && lockResult.existing) {
-      return {
-        status: lockResult.existing.status === 'SUCCESS' || lockResult.existing.status === 'successful',
-        alreadyProcessed: true,
-        autoRefundedToWallet: Boolean((lockResult.existing as any).autoRefundedToWallet),
-        message:
-          lockResult.existing.status === 'PROCESSING'
-            ? 'Order is currently being dispensed.'
-            : 'Order was already processed.',
-        order: lockResult.existing
-      };
-    }
+  // 1. Check idempotency lock so webhook + browser redirect can NEVER double-dispense
+  let existing: Record<string, any> | null = null;
+  if (useAdmin) {
+    existing = await adminGetDoc('orders', reference);
   } else {
-    // Fallback idempotency check without Admin SDK
     try {
       const snap = await getDoc(doc(db, 'orders', reference));
-      if (snap.exists()) {
-        const data = snap.data() as any;
-        if (
-          data?.status === 'SUCCESS' ||
-          data?.status === 'successful' ||
-          data?.status === 'PROCESSING' ||
-          data?.autoRefundedToWallet === true
-        ) {
-          return {
-            status: data.status === 'SUCCESS' || data.status === 'successful',
-            alreadyProcessed: true,
-            autoRefundedToWallet: Boolean(data.autoRefundedToWallet),
-            message: 'Order was already processed.',
-            order: data as Transaction
-          };
-        }
-      }
+      if (snap.exists()) existing = snap.data();
+    } catch {}
+  }
+
+  if (
+    existing &&
+    (existing.status === 'SUCCESS' ||
+      existing.status === 'successful' ||
+      existing.status === 'PROCESSING' ||
+      existing.autoRefundedToWallet === true)
+  ) {
+    return {
+      status: existing.status === 'SUCCESS' || existing.status === 'successful',
+      alreadyProcessed: true,
+      autoRefundedToWallet: Boolean(existing.autoRefundedToWallet),
+      message:
+        existing.status === 'PROCESSING'
+          ? 'Order is currently being dispensed.'
+          : 'Order was already processed.',
+      order: existing as Transaction
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+
+  // Acquire PROCESSING lock before calling GladTidings
+  const processingDoc = {
+    id: reference,
+    reference,
+    userId: metadata.uid || '',
+    userEmail: metadata.userEmail || customerEmail || '',
+    network: metadata.networkName || 'Paystack',
+    networkName: metadata.networkName || 'Paystack',
+    phone: metadata.phone || customerPhone || '',
+    phoneNumber: metadata.phone || customerPhone || '',
+    planName: metadata.planName || 'Mobile Service Top-Up',
+    planSize: metadata.planSize || '',
+    amount: amountInNaira,
+    amountPaid: amountInNaira,
+    status: 'PROCESSING',
+    statusMessage: 'Payment verified. Dispensing service...',
+    paymentMethod: 'PAYSTACK',
+    serviceType: metadata.serviceType || 'data',
+    timestamp: nowIso,
+    createdAt: nowIso
+  };
+
+  if (useAdmin) {
+    await adminPatchDoc('orders', reference, processingDoc);
+  } else {
+    try {
+      await saveOrderToFirestore(processingDoc as Transaction);
     } catch {}
   }
 
@@ -469,7 +373,7 @@ export async function fulfillServicePurchaseIdempotently(params: {
     status: dispatchResult.status ? 'SUCCESS' : 'FAILED',
     statusMessage: finalStatusMessage,
     paymentMethod: 'PAYSTACK',
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso,
     completedAt: new Date().toISOString(),
     serviceType: metadata.serviceType || 'data',
     meterToken: token,
@@ -481,15 +385,11 @@ export async function fulfillServicePurchaseIdempotently(params: {
     autoRefundedToWallet
   };
 
-  if (adminDb) {
-    await adminDb.collection('orders').doc(reference).set(
-      {
-        ...orderTx,
-        timestamp: orderTx.createdAt,
-        updatedAt: FieldValue.serverTimestamp()
-      },
-      { merge: true }
-    );
+  if (useAdmin) {
+    await adminPatchDoc('orders', reference, {
+      ...orderTx,
+      timestamp: nowIso
+    });
   } else {
     await saveOrderToFirestore(orderTx);
   }
