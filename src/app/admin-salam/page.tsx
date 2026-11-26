@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   Key,
@@ -48,7 +49,8 @@ import {
   Headphones,
   Volume2,
   Bell,
-  CheckCheck
+  CheckCheck,
+  Eye
 } from 'lucide-react';
 import {
   SupportConversation,
@@ -81,7 +83,8 @@ import { formatCurrency } from '@/lib/utils';
 import NetworkLogo from '@/components/NetworkLogo';
 
 export default function AdminSalamPage() {
-  const { user, signInWithGoogle, signInWithEmail, logout: authLogout, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { user, startImpersonation, signInWithGoogle, signInWithEmail, logout: authLogout, loading: authLoading } = useAuth();
 
   // Authentication State
   const [pinAuthenticated, setPinAuthenticated] = useState(false);
@@ -2108,16 +2111,31 @@ export default function AdminSalamPage() {
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Active'}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedUserForAdjustment(u);
-                              setAdjustAmount('');
-                              setAdjustReason('Manual offline bank transfer credit');
-                            }}
-                            className="bg-[#f0efff] hover:bg-[#e4e2fd] text-[#4f46e5] font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <span>Credit / Debit</span>
-                          </button>
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            {isEmailAdmin && (
+                              <button
+                                onClick={() => {
+                                  startImpersonation(u);
+                                  router.push('/dashboard');
+                                }}
+                                className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                title="Preview DataAbeg as this customer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>View as User</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setSelectedUserForAdjustment(u);
+                                setAdjustAmount('');
+                                setAdjustReason('Manual offline bank transfer credit');
+                              }}
+                              className="bg-[#f0efff] hover:bg-[#e4e2fd] text-[#4f46e5] font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <span>Credit / Debit</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

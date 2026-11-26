@@ -6,7 +6,9 @@ import {
   CableSubscriptionResponse
 } from './types';
 
-const GLADTIDINGS_BASE_URL = 'https://www.gladtidingsdata.com';
+const GLADTIDINGS_BASE_URL = (
+  process.env.GLADTIDINGS_BASE_URL || 'https://www.gladtidingsdata.com'
+).trim().replace(/\/+$/, '');
 
 export function extractErrorMessage(input: unknown, defaultMessage = 'Transaction could not be processed'): string {
   if (!input) return defaultMessage;

@@ -34,14 +34,14 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadOrders();
-  }, [user, profile?.phoneNumber]);
+  }, [user, profile?.uid, profile?.email, profile?.phoneNumber]);
 
   const loadOrders = async () => {
     setLoading(true);
     try {
       const userOrders = await fetchOrdersByUser(
-        user?.uid,
-        user?.email || undefined,
+        profile?.uid || user?.uid,
+        profile?.email || user?.email || undefined,
         profile?.phoneNumber || undefined
       );
       setOrders(userOrders);

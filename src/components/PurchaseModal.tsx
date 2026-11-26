@@ -95,7 +95,7 @@ export function PurchaseModal({
   onOrderCompleted,
   customApiKey
 }: PurchaseModalProps) {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, isAdmin, refreshProfile } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>('');
@@ -120,6 +120,7 @@ export function PurchaseModal({
 
   useEffect(() => {
     if (isOpen) {
+      refreshProfile().catch(() => {});
       getAdminSettings()
         .then((s) => setAdminSettings(s))
         .catch((err) => console.warn('Admin settings fetch warning:', err));
@@ -499,7 +500,12 @@ export function PurchaseModal({
 
         let friendlyMsg = rawMsg;
         const lowerMsg = rawMsg.toLowerCase();
-        if (
+        if (lowerMsg.includes('whitelisted ip')) {
+          console.warn('GladTidings IP whitelist rejection:', rawMsg);
+          friendlyMsg = isAdmin
+            ? `Admin Gateway Error: ${rawMsg} (Remove any IP from GladTidings IP Whitelist or route via GLADTIDINGS_BASE_URL static-IP relay.)`
+            : 'Temporary carrier gateway IP configuration issue. Your wallet was NOT charged — please try again shortly or contact support.';
+        } else if (
           lowerMsg.includes('insufficient') ||
           lowerMsg.includes('wallet') ||
           lowerMsg.includes('balance') ||
