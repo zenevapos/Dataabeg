@@ -1,3 +1,6 @@
+import http from 'node:http';
+import https from 'node:https';
+import tls from 'node:tls';
 import {
   GladTidingsBalanceResponse,
   MeterValidationResponse,
@@ -9,6 +12,223 @@ import {
 const GLADTIDINGS_BASE_URL = (
   process.env.GLADTIDINGS_BASE_URL || 'https://www.gladtidingsdata.com'
 ).trim().replace(/\/+$/, '');
+
+function getProxyUrl(): string {
+  return (process.env.FIXIE_URL || process.env.GLADTIDINGS_PROXY_URL || '').trim();
+}
+
+export function isGladTidingsProxyConfigured(): boolean {
+  return Boolean(getProxyUrl());
+}
+
+function safeParseJson(rawText: string, status: number): unknown {
+  if (!rawText) return { error: `HTTP ${status}` };
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return { error: rawText || `HTTP ${status}` };
+  }
+}
+
+async function gladtidingsRequest(
+  url: string,
+  options: {
+    method: 'GET' | 'POST';
+    headers: Record<string, string>;
+    body?: string;
+  }
+): Promise<{ ok: boolean; status: number; json: any; rawText: string }> {
+  const proxyUrlStr = getProxyUrl();
+
+  if (!proxyUrlStr) {
+    const res = await fetch(url, {
+      method: options.method,
+      headers: options.headers,
+      body: options.body,
+      cache: 'no-store'
+    });
+    const rawText = await res.text();
+    const json = safeParseJson(rawText, res.status);
+    return {
+      ok: res.ok,
+      status: res.status,
+      json,
+      rawText
+    };
+  }
+
+  const proxy = new URL(proxyUrlStr);
+  const target = new URL(url);
+  const proxyPort = proxy.port
+    ? Number(proxy.port)
+    : proxy.protocol === 'https:'
+      ? 443
+      : 80;
+  const targetPort = target.port
+    ? Number(target.port)
+    : target.protocol === 'https:'
+      ? 443
+      : 80;
+
+  const proxyAuth =
+    proxy.username || proxy.password
+      ? `Basic ${Buffer.from(
+          `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`
+        ).toString('base64')}`
+      : undefined;
+
+  const reqHeaders: Record<string, string> = {
+    ...options.headers,
+    Accept: 'application/json',
+    'Accept-Encoding': 'identity',
+    'User-Agent': 'DataAbeg-Server/1.0'
+  };
+  if (options.body !== undefined) {
+    reqHeaders['Content-Length'] = String(Buffer.byteLength(options.body, 'utf8'));
+  }
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finishResolve = (val: { ok: boolean; status: number; json: any; rawText: string }) => {
+      if (settled) return;
+      settled = true;
+      resolve(val);
+    };
+    const finishReject = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    };
+
+    const readResponse = (res: http.IncomingMessage, cleanupSocket?: { destroy: () => void }) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer | string) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      });
+      res.on('end', () => {
+        const status = res.statusCode ?? 0;
+        const rawText = Buffer.concat(chunks).toString('utf8');
+        const json = safeParseJson(rawText, status);
+        finishResolve({
+          ok: status >= 200 && status < 300,
+          status,
+          json,
+          rawText
+        });
+      });
+      res.on('error', (err) => {
+        cleanupSocket?.destroy();
+        finishReject(err instanceof Error ? err : new Error(String(err)));
+      });
+    };
+
+    if (target.protocol === 'http:') {
+      if (proxyAuth) {
+        reqHeaders['Proxy-Authorization'] = proxyAuth;
+      }
+      const reqModule = proxy.protocol === 'https:' ? https : http;
+      const req = reqModule.request(
+        {
+          hostname: proxy.hostname,
+          port: proxyPort,
+          path: target.toString(),
+          method: options.method,
+          headers: reqHeaders,
+          agent: false
+        },
+        (res) => readResponse(res)
+      );
+      req.setTimeout(25000, () => {
+        req.destroy(new Error('Glad Tidings proxied request timed out'));
+      });
+      req.on('error', (err) => {
+        finishReject(err instanceof Error ? err : new Error(String(err)));
+      });
+      if (options.body !== undefined) {
+        req.write(options.body);
+      }
+      req.end();
+      return;
+    }
+
+    const connectHeaders: Record<string, string> = {
+      Host: `${target.hostname}:${targetPort}`
+    };
+    if (proxyAuth) {
+      connectHeaders['Proxy-Authorization'] = proxyAuth;
+    }
+
+    const connectModule = proxy.protocol === 'https:' ? https : http;
+    const connectReq = connectModule.request({
+      hostname: proxy.hostname,
+      port: proxyPort,
+      method: 'CONNECT',
+      path: `${target.hostname}:${targetPort}`,
+      headers: connectHeaders,
+      agent: false
+    });
+
+    connectReq.setTimeout(15000, () => {
+      connectReq.destroy(new Error('Proxy CONNECT timed out'));
+    });
+
+    connectReq.on('error', (err) => {
+      finishReject(err instanceof Error ? err : new Error(String(err)));
+    });
+
+    connectReq.on('connect', (proxyRes, socket) => {
+      socket.on('error', (err) => {
+        finishReject(err instanceof Error ? err : new Error(String(err)));
+      });
+
+      if (proxyRes.statusCode !== 200) {
+        socket.destroy();
+        finishReject(new Error(`Proxy CONNECT failed (HTTP ${proxyRes.statusCode ?? 'unknown'})`));
+        return;
+      }
+
+      const tlsSocket = tls.connect({
+        socket,
+        servername: target.hostname
+      });
+
+      tlsSocket.on('error', (err) => {
+        socket.destroy();
+        finishReject(err instanceof Error ? err : new Error(String(err)));
+      });
+
+      const req = https.request(
+        {
+          hostname: target.hostname,
+          port: targetPort,
+          path: `${target.pathname}${target.search}`,
+          method: options.method,
+          headers: reqHeaders,
+          agent: false,
+          createConnection: () => tlsSocket
+        },
+        (res) => readResponse(res, tlsSocket)
+      );
+
+      req.setTimeout(25000, () => {
+        req.destroy(new Error('Glad Tidings proxied HTTPS request timed out'));
+        tlsSocket.destroy();
+      });
+
+      req.on('error', (err) => {
+        tlsSocket.destroy();
+        finishReject(err instanceof Error ? err : new Error(String(err)));
+      });
+
+      if (options.body !== undefined) {
+        req.write(options.body);
+      }
+      req.end();
+    });
+
+    connectReq.end();
+  });
+}
 
 export function extractErrorMessage(input: unknown, defaultMessage = 'Transaction could not be processed'): string {
   if (!input) return defaultMessage;
@@ -91,13 +311,12 @@ export class GladTidingsClient {
     }
 
     try {
-      const res = await fetch(`${GLADTIDINGS_BASE_URL}/api/user/`, {
+      const res = await gladtidingsRequest(`${GLADTIDINGS_BASE_URL}/api/user/`, {
         method: 'GET',
-        headers: this.getHeaders(),
-        cache: 'no-store'
+        headers: this.getHeaders()
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       if (!res.ok) {
         return {
@@ -148,7 +367,7 @@ export class GladTidingsClient {
     }
 
     try {
-      const res = await fetch(`${GLADTIDINGS_BASE_URL}/api/data/`, {
+      const res = await gladtidingsRequest(`${GLADTIDINGS_BASE_URL}/api/data/`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -156,11 +375,10 @@ export class GladTidingsClient {
           mobile_number: payload.mobile_number,
           plan: Number(payload.plan),
           Ported_number: payload.Ported_number !== false
-        }),
-        cache: 'no-store'
+        })
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       const isSuccess =
         res.ok &&
@@ -226,7 +444,7 @@ export class GladTidingsClient {
     }
 
     try {
-      const res = await fetch(`${GLADTIDINGS_BASE_URL}/api/topup/`, {
+      const res = await gladtidingsRequest(`${GLADTIDINGS_BASE_URL}/api/topup/`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -235,11 +453,10 @@ export class GladTidingsClient {
           mobile_number: payload.mobile_number,
           Ported_number: payload.Ported_number !== false,
           airtime_type: payload.airtime_type || 'VTU'
-        }),
-        cache: 'no-store'
+        })
       });
 
-      const json = await res.json();
+      const json = res.json;
       const isSuccess =
         res.ok &&
         (json.Status === 'successful' ||
@@ -290,13 +507,12 @@ export class GladTidingsClient {
 
     try {
       const url = `${GLADTIDINGS_BASE_URL}/api/v2/validatemeter/?disco_id=${discoId}&meter_type=${meterType.toLowerCase()}&meter_number=${encodeURIComponent(meterNumber.trim())}`;
-      const res = await fetch(url, {
+      const res = await gladtidingsRequest(url, {
         method: 'GET',
-        headers: this.getHeaders(),
-        cache: 'no-store'
+        headers: this.getHeaders()
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       if (json.invalid === true || json.name === 'INVALID' || !json.name) {
         return {
@@ -348,7 +564,7 @@ export class GladTidingsClient {
     }
 
     try {
-      const res = await fetch(`${GLADTIDINGS_BASE_URL}/api/billpayment/`, {
+      const res = await gladtidingsRequest(`${GLADTIDINGS_BASE_URL}/api/billpayment/`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -359,11 +575,10 @@ export class GladTidingsClient {
           Customer_Phone: payload.Customer_Phone,
           customer_name: payload.customer_name || 'Customer',
           customer_address: payload.customer_address || 'Customer Address'
-        }),
-        cache: 'no-store'
+        })
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       const isSuccess =
         res.ok &&
@@ -420,13 +635,12 @@ export class GladTidingsClient {
 
     try {
       const url = `${GLADTIDINGS_BASE_URL}/api/v2/validateiuc/?cable_id=${cableId}&smart_card_number=${encodeURIComponent(smartCardNumber.trim())}`;
-      const res = await fetch(url, {
+      const res = await gladtidingsRequest(url, {
         method: 'GET',
-        headers: this.getHeaders(),
-        cache: 'no-store'
+        headers: this.getHeaders()
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       if (json.invalid === true || !json.name) {
         return {
@@ -470,18 +684,17 @@ export class GladTidingsClient {
     }
 
     try {
-      const res = await fetch(`${GLADTIDINGS_BASE_URL}/api/cablesub/`, {
+      const res = await gladtidingsRequest(`${GLADTIDINGS_BASE_URL}/api/cablesub/`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
           cablename: Number(payload.cablename),
           cableplan: Number(payload.cableplan),
           smart_card_number: payload.smart_card_number
-        }),
-        cache: 'no-store'
+        })
       });
 
-      const json = await res.json();
+      const json = res.json;
 
       const isSuccess =
         res.ok &&

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GladTidingsClient } from '@/lib/gladtidings';
+import { GladTidingsClient, isGladTidingsProxyConfigured } from '@/lib/gladtidings';
 
 export async function GET(req: NextRequest) {
+  const proxyActive = isGladTidingsProxyConfigured();
   try {
     const { searchParams } = new URL(req.url);
     const queryKey = searchParams.get('customKey');
@@ -15,7 +16,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           ...result,
-          balance: null
+          balance: null,
+          proxyActive
         },
         { status: 502 }
       );
@@ -29,7 +31,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ...result,
-      balance: balanceNum
+      balance: balanceNum,
+      proxyActive
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Internal Server Error';
