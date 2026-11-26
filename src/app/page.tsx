@@ -36,6 +36,10 @@ import {
 } from 'lucide-react';
 import { detectNetworkFromPhone } from '@/lib/utils';
 import { NETWORKS } from '@/lib/constants';
+import { ScrollDeck, DeckCard } from '@/components/ScrollDeck';
+import { IconFolder } from '@/components/IconFolder';
+import { SplitFooter } from '@/components/SplitFooter';
+import { GooglePlayBadge, PLAY_STORE_URL } from '@/components/GooglePlayBadge';
 
 export default function HomePage() {
   const router = useRouter();
@@ -53,6 +57,51 @@ export default function HomePage() {
 
   // Auto detect network for demo simulator
   const detectedNet = detectNetworkFromPhone(simPhone) || NETWORKS[0];
+
+  const deckCards: DeckCard[] = [
+    {
+      name: 'MTN SME',
+      caption: 'from ₦290 / 1GB',
+      icon: <Smartphone />,
+      colors: ['#eab308', '#a16207'],
+    },
+    {
+      name: 'Airtel CG',
+      caption: '30-day data',
+      icon: <Zap />,
+      colors: ['#ef4444', '#991b1b'],
+    },
+    {
+      name: 'Glo Mega',
+      caption: 'instant cg',
+      icon: <Globe />,
+      colors: ['#10b981', '#065f46'],
+    },
+    {
+      name: '9mobile',
+      caption: 'fast 4g/5g',
+      icon: <Database />,
+      colors: ['#65a30d', '#365314'],
+    },
+    {
+      name: 'Electricity',
+      caption: 'meter tokens',
+      icon: <Zap />,
+      colors: ['#f97316', '#9a3412'],
+    },
+    {
+      name: 'Cable TV',
+      caption: 'dstv & gotv',
+      icon: <Tv />,
+      colors: ['#6366f1', '#312e81'],
+    },
+    {
+      name: 'Wallet',
+      caption: 'bank & opay',
+      icon: <Wallet />,
+      colors: ['#2563eb', '#1e3a8a'],
+    },
+  ];
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -107,11 +156,11 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-[#1e2022] font-jakarta selection:bg-[#1E40AF] selection:text-white antialiased">
+    <div className="min-h-screen bg-white text-[#1e2022] font-jakarta selection:bg-[#1E40AF] selection:text-white antialiased overflow-x-clip">
       {/* =========================================================================
           1. NAVIGATION (FLOATING GLASS HEADER)
       ========================================================================= */}
-      <header className="sticky top-0 z-50 w-full px-4 sm:px-6 lg:px-8 py-3 bg-transparent transition-all">
+      <header className="fixed top-0 inset-x-0 z-50 w-full px-4 sm:px-6 lg:px-8 py-3 bg-transparent transition-all">
         <div className="max-w-[1440px] mx-auto">
           <nav className="relative flex items-center justify-between h-[64px] px-5 sm:px-6 bg-white/80 backdrop-blur-md rounded-2xl border border-[rgba(15,27,45,0.06)] shadow-[0_1px_2px_rgba(15,27,45,0.04),0_8px_24px_-12px_rgba(15,27,45,0.14)]">
             
@@ -342,7 +391,16 @@ export default function HomePage() {
             </div>
 
             {/* Right Action Buttons */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2.5">
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-all"
+              >
+                <Download className="w-3.5 h-3.5 text-[#1E40AF]" />
+                <span>Get Android App</span>
+              </a>
               <Link
                 href="/login"
                 className="px-4 py-2 text-sm font-semibold text-[#1E40AF] bg-white hover:bg-blue-50/50 border border-[#D0DFFB] rounded-lg transition-all shadow-xs"
@@ -378,6 +436,15 @@ export default function HomePage() {
               <Link href="#faq" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-blue-50 rounded-lg">FAQ</Link>
             </div>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-center py-2.5 text-sm font-bold text-slate-900 bg-slate-100 border border-slate-200 rounded-lg inline-flex items-center justify-center gap-2"
+              >
+                <Download className="w-4 h-4 text-[#1E40AF]" />
+                <span>Download on Google Play</span>
+              </a>
               <Link href="/login" className="w-full text-center py-2.5 text-sm font-semibold text-[#1E40AF] border border-[#D0DFFB] rounded-lg">Sign in</Link>
               <Link href="/register" className="w-full text-center py-2.5 text-sm font-semibold text-white bg-[#1E40AF] rounded-lg">Create Free Account</Link>
             </div>
@@ -386,74 +453,86 @@ export default function HomePage() {
       </header>
 
       {/* =========================================================================
-          2. HERO SECTION
+          2. SCROLL DECK HERO (3D SCRUBBED CARD DECK)
       ========================================================================= */}
-      <section className="relative overflow-hidden pt-8 pb-16 lg:pt-14 lg:pb-24" style={{
-        background: 'radial-gradient(circle 600px at 20% 30%, rgba(30,64,175,0.08) 0%, transparent 100%), radial-gradient(circle 500px at 80% 20%, rgba(56,189,248,0.07) 0%, transparent 100%), radial-gradient(circle 400px at 65% 75%, rgba(30,64,175,0.06) 0%, transparent 100%), radial-gradient(circle 300px at 10% 80%, rgba(139,92,246,0.05) 0%, transparent 100%), radial-gradient(ellipse at 50% 0%, #ffffff 0%, #faf9f7 45%, #f7f5f3 100%)'
-      }}>
-        {/* Subtle dot matrix grid background overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-60"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(15,27,45,0.06) 1px, transparent 1.4px)',
-            backgroundSize: '24px 24px'
-          }}
-        />
+      <ScrollDeck
+        scroll="page"
+        length={2.6}
+        theme="light"
+        className="pt-16"
+        cards={deckCards}
+        intro="DataAbeg."
+        introNote={
+          <div className="flex flex-col items-center gap-3">
+            <a
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 hover:bg-white border border-slate-200 shadow-sm text-xs sm:text-sm font-bold text-slate-900 transition-all"
+            >
+              <Download className="w-4 h-4 text-[#1E40AF]" />
+              <span>Live on Google Play · Download Android App →</span>
+            </a>
+            <span className="text-xs font-medium text-slate-500">
+              Scroll to explore · From ₦290/GB · 5-second delivery
+            </span>
+          </div>
+        }
+        headline={['~Cheap~ Nigerian data', '~delivered~ in 5 seconds.']}
+        subtitle="Buy MTN, Airtel, Glo & 9mobile 30-day bundles, Airtime, Cable TV, and Electricity from one fast wallet."
+        actions={
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-xl shadow-sm transition-all"
+            >
+              <span>Create Free Account</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-2xs transition-all"
+            >
+              <Wallet className="w-4 h-4 text-[#1E40AF]" />
+              <span>Open Dashboard</span>
+            </Link>
+            <GooglePlayBadge href={PLAY_STORE_URL} />
+          </div>
+        }
+      />
 
+      {/* =========================================================================
+          2A. INTERACTIVE LIVE DISPENSER SIMULATOR
+      ========================================================================= */}
+      <section className="relative overflow-hidden py-14 sm:py-20 bg-gradient-to-b from-[#faf9f7] to-white border-b border-slate-200/60">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-            
-            {/* Left Column: Headline & Action */}
-            <div className="lg:col-span-6 space-y-6">
+            <div className="lg:col-span-6 space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-[#1E40AF] text-xs font-bold tracking-wide uppercase">
                 <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
                 <span>Save Up To 71% On Telecom Retail Rates</span>
               </div>
-
-              <h1 className="font-space text-4xl sm:text-5xl lg:text-[56px] font-semibold text-[#0F1B2D] leading-[1.1] tracking-[-1.5px]">
+              <h2 className="font-space text-3xl sm:text-4xl lg:text-[46px] font-semibold text-[#0F1B2D] leading-[1.1] tracking-tight">
                 Wholesale Mobile Data.<br />
                 Instant 5-Sec Delivery.
-              </h1>
-
+              </h2>
               <p className="text-base sm:text-lg text-[#475569] leading-relaxed max-w-[540px]">
-                Buy MTN, Airtel, Glo & 9mobile 30-day data bundles from ₦290/GB. Direct automated bank transfer, debit card, and zero-fee dedicated virtual accounts.
+                Buy MTN, Airtel, Glo &amp; 9mobile 30-day data bundles from ₦290/GB. Pay seamlessly with your wallet, Paystack Bank Transfer, OPay, USSD, or Debit Card.
               </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <GooglePlayBadge href={PLAY_STORE_URL} />
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center px-7 py-3.5 text-sm sm:text-base font-semibold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-lg shadow-sm transition-all text-center"
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-xl shadow-sm transition-all"
                 >
                   Buy Data Now — From ₦290
                 </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm sm:text-base font-semibold text-[#1a1a1a] bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-all text-center"
-                >
-                  <Wallet className="w-4 h-4 text-[#1E40AF]" />
-                  <span>Fund Wallet & Dashboard</span>
-                </Link>
               </div>
-
-              {/* Micro Social Proof */}
-              <p className="text-xs sm:text-[13px] text-[#6b7280] font-medium pt-1">
-                Trusted by 50,000+ students, remote workers & data resellers across Nigeria.
-              </p>
-
-              {/* Client / Partner Badges Row */}
-              <div className="pt-6 border-t border-slate-200/60">
-                <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider mb-4">
-                  Supported Telecom & Payment Gateways
-                </p>
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4 font-space text-xs font-bold text-slate-700">
-                  <span className="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 shadow-2xs">MTN SME & CG</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-red-600 text-white shadow-2xs">Airtel CG</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-2xs">Glo Mega</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-lime-600 text-white shadow-2xs">9mobile SME</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-blue-700 text-white shadow-2xs">MoMo PSB</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-blue-900 text-white shadow-2xs">Moniepoint MFB</span>
-                </div>
+              <div className="pt-4 flex flex-wrap items-center gap-2.5 font-space text-xs font-bold text-slate-700">
+                <span className="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 shadow-2xs">MTN SME &amp; CG</span>
+                <span className="px-3 py-1.5 rounded-lg bg-red-600 text-white shadow-2xs">Airtel CG</span>
+                <span className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-2xs">Glo Mega</span>
+                <span className="px-3 py-1.5 rounded-lg bg-lime-600 text-white shadow-2xs">9mobile SME</span>
               </div>
             </div>
 
@@ -593,7 +672,7 @@ export default function HomePage() {
       {/* =========================================================================
           2B. QUICK SERVICES HUB (FRONT & CENTER FOR ALL USERS)
       ========================================================================= */}
-      <section id="services-hub" className="relative z-20 -mt-8 sm:-mt-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="services-hub" className="relative z-20 py-12 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-5 sm:p-7">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
             <div>
@@ -696,6 +775,104 @@ export default function HomePage() {
               <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-700">Bulk Data</span>
               <span className="text-[11px] text-slate-500 mt-0.5">Reseller Vending</span>
               <span className="mt-2 text-[10px] font-bold text-sky-700 bg-sky-100/60 px-2 py-0.5 rounded-md">Batch Dispatch</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          2C. INTERACTIVE ICON FOLDER SHOWCASE (DARK GLASS FOLDERS)
+      ========================================================================= */}
+      <section className="py-20 sm:py-28 bg-[#070d1d] text-white border-y border-slate-800/80">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center mb-14 space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              All-in-One Utility Suite
+            </span>
+            <h2 className="font-space text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white">
+              Everything you need, neatly packed.
+            </h2>
+            <p className="text-sm sm:text-base text-slate-400">
+              Hover or tap any folder below to inspect every network, utility biller, and instant funding rail inside DataAbeg.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-8 justify-items-center">
+            <IconFolder
+              title="All 4 Networks"
+              theme="dark"
+              spread={64}
+              icons={[
+                { src: '/networks/mtn.svg', label: 'MTN SME · ₦290' },
+                { src: '/networks/airtel.svg', label: 'Airtel CG · ₦295' },
+                { src: '/networks/glo.svg', label: 'Glo Mega · ₦285' },
+                { src: '/networks/9mobile.svg', label: '9mobile · ₦260' },
+              ]}
+            />
+            <IconFolder
+              title="Bills & Utilities"
+              theme="dark"
+              spread={64}
+              icons={[
+                {
+                  node: <Zap className="w-10 h-10 text-amber-300" />,
+                  background: 'linear-gradient(135deg, #f59e0b, #b45309)',
+                  label: 'Electricity Tokens',
+                },
+                {
+                  node: <Tv className="w-10 h-10 text-indigo-200" />,
+                  background: 'linear-gradient(135deg, #6366f1, #3730a3)',
+                  label: 'DStv · GOtv · StarTimes',
+                },
+                {
+                  node: <Send className="w-10 h-10 text-emerald-200" />,
+                  background: 'linear-gradient(135deg, #10b981, #065f46)',
+                  label: 'Airtime 2% Bonus',
+                },
+                {
+                  node: <Users className="w-10 h-10 text-sky-200" />,
+                  background: 'linear-gradient(135deg, #0284c7, #075985)',
+                  label: 'Bulk Reseller Dispatch',
+                },
+              ]}
+            />
+            <IconFolder
+              title="Instant Funding"
+              theme="dark"
+              spread={64}
+              icons={[
+                {
+                  node: <Building className="w-10 h-10 text-blue-200" />,
+                  background: 'linear-gradient(135deg, #2563eb, #1e3a8a)',
+                  label: 'Bank Transfer',
+                },
+                {
+                  node: <Smartphone className="w-10 h-10 text-emerald-200" />,
+                  background: 'linear-gradient(135deg, #059669, #064e3b)',
+                  label: 'Pay with OPay',
+                },
+                {
+                  node: <Wallet className="w-10 h-10 text-violet-200" />,
+                  background: 'linear-gradient(135deg, #7c3aed, #4c1d95)',
+                  label: 'DataAbeg Wallet Pass',
+                },
+                {
+                  node: <ShieldCheck className="w-10 h-10 text-cyan-200" />,
+                  background: 'linear-gradient(135deg, #0891b2, #164e63)',
+                  label: 'Auto-Refund Protection',
+                },
+              ]}
+            />
+          </div>
+
+          <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <GooglePlayBadge href={PLAY_STORE_URL} variant="light" />
+            <Link
+              href="/dashboard"
+              className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-sm font-bold text-white transition-all"
+            >
+              Explore Web Dashboard →
             </Link>
           </div>
         </div>
@@ -939,15 +1116,16 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                <GooglePlayBadge href={PLAY_STORE_URL} />
                 <Link
                   href="/register"
-                  className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-lg shadow-sm transition-all"
+                  className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold text-white bg-[#1E40AF] hover:bg-blue-800 rounded-xl shadow-sm transition-all"
                 >
                   Create Free Account
                 </Link>
                 <Link
                   href="/login"
-                  className="w-full sm:w-auto px-7 py-3.5 text-base font-semibold text-[#1a1a1a] bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-all"
+                  className="w-full sm:w-auto px-7 py-3.5 text-base font-semibold text-[#1a1a1a] bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-2xs transition-all"
                 >
                   Log In to Dashboard
                 </Link>
@@ -972,120 +1150,49 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          7. FOOTER
+          7. SPLIT FOOTER
       ========================================================================= */}
-      <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-8 lg:gap-12 pb-14 border-b border-slate-100">
-            
-            {/* Col 1: Brand Info */}
-            <div className="col-span-2 md:col-span-6 lg:col-span-4 space-y-4">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#1E40AF] text-white flex items-center justify-center font-black">
-                  <Zap className="w-4 h-4 fill-white" />
-                </div>
-                <span className="text-xl font-bold tracking-tight text-slate-900 font-space">
-                  Data<span className="text-[#1E40AF]">Abeg</span>
-                </span>
-              </Link>
-              <p className="text-sm text-slate-500 leading-relaxed max-w-[300px]">
-                Nigeria's premier wholesale mobile data and utility vending engine. Automated 5-second delivery.
-              </p>
-
-              {/* Social / WhatsApp Contact */}
-              <div className="flex items-center gap-3 pt-2 text-slate-400">
-                <a
-                  href="https://wa.me/2348154276838"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                  aria-label="WhatsApp Support"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </a>
-                <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-slate-50 hover:bg-slate-900 hover:text-white transition-colors"
-                  aria-label="Twitter"
-                >
-                  <svg className="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-
-            {/* Col 2: Services */}
-            <div className="space-y-3">
-              <strong className="text-xs font-bold text-slate-900 uppercase tracking-wider block">Data Plans</strong>
-              <div className="space-y-2 text-xs text-slate-500">
-                <Link href="#services" className="block hover:text-[#1E40AF]">MTN SME Data</Link>
-                <Link href="#services" className="block hover:text-[#1E40AF]">MTN Corporate Gifting</Link>
-                <Link href="#services" className="block hover:text-[#1E40AF]">Airtel CG Data</Link>
-                <Link href="#services" className="block hover:text-[#1E40AF]">Glo Mega Bundles</Link>
-                <Link href="#services" className="block hover:text-[#1E40AF]">9mobile SME Data</Link>
-              </div>
-            </div>
-
-            {/* Col 3: Utilities */}
-            <div className="space-y-3">
-              <strong className="text-xs font-bold text-slate-900 uppercase tracking-wider block">Utilities</strong>
-              <div className="space-y-2 text-xs text-slate-500">
-                <Link href="/dashboard/electricity" className="block hover:text-[#1E40AF]">Ikeja Electric (IKEDC)</Link>
-                <Link href="/dashboard/electricity" className="block hover:text-[#1E40AF]">Eko Electric (EKEDC)</Link>
-                <Link href="/dashboard/electricity" className="block hover:text-[#1E40AF]">Abuja Electric (AEDC)</Link>
-                <Link href="/dashboard/cable" className="block hover:text-[#1E40AF]">DStv Subscriptions</Link>
-                <Link href="/dashboard/cable" className="block hover:text-[#1E40AF]">GOtv Packages</Link>
-                <Link href="/dashboard/cable" className="block hover:text-[#1E40AF]">StarTimes Renewal</Link>
-              </div>
-            </div>
-
-            {/* Col 4: Features */}
-            <div className="space-y-3">
-              <strong className="text-xs font-bold text-slate-900 uppercase tracking-wider block">Platform</strong>
-              <div className="space-y-2 text-xs text-slate-500">
-                <Link href="/dashboard/wallet" className="block hover:text-[#1E40AF]">MoMo PSB Account</Link>
-                <Link href="/dashboard/wallet" className="block hover:text-[#1E40AF]">SmartCash Account</Link>
-                <Link href="/dashboard/api-docs" className="block hover:text-[#1E40AF]">Developer API</Link>
-                <Link href="/dashboard/bulk-data" className="block hover:text-[#1E40AF]">Bulk Data Vending</Link>
-                <Link href="/dashboard/transactions" className="block hover:text-[#1E40AF]">Order Tracking</Link>
-              </div>
-            </div>
-
-            {/* Col 5: Company */}
-            <div className="space-y-3">
-              <strong className="text-xs font-bold text-slate-900 uppercase tracking-wider block">Company</strong>
-              <div className="space-y-2 text-xs text-slate-500">
-                <Link href="/privacy" className="block hover:text-[#1E40AF]">About DataAbeg</Link>
-                <Link href="/privacy" className="block hover:text-[#1E40AF]">Privacy Policy</Link>
-                <Link href="/privacy" className="block hover:text-[#1E40AF]">Terms of Service</Link>
-                <a href="https://wa.me/2348154276838" target="_blank" rel="noopener noreferrer" className="block hover:text-[#1E40AF]">Customer Support</a>
-              </div>
-            </div>
-
-            {/* Col 6: Admin */}
-            <div className="space-y-3">
-              <strong className="text-xs font-bold text-slate-900 uppercase tracking-wider block">Portals</strong>
-              <div className="space-y-2 text-xs text-slate-500">
-                <Link href="/login" className="block hover:text-[#1E40AF]">User Dashboard</Link>
-                <Link href="/admin-salam" className="block hover:text-[#1E40AF]">Merchant Admin</Link>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Copyright & Currency */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-            <p>© 2026 DataAbeg Technologies. All rights reserved.</p>
-            <div className="flex items-center gap-2 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 bg-slate-50 font-medium">
-              <Globe className="w-3.5 h-3.5 text-slate-500" />
-              <span>NGN — Nigerian Naira (₦)</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SplitFooter
+        brand="DataAbeg"
+        tagline={['Cheap data.', '5-second delivery.']}
+        panel="#071029"
+        accent="#2563eb"
+        palette={['#1e3a8a', '#3b82f6', '#dbeafe']}
+        socials={[
+          { label: 'DataAbeg on X', href: 'https://x.com', icon: 'x' },
+        ]}
+        groups={[
+          {
+            title: 'Services',
+            links: [
+              { label: 'Buy Data', href: '/dashboard/data' },
+              { label: 'Buy Airtime', href: '/dashboard/airtime' },
+              { label: 'Electricity', href: '/dashboard/electricity' },
+              { label: 'Cable TV', href: '/dashboard/cable' },
+              { label: 'Bulk Vending', href: '/dashboard/bulk-data' },
+            ],
+          },
+          {
+            title: 'Download & Account',
+            links: [
+              { label: 'Google Play App', href: PLAY_STORE_URL },
+              { label: 'User Dashboard', href: '/dashboard' },
+              { label: 'Fund Wallet', href: '/dashboard/wallet' },
+              { label: 'Create Account', href: '/register' },
+              { label: 'Sign In', href: '/login' },
+            ],
+          },
+          {
+            title: 'Legal & Support',
+            links: [
+              { label: 'WhatsApp Support', href: 'https://wa.me/2348154276838' },
+              { label: 'Privacy Policy', href: '/privacy' },
+              { label: 'Delete Account', href: '/delete-account' },
+              { label: 'Merchant Admin', href: '/admin-salam' },
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

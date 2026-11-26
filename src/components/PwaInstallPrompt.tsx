@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Download, X, Share2, PlusSquare, Sparkles } from 'lucide-react';
+import { Download, X, Share2, PlusSquare, Sparkles, Smartphone } from 'lucide-react';
+import { PLAY_STORE_URL } from './GooglePlayBadge';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -109,14 +110,26 @@ export default function PwaInstallPrompt() {
               : 'Add DataAbeg to your home screen for instant 1-tap data recharges without opening browser.'}
           </p>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {!isIos && (
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all shadow-sm cursor-pointer"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Get on Google Play</span>
+              </a>
+            )}
+
             {!isIos && deferredPrompt && (
               <button
                 onClick={handleInstallClick}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#4f46e5] hover:bg-indigo-600 text-white transition-all shadow-sm cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Install Now</span>
+                <span>Install Web App</span>
               </button>
             )}
 
