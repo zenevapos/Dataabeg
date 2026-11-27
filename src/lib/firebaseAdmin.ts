@@ -223,3 +223,102 @@ export async function adminPatchDoc(
   }
   return true;
 }
+
+/**
+ * Atomically adjusts a user's `walletBalance` using Firestore REST API optimistic concurrency
+ * (`currentDocument.updateTime` precondition). Prevents double-spend and double-refund race
+ * conditions across parallel tabs or rapid requests.
+ */
+export async function adminAtomicWalletDelta(
+  uid: string,
+  delta: number,
+  options?: { minBalanceAfter?: number; maxRetries?: number }
+): Promise<{
+  ok: boolean;
+  previousBalance?: number;
+  newBalance?: number;
+  userEmail?: string;
+  phoneNumber?: string;
+  error?: string;
+}> {
+  const auth = await getAdminAccessToken();
+  if (!auth) {
+    return { ok: false, error: 'Server wallet service is not configured.' };
+  }
+
+  const maxRetries = options?.maxRetries ?? 5;
+  const docUrl = `https://firestore.googleapis.com/v1/projects/${auth.projectId}/databases/(default)/documents/users/${encodeURIComponent(uid)}`;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const getRes = await fetch(docUrl, {
+      headers: { Authorization: `Bearer ${auth.token}` },
+      cache: 'no-store'
+    });
+
+    if (getRes.status === 404) {
+      return { ok: false, error: 'User wallet profile not found.' };
+    }
+    if (!getRes.ok) {
+      return { ok: false, error: `Could not read user wallet (HTTP ${getRes.status}).` };
+    }
+
+    const docJson = await getRes.json();
+    const updateTime: string | undefined = docJson?.updateTime;
+    const decoded = fromFirestoreDoc(docJson);
+    if (!updateTime || !decoded) {
+      return { ok: false, error: 'Invalid user wallet document.' };
+    }
+
+    const previousBalance = Number(decoded.walletBalance || 0);
+    const newBalance = Math.round((previousBalance + delta) * 100) / 100;
+
+    if (options?.minBalanceAfter !== undefined && newBalance < options.minBalanceAfter) {
+      return {
+        ok: false,
+        previousBalance,
+        error: `Insufficient wallet balance. You have ₦${previousBalance.toLocaleString()} but need ₦${Math.abs(delta).toLocaleString()}.`
+      };
+    }
+
+    const patchUrl =
+      `${docUrl}?updateMask.fieldPaths=walletBalance&updateMask.fieldPaths=updatedAt` +
+      `&currentDocument.updateTime=${encodeURIComponent(updateTime)}`;
+
+    const patchRes = await fetch(patchUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth.token}`
+      },
+      body: JSON.stringify({
+        fields: {
+          walletBalance: toFirestoreValue(newBalance),
+          updatedAt: toFirestoreValue(new Date().toISOString())
+        }
+      }),
+      cache: 'no-store'
+    });
+
+    if (patchRes.ok) {
+      return {
+        ok: true,
+        previousBalance,
+        newBalance,
+        userEmail: String(decoded.email || ''),
+        phoneNumber: String(decoded.phoneNumber || '')
+      };
+    }
+
+    // 400/409 FAILED_PRECONDITION means a concurrent write modified the wallet — retry with fresh balance
+    if (patchRes.status === 400 || patchRes.status === 409) {
+      await new Promise((r) => setTimeout(r, 40 + Math.floor(Math.random() * 60)));
+      continue;
+    }
+
+    const errText = await patchRes.text().catch(() => '');
+    console.error(`adminAtomicWalletDelta PATCH failed (${patchRes.status}):`, errText);
+    return { ok: false, error: 'Could not update wallet balance. Please try again.' };
+  }
+
+  return { ok: false, error: 'Wallet is busy processing another transaction. Please try again in a moment.' };
+}

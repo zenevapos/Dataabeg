@@ -8,6 +8,52 @@ export interface VerifiedAdminResult {
   error?: string;
 }
 
+export interface VerifiedUserResult {
+  authenticated: boolean;
+  uid?: string;
+  email?: string;
+  isAdmin?: boolean;
+  error?: string;
+}
+
+/**
+ * Verifies any logged-in user's Firebase ID token from the Authorization header
+ * via Google Identity Toolkit. Zero external SDK dependencies.
+ */
+export async function verifyUserRequest(req: NextRequest): Promise<VerifiedUserResult> {
+  const authHeader = req.headers.get('authorization') || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+
+  if (!idToken) {
+    return { authenticated: false, error: 'Missing Authorization Bearer token. Please sign in again.' };
+  }
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+        cache: 'no-store'
+      }
+    );
+    const data = await res.json();
+    const userRecord = data?.users?.[0];
+    if (!res.ok || !userRecord?.localId) {
+      return { authenticated: false, error: 'Invalid or expired session. Please sign in again.' };
+    }
+    return {
+      authenticated: true,
+      uid: userRecord.localId,
+      email: userRecord.email || '',
+      isAdmin: Boolean(userRecord.email && isAuthorizedAdmin(userRecord.email))
+    };
+  } catch {
+    return { authenticated: false, error: 'Could not verify user authentication.' };
+  }
+}
+
 /**
  * Verifies a Firebase ID token from the Authorization header via Google Identity Toolkit
  * and confirms the caller is one of the authorized DataAbeg admin emails.

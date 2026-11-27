@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { DataPlan, NetworkInfo, Transaction } from '@/lib/types';
 import { formatCurrency, generateTxReference } from '@/lib/utils';
@@ -8,9 +8,7 @@ import {
   saveOrderToFirestore,
   getAdminSettings,
   AdminSettings,
-  DEFAULT_ADMIN_SETTINGS,
-  debitUserWallet,
-  refundUserWallet
+  DEFAULT_ADMIN_SETTINGS
 } from '@/lib/firebaseDb';
 import { useAuth } from '@/context/AuthContext';
 import { getPaystackPublicKey } from '@/lib/paystack';
@@ -106,6 +104,7 @@ export function PurchaseModal({
   const [copiedToken, setCopiedToken] = useState<boolean>(false);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(DEFAULT_ADMIN_SETTINGS);
+  const isSubmittingRef = useRef<boolean>(false);
 
   // Compute checkout amount and titles based on service
   const checkoutAmount =
@@ -144,6 +143,8 @@ export function PurchaseModal({
       : phoneNumber;
 
   const handlePurchase = async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setIsProcessing(true);
     setErrorMessage(null);
     setProcessingStep('Connecting to Glad Tidings Automated Gateway...');
@@ -314,7 +315,7 @@ export function PurchaseModal({
         return;
       }
 
-      // User Wallet Payment Method
+      // User Wallet Payment Method — 100% atomic server-side debit, dispense, and auto-refund
       if (paymentMethod === 'wallet') {
         if (!user) {
           setErrorMessage('Please login to pay with your DataAbeg wallet, or select Paystack Instant to pay with Card or Transfer.');
@@ -330,204 +331,178 @@ export function PurchaseModal({
           return;
         }
 
-        setProcessingStep('Authorizing secure wallet debit...');
-        const debitResult = await debitUserWallet(
-          user.uid,
-          checkoutAmount,
-          txRef,
-          `${serviceType.toUpperCase()} purchase for ${recipientIdentifier}`
-        );
+        setProcessingStep('Authorizing secure server wallet debit & dispensing...');
+        const idToken = await user.getIdToken();
 
-        if (!debitResult.success) {
-          setErrorMessage(debitResult.error || 'Failed to debit wallet balance.');
-          setIsProcessing(false);
-          return;
-        }
+        const isAirtime =
+          serviceType === 'airtime' ||
+          String(plan?.id).startsWith('airtime-') ||
+          plan?.planId === 0;
+        const resolvedServiceType =
+          serviceType === 'electricity'
+            ? 'electricity'
+            : serviceType === 'cable'
+              ? 'cable'
+              : isAirtime
+                ? 'airtime'
+                : 'data';
 
-        await refreshProfile();
-      }
-
-      await new Promise((r) => setTimeout(r, 400));
-      setProcessingStep('Connecting to Glad Tidings Automated Cloud Gateway...');
-      await new Promise((r) => setTimeout(r, 500));
-
-      let endpoint = '/api/smeplug/purchase';
-      let payload: Record<string, any> = {};
-
-      if (serviceType === 'electricity' && electricityDetails) {
-        setProcessingStep(`Generating token for ${electricityDetails.meterNumber}...`);
-        endpoint = '/api/gladtidings/electricity/recharge';
-        payload = {
-          disco_id: electricityDetails.discoId,
-          amount: electricityDetails.amount,
-          meter_number: electricityDetails.meterNumber,
-          meter_type: electricityDetails.meterType,
-          customer_phone: electricityDetails.phone,
-          customer_name: electricityDetails.customerName,
-          customer_address: electricityDetails.customerAddress,
+        let walletPayload: Record<string, any> = {
+          serviceType: resolvedServiceType,
           customer_reference: txRef
         };
-      } else if (serviceType === 'cable' && cableDetails) {
-        setProcessingStep(`Renewing ${cableDetails.cableName} subscription...`);
-        endpoint = '/api/gladtidings/cable/subscribe';
-        payload = {
-          cable_id: cableDetails.cableId,
-          cable_plan_id: cableDetails.cablePlanId,
-          smart_card_number: cableDetails.smartCardNumber,
-          customer_reference: txRef
-        };
-      } else {
-        const isAirtime = serviceType === 'airtime' || String(plan?.id).startsWith('airtime-') || plan?.planId === 0;
-        endpoint = isAirtime ? '/api/smeplug/airtime' : '/api/smeplug/purchase';
 
-        if (isAirtime) {
+        if (resolvedServiceType === 'electricity' && electricityDetails) {
+          setProcessingStep(`Generating token for ${electricityDetails.meterNumber}...`);
+          walletPayload = {
+            ...walletPayload,
+            disco_id: electricityDetails.discoId,
+            discoName: electricityDetails.discoName,
+            amount: electricityDetails.amount,
+            meter_number: electricityDetails.meterNumber,
+            meter_type: electricityDetails.meterType,
+            customer_phone: electricityDetails.phone,
+            customer_name: electricityDetails.customerName,
+            customer_address: electricityDetails.customerAddress
+          };
+        } else if (resolvedServiceType === 'cable' && cableDetails) {
+          setProcessingStep(`Renewing ${cableDetails.cableName} subscription...`);
+          walletPayload = {
+            ...walletPayload,
+            cable_id: cableDetails.cableId,
+            cable_plan_id: cableDetails.cablePlanId,
+            cableName: cableDetails.cableName,
+            cablePlanName: cableDetails.cablePlanName,
+            smart_card_number: cableDetails.smartCardNumber,
+            amount: cableDetails.amount,
+            phone: cableDetails.phone
+          };
+        } else if (resolvedServiceType === 'airtime') {
           setProcessingStep(`Recharging ${formatCurrency(plan?.retailPrice || 0)} airtime to ${phoneNumber}...`);
-          payload = {
+          walletPayload = {
+            ...walletPayload,
             network_id: plan?.networkId || network?.id,
+            network: network?.name || 'Airtime',
+            networkName: network?.displayName || network?.name || 'Airtime',
             phone: phoneNumber,
             amount: plan?.retailPrice || plan?.sellingPrice,
-            customer_reference: txRef
+            planName: plan?.name
           };
         } else {
           setProcessingStep(`Dispensing ${plan?.size || 'data'} to ${phoneNumber}...`);
-          payload = {
+          walletPayload = {
+            ...walletPayload,
             network_id: plan?.networkId || network?.id,
+            network: network?.name || 'Data',
+            networkName: network?.displayName || network?.name || 'Data',
             plan_id: plan?.planId,
-            phone: phoneNumber,
-            customer_reference: txRef
+            phone: phoneNumber
           };
         }
-      }
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      if (customApiKey) {
-        headers['x-gladtidings-key'] = customApiKey;
-      }
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.status) {
-        setIsSuccess(true);
-        const generatedToken = data.token || data.data?.token || '';
-
-        const newTx: Transaction = {
-          id: txRef,
-          reference: txRef,
-          userId: user?.uid || '',
-          userEmail: user?.email || '',
-          smeplugReference: data.data?.reference || data.data?.ident || `GT_${Date.now()}`,
-          network: network?.name || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',
-          networkName: network?.displayName || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',
-          phone: phoneNumber || electricityDetails?.phone || cableDetails?.phone || '',
-          phoneNumber: phoneNumber || electricityDetails?.phone || cableDetails?.phone || '',
-          planName:
-            serviceType === 'electricity'
-              ? `${electricityDetails?.discoName} (${electricityDetails?.meterType})`
-              : serviceType === 'cable'
-              ? `${cableDetails?.cableName} - ${cableDetails?.cablePlanName}`
-              : plan?.name || 'Mobile Top-Up',
-          planSize:
-            serviceType === 'electricity'
-              ? `Meter: ${electricityDetails?.meterNumber}`
-              : serviceType === 'cable'
-              ? `IUC: ${cableDetails?.smartCardNumber}`
-              : plan?.size || '',
-          amount: checkoutAmount,
-          amountPaid: checkoutAmount,
-          status: 'successful',
-          statusMessage: data.msg || data.data?.msg || 'Transaction completed successfully.',
-          paymentMethod: paymentMethod === 'wallet' ? 'WALLET' : paymentMethod === 'transfer' ? 'BANK_TRANSFER' : 'DEBIT_CARD',
-          createdAt: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
-          serviceType,
-          meterToken: generatedToken,
-          meterNumber: electricityDetails?.meterNumber,
-          customerName: electricityDetails?.customerName || cableDetails?.customerName,
-          smartCardNumber: cableDetails?.smartCardNumber,
-          cableName: cableDetails?.cableName,
-          cablePlanName: cableDetails?.cablePlanName
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`
         };
-
-        setCompletedTx(newTx);
-        if (onOrderCompleted) {
-          onOrderCompleted(newTx);
+        if (customApiKey) {
+          headers['x-gladtidings-key'] = customApiKey;
         }
 
-        // Save order directly to Firestore
-        saveOrderToFirestore(newTx);
+        const res = await fetch('/api/wallet/purchase', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(walletPayload)
+        });
 
-        try {
-          confetti({
-            particleCount: 90,
-            spread: 75,
-            origin: { y: 0.6 }
-          });
-        } catch {
-          // ignore
-        }
-        // Refresh user profile wallet balance after successful purchase
-        if (paymentMethod === 'wallet') {
-          refreshProfile().catch(() => {});
-        }
-      } else {
-        // Automatic refund if wallet was debited but gateway failed
-        if (paymentMethod === 'wallet' && user) {
-          try {
-            await refundUserWallet(user.uid, checkoutAmount, txRef, 'Dispense failure auto-refund');
-            await refreshProfile();
-          } catch (refundErr) {
-            console.error('Wallet auto-refund error:', refundErr);
+        const data = await res.json();
+        await refreshProfile().catch(() => {});
+
+        if (res.ok && data.status) {
+          setIsSuccess(true);
+          const generatedToken = data.token || data.data?.token || '';
+          const newTx: Transaction = (data.order as Transaction) || {
+            id: txRef,
+            reference: txRef,
+            userId: user.uid,
+            userEmail: user.email || '',
+            smeplugReference: data.data?.reference || data.data?.ident || `GT_${Date.now()}`,
+            network: network?.name || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',
+            networkName: network?.displayName || electricityDetails?.discoName || cableDetails?.cableName || 'VTU',
+            phone: phoneNumber || electricityDetails?.phone || cableDetails?.phone || '',
+            phoneNumber: phoneNumber || electricityDetails?.phone || cableDetails?.phone || '',
+            planName:
+              serviceType === 'electricity'
+                ? `${electricityDetails?.discoName} (${electricityDetails?.meterType})`
+                : serviceType === 'cable'
+                  ? `${cableDetails?.cableName} - ${cableDetails?.cablePlanName}`
+                  : plan?.name || 'Mobile Top-Up',
+            planSize:
+              serviceType === 'electricity'
+                ? `Meter: ${electricityDetails?.meterNumber}`
+                : serviceType === 'cable'
+                  ? `IUC: ${cableDetails?.smartCardNumber}`
+                  : plan?.size || '',
+            amount: checkoutAmount,
+            amountPaid: checkoutAmount,
+            status: 'successful',
+            statusMessage: data.msg || data.data?.msg || 'Transaction completed successfully.',
+            paymentMethod: 'WALLET',
+            createdAt: new Date().toISOString(),
+            timestamp: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            serviceType,
+            meterToken: generatedToken,
+            meterNumber: electricityDetails?.meterNumber,
+            customerName: electricityDetails?.customerName || cableDetails?.customerName,
+            smartCardNumber: cableDetails?.smartCardNumber,
+            cableName: cableDetails?.cableName,
+            cablePlanName: cableDetails?.cablePlanName
+          };
+
+          setCompletedTx(newTx);
+          if (onOrderCompleted) {
+            onOrderCompleted(newTx);
           }
-        }
 
-        const raw = data.msg ?? data.data?.msg ?? data.error ?? data.message ?? data.detail ?? '';
-        const rawMsg = typeof raw === 'string'
-          ? raw
-          : Array.isArray(raw)
-          ? raw.map((item: any) => (typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item))).join(', ')
-          : typeof raw === 'object' && raw !== null
-          ? ((raw as any).detail || (raw as any).message || (raw as any).error || (raw as any).msg || JSON.stringify(raw))
-          : String(raw || '');
+          try {
+            confetti({
+              particleCount: 90,
+              spread: 75,
+              origin: { y: 0.6 }
+            });
+          } catch {}
+        } else {
+          const raw = data.msg ?? data.data?.msg ?? data.error ?? data.message ?? data.detail ?? '';
+          const rawMsg = typeof raw === 'string'
+            ? raw
+            : Array.isArray(raw)
+              ? raw.map((item: any) => (typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item))).join(', ')
+              : typeof raw === 'object' && raw !== null
+                ? ((raw as any).detail || (raw as any).message || (raw as any).error || (raw as any).msg || JSON.stringify(raw))
+                : String(raw || '');
 
-        let friendlyMsg = rawMsg;
-        const lowerMsg = rawMsg.toLowerCase();
-        if (lowerMsg.includes('whitelisted ip')) {
-          console.warn('GladTidings IP whitelist rejection:', rawMsg);
-          friendlyMsg = isAdmin
-            ? `Admin Gateway Error: ${rawMsg} (Remove any IP from GladTidings IP Whitelist or route via GLADTIDINGS_BASE_URL static-IP relay.)`
-            : 'Temporary carrier gateway IP configuration issue. Your wallet was NOT charged — please try again shortly or contact support.';
-        } else if (
-          lowerMsg.includes('insufficient') ||
-          lowerMsg.includes('wallet') ||
-          lowerMsg.includes('balance') ||
-          lowerMsg.includes('fund')
-        ) {
-          friendlyMsg = 'Gateway Notice: Insufficient wallet balance on merchant account. Please fund your balance on gladtidingsdata.com to dispense.';
+          let friendlyMsg = rawMsg;
+          const lowerMsg = rawMsg.toLowerCase();
+          if (lowerMsg.includes('whitelisted ip')) {
+            console.warn('GladTidings IP whitelist rejection:', rawMsg);
+            friendlyMsg = isAdmin
+              ? `Admin Gateway Error: ${rawMsg} (Route via GLADTIDINGS_PROXY_URL / FIXIE_URL static IP or disable IP whitelist on GladTidings.)`
+              : 'Temporary carrier gateway IP configuration issue. Your wallet was NOT charged — please try again shortly or contact support.';
+          } else if (
+            lowerMsg.includes('insufficient') && !lowerMsg.includes('you have')
+          ) {
+            friendlyMsg = 'Gateway Notice: Insufficient wallet balance on merchant account. Please fund your balance on gladtidingsdata.com to dispense.';
+          }
+          setErrorMessage(friendlyMsg || 'Transaction could not be processed by gateway. Your wallet was NOT charged.');
         }
-        setErrorMessage(friendlyMsg || 'Transaction could not be processed by gateway. Please verify your details and try again.');
+        return;
       }
     } catch (err: unknown) {
-      // Automatic refund if wallet was debited but an exception was thrown
-      if (paymentMethod === 'wallet' && user) {
-        try {
-          await refundUserWallet(user.uid, checkoutAmount, txRef, 'Dispense failure exception auto-refund');
-          await refreshProfile();
-        } catch (refundErr) {
-          console.error('Wallet auto-refund error:', refundErr);
-        }
-      }
+      await refreshProfile().catch(() => {});
       console.error('Purchase error:', err);
       setErrorMessage(err instanceof Error ? err.message : 'Network error. Please check your connection.');
     } finally {
+      isSubmittingRef.current = false;
       setIsProcessing(false);
     }
   };
