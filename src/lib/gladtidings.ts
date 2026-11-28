@@ -207,19 +207,22 @@ async function gladtidingsRequest(
         finishReject(err instanceof Error ? err : new Error(String(err)));
       });
 
+      const tunnelAgent = new http.Agent({ keepAlive: false });
+      (tunnelAgent as unknown as { createConnection: () => tls.TLSSocket }).createConnection = () => tlsSocket;
+
       const req = http.request(
         {
           hostname: target.hostname,
           port: targetPort,
           path: `${target.pathname}${target.search}`,
           method: options.method,
+          setHost: false,
           headers: {
             Host: target.host,
             Connection: 'close',
             ...reqHeaders
           },
-          agent: false,
-          createConnection: () => tlsSocket
+          agent: tunnelAgent
         },
         (res) => readResponse(res, tlsSocket)
       );
