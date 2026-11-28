@@ -14,11 +14,21 @@ const GLADTIDINGS_BASE_URL = (
 ).trim().replace(/\/+$/, '');
 
 function getProxyUrl(): string {
-  return (process.env.FIXIE_URL || process.env.GLADTIDINGS_PROXY_URL || '').trim();
+  return (process.env.GLADTIDINGS_PROXY_URL || process.env.FIXIE_URL || '').trim();
 }
 
 export function isGladTidingsProxyConfigured(): boolean {
   return Boolean(getProxyUrl());
+}
+
+export function getGladTidingsProxyHost(): string | null {
+  const raw = getProxyUrl();
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return 'invalid-proxy-url';
+  }
 }
 
 function safeParseJson(rawText: string, status: number): unknown {
@@ -197,13 +207,17 @@ async function gladtidingsRequest(
         finishReject(err instanceof Error ? err : new Error(String(err)));
       });
 
-      const req = https.request(
+      const req = http.request(
         {
           hostname: target.hostname,
           port: targetPort,
           path: `${target.pathname}${target.search}`,
           method: options.method,
-          headers: reqHeaders,
+          headers: {
+            Host: target.host,
+            Connection: 'close',
+            ...reqHeaders
+          },
           agent: false,
           createConnection: () => tlsSocket
         },
